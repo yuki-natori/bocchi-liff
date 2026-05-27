@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bocchi</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #f0fdf4;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 32px 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: 900;
+      color: #06C755;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 32px;
+    }
+    .status-box {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .status-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .status-value {
+      font-size: 15px;
+      color: #1f2937;
+      font-weight: 500;
+      word-break: break-all;
+    }
+    .status-value.loading {
+      color: #9ca3af;
+      font-weight: 400;
+    }
+    .status-value.success {
+      color: #065f46;
+    }
+    .status-value.error {
+      color: #991b1b;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .badge.ok {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge.ng {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .badge.pending {
+      background: #f1f5f9;
+      color: #6b7280;
+    }
+    .divider {
+      height: 1px;
+      background: #f1f5f9;
+      margin: 8px 0;
+    }
+    .note {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #e5e7eb;
+      border-top-color: #06C755;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">bocchi</div>
+    <div class="subtitle">LINE ID 取得確認ツール（開発用）</div>
+
+    <span class="badge pending" id="badge">
+      <span class="spinner"></span> 確認中...
+    </span>
+
+    <div class="status-box">
+      <div class="status-label">LINE ユーザーID</div>
+      <div class="status-value loading" id="userId">取得中...</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="status-box">
+      <div class="status-label">表示名</div>
+      <div class="status-value loading" id="displayName">取得中...</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="status-box">
+      <div class="status-label">GAS への送信</div>
+      <div class="status-value loading" id="gasStatus">待機中...</div>
+    </div>
+
+    <p class="note" id="note">LINEアカウントの情報を取得しています...</p>
+  </div>
+
+  <script>
+    const LIFF_ID = "2010205663-ilzLGQpb"; // ← 開発用LIFF ID
+
+    // GASのWebアプリURL（LINE IDを受け取るエンドポイント）
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzbu1zJOhfadOgEJE4mwg3Wc39mpg3sLSn9CoR6Dic4Ru9t2v0-teJxbwaZB2juCVgz/exec";
+
+    function setBadge(type, text) {
+      const badge = document.getElementById("badge");
+      badge.className = "badge " + type;
+      badge.innerHTML = text;
+    }
+
+    function setStatus(id, value, type) {
+      const el = document.getElementById(id);
+      el.textContent = value;
+      el.className = "status-value " + (type || "");
+    }
+
+    async function sendToGAS(userId, displayName) {
+      try {
+        setStatus("gasStatus", "送信中...", "loading");
+        const params = new URLSearchParams({
+          action: "saveLiffUserId",
+          lineUserId: userId,
+          displayName: displayName
+        });
+        const res = await fetch(GAS_URL + "?" + params.toString());
+        const text = await res.text();
+        setStatus("gasStatus", "✅ 送信成功：" + text, "success");
+      } catch (e) {
+        setStatus("gasStatus", "❌ 送信失敗：" + e.message, "error");
+      }
+    }
+
+    async function init() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        const userId = profile.userId;
+        const displayName = profile.displayName;
+
+        setStatus("userId", userId, "success");
+        setStatus("displayName", displayName, "success");
+        setBadge("ok", "✅ LINE ID 取得成功");
+        document.getElementById("note").textContent =
+          "上記のLINE IDがGASに送信されます。";
+
+        await sendToGAS(userId, displayName);
+
+      } catch (e) {
+        setStatus("userId", "エラー：" + e.message, "error");
+        setStatus("displayName", "—", "error");
+        setStatus("gasStatus", "—", "error");
+        setBadge("ng", "❌ 取得失敗");
+        document.getElementById("note").textContent =
+          "LINEアプリ内で開いているか確認してください。";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
