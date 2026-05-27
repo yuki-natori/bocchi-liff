@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ぼっち the 交流会 | LINEで繋がるイベント交流サービス</title>
+  <meta name="description" content="イベント後のぎこちなさをなくす。4〜5人のグループで、90分間の心地よい交流体験をLINEでお届けします。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #06C755;
+      --green-dark: #05a847;
+      --green-light: #e8faf0;
+      --dark: #1a1a2e;
+      --gray: #6b7280;
+      --light: #f8fafc;
+      --white: #ffffff;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      color: var(--dark);
+      background: var(--white);
+      line-height: 1.7;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-weight: 900;
+      font-size: 18px;
+      color: var(--dark);
+      text-decoration: none;
+    }
+
+    .logo span { color: var(--green); }
+
+    nav { display: flex; gap: 32px; align-items: center; }
+
+    nav a {
+      text-decoration: none;
+      color: var(--gray);
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav a:hover { color: var(--dark); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-line {
+      background: var(--green);
+      color: white;
+    }
+
+    .btn-line:hover {
+      background: var(--green-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(6,199,85,0.35);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--green);
+      border: 2px solid var(--green);
+    }
+
+    .btn-outline:hover {
+      background: var(--green-light);
+    }
+
+    /* LINE icon SVG */
+    .line-icon {
+      width: 20px;
+      height: 20px;
+      fill: white;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      padding: 120px 24px 80px;
+      text-align: center;
+      background: linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px; right: -100px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(6,199,85,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--green-light);
+      color: var(--green-dark);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 50px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 6vw, 60px);
+      font-weight: 900;
+      line-height: 1.25;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero h1 .accent { color: var(--green); }
+
+    .hero p {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--gray);
+      max-width: 580px;
+      margin: 0 auto 40px;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      margin-top: 64px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--green);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--gray);
+    }
+
+    /* ===== SECTION ===== */
+    section {
+      padding: 80px 24px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      display: inline-block;
+      background: var(--green-light);
+      color: var(--green-dark);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 50px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .section-title {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 900;
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+
+    .section-desc {
+      color: var(--gray);
+      font-size: 16px;
+      max-width: 600px;
+    }
+
+    .section-header {
+      margin-bottom: 48px;
+    }
+
+    /* ===== PROBLEM ===== */
+    .problem { background: var(--dark); color: white; }
+
+    .problem .section-tag {
+      background: rgba(255,255,255,0.1);
+      color: #9ca3af;
+    }
+
+    .problem .section-title { color: white; }
+    .problem .section-desc { color: #9ca3af; }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .problem-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+
+    .problem-card .emoji { font-size: 32px; margin-bottom: 12px; }
+
+    .problem-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: white;
+    }
+
+    .problem-card p {
+      font-size: 14px;
+      color: #9ca3af;
+      line-height: 1.6;
+    }
+
+    /* ===== FEATURES ===== */
+    .features { background: var(--light); }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .feature-card:hover { transform: translateY(-4px); }
+
+    .feature-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--green-light);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--gray);
+      line-height: 1.6;
+    }
+
+    /* ===== HOW IT WORKS ===== */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0;
+      position: relative;
+    }
+
+    .step {
+      text-align: center;
+      padding: 32px 16px;
+      position: relative;
+    }
+
+    .step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 24px;
+      color: var(--green);
+      font-weight: 900;
+    }
+
+    .step-num {
+      width: 56px;
+      height: 56px;
+      background: var(--green);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      margin: 0 auto 20px;
+    }
+
+    .step h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      font-size: 13px;
+      color: var(--gray);
+    }
+
+    /* ===== CTA SECTION ===== */
+    .cta-section {
+      background: linear-gradient(135deg, #06C755, #05a847);
+      color: white;
+      text-align: center;
+      border-radius: 24px;
+      padding: 64px 32px;
+      margin: 0 24px 80px;
+    }
+
+    .cta-section h2 {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 900;
+      margin-bottom: 16px;
+    }
+
+    .cta-section p {
+      font-size: 16px;
+      opacity: 0.9;
+      margin-bottom: 32px;
+    }
+
+    .btn-white {
+      background: white;
+      color: var(--green-dark);
+      font-weight: 900;
+    }
+
+    .btn-white:hover {
+      background: #f0fdf4;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    /* ===== ANIMAL CONCIERGE ===== */
+    .animal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+
+    .animal-card {
+      background: var(--light);
+      border-radius: var(--radius);
+      padding: 24px 16px;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .animal-card:hover {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    .animal-emoji { font-size: 40px; margin-bottom: 8px; }
+
+    .animal-name {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .animal-desc {
+      font-size: 12px;
+      color: var(--gray);
+    }
+
+    /* ===== FAQ ===== */
+    .faq-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .faq-item {
+      background: var(--light);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .faq-q {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .faq-q::before {
+      content: 'Q';
+      background: var(--green);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .faq-a {
+      font-size: 15px;
+      color: var(--gray);
+      padding-left: 40px;
+    }
+
+    /* ===== OPERATOR ===== */
+    .operator-box {
+      background: var(--light);
+      border-radius: var(--radius);
+      padding: 40px;
+      max-width: 600px;
+    }
+
+    .operator-box h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .operator-row {
+      display: flex;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 15px;
+    }
+
+    .operator-label {
+      min-width: 120px;
+      color: var(--gray);
+      font-weight: 500;
+    }
+
+    .operator-value { color: var(--dark); }
+
+    /* ===== NOTICE ===== */
+    .notice-box {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-top: 32px;
+    }
+
+    .notice-box h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #c2410c;
+      margin-bottom: 10px;
+    }
+
+    .notice-box ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .notice-box li {
+      font-size: 14px;
+      color: #7c3d12;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .notice-box li::before {
+      content: '・';
+      position: absolute;
+      left: 0;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--dark);
+      color: #9ca3af;
+      padding: 48px 24px 32px;
+    }
+
+    .footer-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 32px;
+      margin-bottom: 40px;
+    }
+
+    .footer-logo {
+      font-weight: 900;
+      font-size: 20px;
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .footer-logo span { color: var(--green); }
+
+    .footer-tagline {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: #9ca3af;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: white; }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-bottom p { font-size: 13px; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      nav { display: none; }
+
+      .step:not(:last-child)::after { display: none; }
+
+      .operator-row { flex-direction: column; gap: 4px; }
+
+      .hero-stats { gap: 32px; }
+
+      .cta-section { margin: 0 0 60px; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a href="/" class="logo">ぼっち <span>the</span> 交流会</a>
+  <nav>
+    <a href="#features">特徴</a>
+    <a href="#howto">使い方</a>
+    <a href="#faq">よくある質問</a>
+    <a href="#operator">運営情報</a>
+  </nav>
+  <a href="#line-register" class="btn btn-line" style="padding: 10px 20px; font-size: 14px;">
+    <svg class="line-icon" viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+    友達登録
+  </a>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge">2027年 サービス開始予定</div>
+  <h1>
+    「知り合い以上、<br>
+    友人未満」を<br>
+    <span class="accent">卒業しよう。</span>
+  </h1>
+  <p>イベントで出会った人と、もっと話したかった。<br>そんな気持ちに応える、LINEで完結する交流支援サービス。</p>
+  <div class="hero-cta">
+    <a href="#line-register" class="btn btn-line">
+      <svg class="line-icon" viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.30-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+      LINEで友達登録する
+    </a>
+    <a href="#features" class="btn btn-outline">サービスを詳しく見る</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <span class="stat-num">90<small style="font-size:18px">分</small></span>
+      <span class="stat-label">1回の交流時間</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">4〜5<small style="font-size:18px">人</small></span>
+      <span class="stat-label">少人数グループ</span>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">こんな経験ありませんか？</span>
+      <h2 class="section-title" style="color:white">イベント後、<br>せっかくの出会いが消えていく</h2>
+      <p class="section-desc">一緒にイベントを楽しんだのに、終わった後は疎遠に。そんな経験に心当たりはありませんか？</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="emoji">😶</div>
+        <h3>話しかけるきっかけがない</h3>
+        <p>イベントでは盛り上がったのに、終わった後は誰も話しかけてこない。どうしたらいいかわからない。</p>
+      </div>
+      <div class="problem-card">
+        <div class="emoji">😟</div>
+        <h3>大人数だと発言しづらい</h3>
+        <p>大勢の交流会では目立てず、結局知らない人と話せないまま終わってしまう。</p>
+      </div>
+      <div class="problem-card">
+        <div class="emoji">😔</div>
+        <h3>SNSで繋がっても続かない</h3>
+        <p>フォローし合っても会話が続かない。イベント限りの関係で終わってしまいがち。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">サービスの特徴</span>
+      <h2 class="section-title">「ぼっち the 交流会」が<br>選ばれる4つの理由</h2>
+      <p class="section-desc">LINEだけで完結。難しい操作は一切不要。心地よい交流体験をデザインしました。</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <h3>少人数グループで<br>話しやすい</h3>
+        <p>4〜5人の少人数グループだから、全員と自然に会話できる。大人数の交流会とは違う安心感。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🦁</div>
+        <h3>アニマルコンシェルジュが<br>サポート</h3>
+        <p>各グループに専任のコンシェルジュが付いて、会話のきっかけをそっと作ってくれます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎭</div>
+        <h3>匿名で参加できる</h3>
+        <p>登録は匿名OK。好きな表示名で参加できるから、プライバシーを守りながら自由に交流できます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⏰</div>
+        <h3>ちょうどいい90分</h3>
+        <p>長すぎず短すぎない90分間の体験設計。疲れずに充実した時間を過ごせます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>LINEで完結</h3>
+        <p>専用アプリのダウンロード不要。普段使いのLINEから、いつでも簡単に参加できます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎁</div>
+        <h3>参加後にノベルティ<br>プレゼント</h3>
+        <p>交流会終了後、参加者全員にオリジナルノベルティをプレゼント。思い出に残る体験を。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="howto">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">使い方</span>
+      <h2 class="section-title">たった4ステップで<br>交流スタート</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>LINE友達登録</h3>
+        <p>公式LINEアカウントを友達追加するだけ</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>ユーザー登録</h3>
+        <p>ニックネーム・性別・アイコン写真を設定</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>日時を選択</h3>
+        <p>参加したいイベントの日時を選ぶ</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3>交流スタート！</h3>
+        <p>グループに割り振られ、90分の交流が始まる</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ANIMAL CONCIERGE -->
+<section style="background: var(--light);">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">アニマルコンシェルジュ</span>
+      <h2 class="section-title">個性豊かな動物キャラが<br>あなたの交流をサポート</h2>
+      <p class="section-desc">グループごとに異なるアニマルコンシェルジュが担当。それぞれ個性的なアプローチで会話を盛り上げます。</p>
+    </div>
+    <div class="animal-grid">
+      <div class="animal-card">
+        <div class="animal-emoji">🐭</div>
+        <div class="animal-name">子（ねずみ）</div>
+        <div class="animal-desc">機転が利く好奇心旺盛タイプ</div>
+      </div>
+      <div class="animal-card">
+        <div class="animal-emoji">🐯</div>
+        <div class="animal-name">寅（とら）</div>
+        <div class="animal-desc">力強くグループをリードするタイプ</div>
+      </div>
+      <div class="animal-card">
+        <div class="animal-emoji">🐰</div>
+        <div class="animal-name">卯（うさぎ）</div>
+        <div class="animal-desc">穏やかで場を和ませるタイプ</div>
+      </div>
+      <div class="animal-card">
+        <div class="animal-emoji">🐉</div>
+        <div class="animal-name">辰（たつ）</div>
+        <div class="animal-desc">カリスマ性で場を盛り上げるタイプ</div>
+      </div>
+      <div class="animal-card">
+        <div class="animal-emoji">🐴</div>
+        <div class="animal-name">午（うま）</div>
+        <div class="animal-desc">行動力があり会話を引っ張るタイプ</div>
+      </div>
+      <div class="animal-card">
+        <div class="animal-emoji">🐶</div>
+        <div class="animal-name">戌（いぬ）</div>
+        <div class="animal-desc">誠実で仲間思いのサポートタイプ</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section" id="line-register">
+  <div class="container" style="text-align:center">
+    <h2>まずはLINE友達登録から</h2>
+    <p>サービス開始のお知らせや先行案内をお届けします。<br>いつでも解除できます。</p>
+    <a href="#" class="btn btn-white" style="display:inline-flex; align-items:center; gap:8px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#05a847"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+      LINEで友達登録する（無料）
+    </a>
+  </div>
+</div>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">よくある質問</span>
+      <h2 class="section-title">FAQ</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">出会い系・恋愛目的のサービスですか？</div>
+        <div class="faq-a">いいえ、本サービスはイベント参加者同士のコミュニケーション支援を目的としており、恋愛・出会い系サービスではありません。交際目的での利用・ナンパ行為は固く禁じています。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">本名を公開する必要がありますか？</div>
+        <div class="faq-a">いいえ、匿名での参加が可能です。登録時に自由に表示名（ニックネーム）を設定できます。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">どんなイベントに対応していますか？</div>
+        <div class="faq-a">様々なイベントに対応予定です。詳細はサービス開始時にご案内します。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">いつサービスが始まりますか？</div>
+        <div class="faq-a">2027年夏のサービス開始を予定しています。LINE友達登録いただいた方には先行案内をお送りします。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">トラブルが起きた場合はどうすればいいですか？</div>
+        <div class="faq-a">LINE公式メニューからいつでも運営チームに直接連絡できます。迅速に対応いたします。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OPERATOR INFO -->
+<section id="operator" style="background: var(--light);">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">運営情報</span>
+      <h2 class="section-title">サービス運営者情報</h2>
+    </div>
+    <div class="operator-box">
+      <h3>運営者情報</h3>
+      <div class="operator-row">
+        <span class="operator-label">運営者名</span>
+        <span class="operator-value">みゃー</span>
+      </div>
+      <div class="operator-row">
+        <span class="operator-label">所在地</span>
+        <span class="operator-value">宮城県名取市</span>
+      </div>
+      <div class="operator-row">
+        <span class="operator-label">お問い合わせ</span>
+        <span class="operator-value"><a href="mailto:hy.natori.0625@gmail.com" style="color:var(--green)">hy.natori.0625@gmail.com</a></span>
+      </div>
+      <div class="operator-row">
+        <span class="operator-label">サービス開始</span>
+        <span class="operator-value">2027年夏 予定</span>
+      </div>
+    </div>
+    <div class="notice-box">
+      <h4>⚠ ご利用上の注意</h4>
+      <ul>
+        <li>本サービスは恋愛・出会い系サービスではありません</li>
+        <li>交際目的での利用・ナンパ行為は固く禁じています</li>
+        <li>18歳未満の方はご利用いただけません</li>
+        <li>他の参加者への迷惑行為が確認された場合は利用停止となります</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">ぼっち <span>the</span> 交流会</div>
+        <div class="footer-tagline">イベントの出会いを、もっと深く。</div>
+      </div>
+      <div class="footer-links">
+        <a href="#features">サービス特徴</a>
+        <a href="#howto">使い方</a>
+        <a href="#faq">よくある質問</a>
+        <a href="privacy.html">プライバシーポリシー</a>
+        <a href="terms.html">利用規約</a>
+        <a href="mailto:hy.natori.0625@gmail.com">お問い合わせ</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 ぼっち the 交流会 運営：みゃー</p>
+      <div style="display:flex; gap:16px;">
+        <a href="privacy.html" style="color:#6b7280; font-size:13px; text-decoration:none;">プライバシーポリシー</a>
+        <a href="terms.html" style="color:#6b7280; font-size:13px; text-decoration:none;">利用規約</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
