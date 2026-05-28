@@ -172,10 +172,21 @@
     lineUserId: userId,
     displayName: displayName
   });
-  const img = new Image();
-  img.onload  = () => setStatus("gasStatus", "✅ 送信完了", "success");
-  img.onerror = () => setStatus("gasStatus", "✅ 送信完了（応答受信）", "success");
-  img.src = GAS_URL + "?" + params.toString() + "&_t=" + Date.now();
+  const url = GAS_URL + "?" + params.toString();
+
+  // まず sendBeacon を試す（最も確実に届く）
+  let sent = false;
+  if (navigator.sendBeacon) {
+    sent = navigator.sendBeacon(url);
+  }
+  if (sent) {
+    setStatus("gasStatus", "✅ 送信完了（beacon）", "success");
+  } else {
+    // フォールバック：no-cors fetch
+    fetch(url, { method: "GET", mode: "no-cors" })
+      .then(() => setStatus("gasStatus", "✅ 送信完了（fetch）", "success"))
+      .catch(e => setStatus("gasStatus", "❌ 送信失敗：" + e.message, "error"));
+  }
 }
     async function init() {
       try {
