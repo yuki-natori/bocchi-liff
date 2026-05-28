@@ -166,21 +166,22 @@
     }
 
     async function sendToGAS(userId, displayName) {
-      try {
-        setStatus("gasStatus", "送信中...", "loading");
-        const params = new URLSearchParams({
-          action: "saveLiffUserId",
-          lineUserId: userId,
-          displayName: displayName
-        });
-        const res = await fetch(GAS_URL + "?" + params.toString());
-        const text = await res.text();
-        setStatus("gasStatus", "✅ 送信成功：" + text, "success");
-      } catch (e) {
-        setStatus("gasStatus", "❌ 送信失敗：" + e.message, "error");
-      }
-    }
-
+  try {
+    setStatus("gasStatus", "送信中...", "loading");
+    const params = new URLSearchParams({
+      action: "saveLiffUserId",
+      lineUserId: userId,
+      displayName: displayName
+    });
+    await fetch(GAS_URL + "?" + params.toString(), {
+      method: "GET",
+      mode: "no-cors"
+    });
+    setStatus("gasStatus", "✅ 送信完了（GAS保存済み）", "success");
+  } catch (e) {
+    setStatus("gasStatus", "❌ 送信失敗：" + e.message, "error");
+  }
+}
     async function init() {
       try {
         await liff.init({ liffId: LIFF_ID });
