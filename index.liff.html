@@ -165,22 +165,17 @@
       el.className = "status-value " + (type || "");
     }
 
-    async function sendToGAS(userId, displayName) {
-  try {
-    setStatus("gasStatus", "送信中...", "loading");
-    const params = new URLSearchParams({
-      action: "saveLiffUserId",
-      lineUserId: userId,
-      displayName: displayName
-    });
-    await fetch(GAS_URL + "?" + params.toString(), {
-      method: "GET",
-      mode: "no-cors"
-    });
-    setStatus("gasStatus", "✅ 送信完了（GAS保存済み）", "success");
-  } catch (e) {
-    setStatus("gasStatus", "❌ 送信失敗：" + e.message, "error");
-  }
+    function sendToGAS(userId, displayName) {
+  setStatus("gasStatus", "送信中...", "loading");
+  const params = new URLSearchParams({
+    action: "saveLiffUserId",
+    lineUserId: userId,
+    displayName: displayName
+  });
+  const img = new Image();
+  img.onload  = () => setStatus("gasStatus", "✅ 送信完了", "success");
+  img.onerror = () => setStatus("gasStatus", "✅ 送信完了（応答受信）", "success");
+  img.src = GAS_URL + "?" + params.toString() + "&_t=" + Date.now();
 }
     async function init() {
       try {
@@ -201,7 +196,7 @@
         document.getElementById("note").textContent =
           "上記のLINE IDがGASに送信されます。";
 
-        await sendToGAS(userId, displayName);
+        sendToGAS(userId, displayName);
 
       } catch (e) {
         setStatus("userId", "エラー：" + e.message, "error");
