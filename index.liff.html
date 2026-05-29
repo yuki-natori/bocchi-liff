@@ -172,15 +172,14 @@
     lineUserId: userId,
     displayName: displayName
   });
-  fetch(GAS_URL, {
-    method: "POST",
-    mode: "no-cors",
-    redirect: "follow",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: params.toString()
-  })
-    .then(() => setStatus("gasStatus", "✅ 送信完了（POST）", "success"))
-    .catch(e => setStatus("gasStatus", "❌ 送信失敗：" + e.message, "error"));
+  const url = GAS_URL + "?" + params.toString() + "&_t=" + Date.now();
+
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  iframe.onload  = () => setStatus("gasStatus", "✅ 送信完了（iframe）", "success");
+  iframe.onerror = () => setStatus("gasStatus", "❌ 送信失敗（iframe）", "error");
+  iframe.src = url;
+  document.body.appendChild(iframe);
 }
     async function init() {
       try {
