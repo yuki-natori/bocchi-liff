@@ -151,7 +151,7 @@
     const LIFF_ID = "2010205663-iIzLQGpb"; // ← 開発用LIFF ID
 
     // GASのWebアプリURL（LINE IDを受け取るエンドポイント）
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxY3R1Fyyh4-MRJwYghFFpljZlwix6gnRJcShG11Uy-Kb2NMV86xmJ5ROl4F1TmtCk/exec";
+    const GAS_URL = "https://us-central1-bocchi-liff-test.cloudfunctions.net/saveLiffUserId";
     
     function setBadge(type, text) {
       const badge = document.getElementById("badge");
@@ -165,21 +165,23 @@
       el.className = "status-value " + (type || "");
     }
 
-    function sendToGAS(userId, displayName) {
-  setStatus("gasStatus", "送信中...", "loading");
-  const params = new URLSearchParams({
-    action: "saveLiffUserId",
-    lineUserId: userId,
-    displayName: displayName
-  });
-  const url = GAS_URL + "?" + params.toString() + "&_t=" + Date.now();
-
-  const iframe = document.createElement("iframe");
-  iframe.style.display = "none";
-  iframe.onload  = () => setStatus("gasStatus", "✅ 送信完了（iframe）", "success");
-  iframe.onerror = () => setStatus("gasStatus", "❌ 送信失敗（iframe）", "error");
-  iframe.src = url;
-  document.body.appendChild(iframe);
+    async function sendToGAS(userId, displayName) {
+  try {
+    setStatus("gasStatus", "送信中...", "loading");
+    const params = new URLSearchParams({
+      lineUserId: userId,
+      displayName: displayName
+    });
+    const res = await fetch(GAS_URL + "?" + params.toString());
+    const data = await res.json();
+    if (data.ok) {
+      setStatus("gasStatus", "✅ 送信完了：Firestoreに保存済み", "success");
+    } else {
+      setStatus("gasStatus", "❌ エラー：" + JSON.stringify(data), "error");
+    }
+  } catch (e) {
+    setStatus("gasStatus", "❌ 送信失敗：" + e.message, "error");
+  }
 }
     async function init() {
       try {
@@ -200,7 +202,7 @@
         document.getElementById("note").textContent =
           "上記のLINE IDがGASに送信されます。";
 
-        sendToGAS(userId, displayName);
+        await sendToGAS(userId, displayName);
 
       } catch (e) {
         setStatus("userId", "エラー：" + e.message, "error");
