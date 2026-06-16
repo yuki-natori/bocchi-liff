@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>bocchi｜プロフィール登録</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #2f6d4f;       /* 深い森緑 */
+      --line:  #06c755;       /* LINE緑（送信ボタン専用） */
+      --paper: #faf7f0;       /* 生成り */
+      --ink:   #2b2b28;
+      --sub:   #6b6b63;
+      --accent:#e6a817;       /* 山吹 */
+      --err:   #d6453d;
+      --radius: 14px;
+    }
+    body {
+      font-family: -apple-system, "Hiragino Sans", "Helvetica Neue", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 0 0 48px;
+    }
+    .wrap { max-width: 480px; margin: 0 auto; padding: 24px 20px; }
+
+    /* ---- 状態表示（ローディング/エラー） ---- */
+    #boot { text-align: center; padding: 64px 20px; color: var(--sub); }
+    .spinner {
+      width: 36px; height: 36px; margin: 0 auto 16px;
+      border: 3px solid #e5e2d8; border-top-color: var(--green);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- ヘッダー ---- */
+    .head { text-align: center; margin-bottom: 24px; }
+    .logo { font-size: 26px; font-weight: 800; color: var(--green); letter-spacing: 1px; }
+    .head p { font-size: 13px; color: var(--sub); margin-top: 4px; }
+
+    /* ---- LINE名カード ---- */
+    .me {
+      display: flex; align-items: center; gap: 12px;
+      background: #fff; border: 1px solid #ece8dc; border-radius: var(--radius);
+      padding: 12px 14px; margin-bottom: 22px;
+    }
+    .me img { width: 44px; height: 44px; border-radius: 50%; background: #eee; object-fit: cover; }
+    .me .name { font-weight: 700; font-size: 15px; }
+    .me .label { font-size: 11px; color: var(--sub); }
+
+    /* ---- フォーム ---- */
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 7px; }
+    .field .req { color: var(--err); font-size: 11px; margin-left: 4px; }
+    .field input, .field select {
+      width: 100%; padding: 13px 14px; font-size: 16px;
+      border: 1px solid #d9d4c6; border-radius: 12px; background: #fff;
+      color: var(--ink); appearance: none; -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--green); }
+    .field .hint { font-size: 11px; color: var(--sub); margin-top: 5px; }
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: "▾"; position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%); color: var(--sub); pointer-events: none;
+    }
+
+    /* ---- 送信ボタン ---- */
+    .submit {
+      width: 100%; padding: 16px; font-size: 16px; font-weight: 800;
+      color: #fff; background: var(--line); border: none; border-radius: 12px;
+      cursor: pointer; margin-top: 8px;
+    }
+    .submit:disabled { opacity: 0.5; }
+
+    /* ---- ステータス ---- */
+    #status { text-align: center; font-size: 14px; margin-top: 16px; min-height: 20px; }
+    .ok  { color: var(--green); font-weight: 700; }
+    .ng  { color: var(--err); font-weight: 700; }
+
+    /* ---- 完了画面 ---- */
+    #done { display: none; text-align: center; padding: 40px 12px; }
+    #done .mark { font-size: 52px; }
+    #done h2 { font-size: 20px; color: var(--green); margin: 12px 0 6px; }
+    #done p { font-size: 14px; color: var(--sub); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- 起動中 -->
+  <div id="boot">
+    <div class="spinner"></div>
+    読み込み中…
+  </div>
+
+  <!-- 登録フォーム -->
+  <div class="wrap hidden" id="app">
+    <div class="head">
+      <div class="logo">bocchi</div>
+      <p>当日のグループ分けに使うプロフィールを登録してね</p>
+    </div>
+
+    <div class="me">
+      <img id="meIcon" src="" alt="" />
+      <div>
+        <div class="name" id="meName">—</div>
+        <div class="label">LINEアカウント連携済み ✓</div>
+      </div>
+    </div>
+
+    <form id="form">
+      <div class="field">
+        <label>ニックネーム<span class="req">必須</span></label>
+        <input type="text" id="nickname" maxlength="20" placeholder="当日呼ばれたい名前" autocomplete="off" />
+        <div class="hint">ひらがな・カタカナ・英字どれでもOK（20文字まで）</div>
+      </div>
+
+      <div class="field">
+        <label>性別</label>
+        <div class="select-wrap">
+          <select id="gender">
+            <option value="">選択しない</option>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>話したい話題</label>
+        <div class="select-wrap">
+          <select id="topic">
+            <option value="">選択しない</option>
+            <option value="副業・IT">副業・IT</option>
+            <option value="投資・お金">投資・お金</option>
+            <option value="趣味・遊び">趣味・遊び</option>
+            <option value="仕事・キャリア">仕事・キャリア</option>
+            <option value="音楽・フェス">音楽・フェス</option>
+            <option value="なんでも">なんでも</option>
+          </select>
+        </div>
+        <div class="hint">同じ話題の人と組みやすくなるよ</div>
+      </div>
+
+      <button type="submit" class="submit" id="submitBtn">この内容で登録する</button>
+      <div id="status"></div>
+    </form>
+  </div>
+
+  <!-- 完了 -->
+  <div class="wrap hidden" id="done">
+    <div class="mark">🎉</div>
+    <h2 id="doneTitle">登録が完了しました</h2>
+    <p id="doneMsg">当日のグループ分けをお楽しみに！<br>この画面は閉じて大丈夫です。</p>
+  </div>
+
+  <script>
+    // ===== 設定 =====
+    const LIFF_ID = "2010205663-iIzLQGpb";
+    const API_URL = "https://us-central1-bocchi-liff-test.cloudfunctions.net/registerUser";
+
+    let profile = null;
+
+    const $ = (id) => document.getElementById(id);
+    function setStatus(msg, cls) {
+      const el = $("status");
+      el.textContent = msg;
+      el.className = cls || "";
+    }
+    function bootError(msg) {
+      $("boot").innerHTML =
+        '<p class="ng" style="font-weight:700">起動エラー</p>' +
+        '<p style="font-size:13px;color:#6b6b63;margin-top:8px">' + msg + '</p>';
+    }
+
+    // ===== 起動 =====
+    async function main() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+      } catch (e) {
+        bootError("LIFFの初期化に失敗しました: " + e.message);
+        return;
+      }
+
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+
+      try {
+        profile = await liff.getProfile();
+      } catch (e) {
+        bootError("プロフィール取得に失敗しました: " + e.message);
+        return;
+      }
+
+      // LINE情報を表示
+      $("meName").textContent = profile.displayName || "—";
+      if (profile.pictureUrl) $("meIcon").src = profile.pictureUrl;
+      $("nickname").value = profile.displayName || ""; // 初期値にLINE名を入れておく
+
+      // フォーム表示
+      $("boot").classList.add("hidden");
+      $("app").classList.remove("hidden");
+    }
+
+    // ===== 送信 =====
+    $("form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const nickname = $("nickname").value.trim();
+      if (!nickname) { setStatus("ニックネームを入力してください", "ng"); return; }
+
+      $("submitBtn").disabled = true;
+      setStatus("送信中…", "");
+
+      const params = new URLSearchParams({
+        lineUserId:  profile.userId,
+        displayName: profile.displayName || "",
+        nickname:    nickname,
+        gender:      $("gender").value,
+        topic:       $("topic").value
+      });
+
+      try {
+        const res = await fetch(API_URL + "?" + params.toString());
+        const data = await res.json();
+        if (data.ok) {
+          // 完了画面へ
+          $("app").classList.add("hidden");
+          $("done").classList.remove("hidden");
+          $("doneTitle").textContent = data.isNew ? "登録が完了しました" : "プロフィールを更新しました";
+        } else {
+          setStatus("エラー：" + (data.error || JSON.stringify(data)), "ng");
+          $("submitBtn").disabled = false;
+        }
+      } catch (e) {
+        setStatus("送信失敗：" + e.message, "ng");
+        $("submitBtn").disabled = false;
+      }
+    });
+
+    main();
+  </script>
+</body>
+</html>
