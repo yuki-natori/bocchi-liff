@@ -70,6 +70,23 @@
     .link-btn { font-size:12px; color:var(--green); background:none; border:none;
       text-decoration:underline; cursor:pointer; }
 
+    /* グループ発表カード */
+    .group-box { background:linear-gradient(160deg,#2f6d4f,#3f8a64); color:#fff;
+      border-radius:var(--radius); padding:20px 18px; margin-bottom:20px; text-align:center; }
+    .group-box .lead { font-size:13px; opacity:.9; }
+    .group-box .gname { font-size:30px; font-weight:800; margin:6px 0 2px; }
+    .group-box .gsub { font-size:12px; opacity:.9; margin-bottom:14px; }
+    .group-members { background:#fff; border-radius:12px; padding:10px; }
+    .checkin-status { margin-top:14px; font-size:14px; font-weight:700; }
+    .checkin-status .allset { font-size:16px; }
+    .gmember { display:flex; justify-content:space-between; align-items:center;
+      padding:9px 10px; border-bottom:1px solid #f0ece1; }
+    .gmember:last-child { border-bottom:none; }
+    .gmember .gm-name { font-weight:700; color:var(--ink); font-size:15px; }
+    .gmember .gm-topic { font-size:11px; color:var(--sub); }
+    .gmember.me { background:#f3faf5; border-radius:8px; }
+    .gmember.me .gm-name::after { content:" (あなた)"; color:var(--green); font-size:11px; }
+
     /* 予約済みカード */
     .reserved { background:#eaf6ef; border:1.5px solid var(--green); border-radius:var(--radius);
       padding:16px; margin-bottom:20px; }
@@ -170,6 +187,15 @@
       <button class="link-btn" id="editBtn">プロフィール編集</button>
     </div>
 
+    <!-- マッチング後：グループ発表 -->
+    <div class="group-box hidden" id="groupBox">
+      <div class="lead">🎉 あなたのグループが決まりました</div>
+      <div class="gname" id="groupName">—</div>
+      <div class="gsub" id="groupSlot"></div>
+      <div class="group-members" id="groupMembers"></div>
+      <div class="checkin-status" id="checkinStatus"></div>
+    </div>
+
     <div class="reserved hidden" id="reservedBox">
       <div class="tag">✓ 予約済み</div>
       <div class="slot" id="reservedSlot">—</div>
@@ -196,9 +222,11 @@
     const LIFF_ID = "2010205663-iIzLQGpb";
     const BASE = "https://us-central1-bocchi-liff-test.cloudfunctions.net";
 
-    let profile = null;     // LINEプロフィール
-    let currentUser = null; // Firestoreのユーザー情報（未登録ならnull）
+    let profile = null;       // LINEプロフィール
+    let currentUser = null;   // Firestoreのユーザー情報（未登録ならnull）
     let selectedSlotId = null;
+    let checkinJustDone = null; // チェックインリンクで開いた直後の結果
+    let checkinError = null;
 
     const $ = (id) => document.getElementById(id);
     const api = async (path, params) => {
@@ -232,6 +260,14 @@
 
       const r = await api("getUser", { lineUserId: profile.userId });
       currentUser = r.user;
+
+      // チェックインリンク（?mode=checkin）で開かれたら、先にチェックインを実行
+      const mode = new URLSearchParams(window.location.search).get("mode");
+      if (currentUser && mode === "checkin") {
+        const c = await api("checkIn", { lineUserId: profile.userId });
+        checkinJustDone = c.ok ? c : null;
+        if (!c.ok) checkinError = c.error || "チェックインに失敗しました";
+      }
 
       if (!currentUser) {
         openRegister(false); // 新規登録
@@ -286,28 +322,77 @@
 
     // ===== ホーム（予約）=====
     async function openHome() {
+      setStatus("homeStatus", "", ""); // 前画面のステータス文言をクリア
       // プロフィール要約
       $("homeName").textContent = (currentUser.nickname || "") + " さん";
       const meta = [currentUser.gender, currentUser.topic].filter(Boolean).join("・");
       $("homeMeta").textContent = meta;
       await renderReservation();
+      if (checkinError) { setStatus("homeStatus", "⚠️ " + checkinError, "ng"); checkinError = null; }
       showScreen("screen-home");
     }
 
     async function renderReservation() {
-      const [mine, slotsRes] = await Promise.all([
+      const [mine, slotsRes, myGroup] = await Promise.all([
         api("getMyReservation", { lineUserId: profile.userId }),
-        api("getSlots")
+        api("getSlots"),
+        api("getMyGroup", { lineUserId: profile.userId })
       ]);
-      if (mine.reservation) {
-        const r = mine.reservation;
-        $("reservedSlot").textContent = formatSlot(r.date, r.time);
-        $("reservedBox").classList.remove("hidden");
-        $("chooseBox").classList.add("hidden");
-      } else {
+
+      if (!mine.reservation) {
+        // 未予約 → スロット選択
+        $("groupBox").classList.add("hidden");
         $("reservedBox").classList.add("hidden");
         $("chooseBox").classList.remove("hidden");
         renderSlots(slotsRes.slots || []);
+        return;
+      }
+
+      // 予約あり
+      const r = mine.reservation;
+      $("reservedSlot").textContent = formatSlot(r.date, r.time);
+      $("chooseBox").classList.add("hidden");
+
+      if (myGroup.group) {
+        // マッチング済み → グループ発表を表示。予約カードは出すがキャンセルは隠す
+        renderGroup(myGroup.group);
+        $("groupBox").classList.remove("hidden");
+        $("reservedBox").classList.remove("hidden");
+        $("cancelBtn").classList.add("hidden");
+      } else {
+        // 予約済み・未マッチ → 予約カード＋キャンセル
+        $("groupBox").classList.add("hidden");
+        $("reservedBox").classList.remove("hidden");
+        $("cancelBtn").classList.remove("hidden");
+      }
+    }
+
+    function renderGroup(g) {
+      $("groupName").textContent = g.name + " グループ";
+      $("groupSlot").textContent = formatSlot(g.date, g.time);
+      const box = $("groupMembers");
+      box.innerHTML = "";
+      (g.members || []).forEach((m) => {
+        const isMe = (m.nickname === (currentUser.nickname || ""));
+        const row = document.createElement("div");
+        row.className = "gmember" + (isMe ? " me" : "");
+        row.innerHTML =
+          '<span class="gm-name">' + (m.nickname || "") + '</span>' +
+          '<span class="gm-topic">' + (m.topic || "") + '</span>';
+        box.appendChild(row);
+      });
+
+      // 到着状況
+      const cs = $("checkinStatus");
+      const total = g.total || (g.members || []).length;
+      const arrived = g.arrived || 0;
+      if (arrived >= total && total > 0) {
+        cs.innerHTML = '<span class="allset">🙌 全員集合しました！</span>';
+      } else if (g.checkedIn) {
+        cs.innerHTML = '✅ チェックイン済み（到着 ' + arrived + '/' + total + '人）';
+      } else {
+        cs.innerHTML = '到着 ' + arrived + '/' + total + '人<br>'
+          + '<span style="font-weight:400;font-size:12px;opacity:.9">会場でLINEのチェックインリンクをタップしてね</span>';
       }
     }
 
