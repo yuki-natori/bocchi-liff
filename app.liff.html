@@ -89,6 +89,19 @@
     .gmember.me { background:#f3faf5; border-radius:8px; }
     .gmember.me .gm-name::after { content:" (あなた)"; color:var(--green); font-size:11px; }
 
+    /* 不成立カード */
+    .unmatched-box { background:#fff6f5; border:1.5px solid #f0c9c5; border-radius:var(--radius);
+      padding:16px; margin-bottom:20px; }
+    .unmatched-box .um-title { font-weight:800; color:var(--err); font-size:15px; margin-bottom:6px; }
+    .unmatched-box .um-text { font-size:13px; color:var(--sub); }
+
+    /* クーポン */
+    #couponBox { margin-top:8px; margin-bottom:20px; }
+    .coupon { display:flex; align-items:center; gap:12px; background:#fffaf0;
+      border:1.5px dashed var(--accent); border-radius:12px; padding:14px; margin-bottom:10px; }
+    .coupon .amt { font-size:22px; font-weight:800; color:var(--accent); white-space:nowrap; }
+    .coupon .cinfo { font-size:12px; color:var(--sub); }
+
     /* 予約済みカード */
     .reserved { background:#eaf6ef; border:1.5px solid var(--green); border-radius:var(--radius);
       padding:16px; margin-bottom:20px; }
@@ -199,6 +212,12 @@
       <div class="checkin-status" id="checkinStatus"></div>
     </div>
 
+    <!-- マッチング不成立の案内 -->
+    <div class="unmatched-box hidden" id="unmatchedBox">
+      <div class="um-title">😢 今回はグループが成立しませんでした</div>
+      <div class="um-text">人数が集まらず、グループを作れませんでした。<br>おわびにクーポンをお送りしました。次回ぜひご参加ください。</div>
+    </div>
+
     <div class="reserved hidden" id="reservedBox">
       <div class="tag">✓ 予約済み</div>
       <div class="slot" id="reservedSlot">—</div>
@@ -210,6 +229,13 @@
       <div id="slotList"></div>
       <button class="submit" id="reserveBtn" disabled>この日時で予約する</button>
     </div>
+
+    <!-- 所持クーポン -->
+    <div class="hidden" id="couponBox">
+      <div class="section-title">🎟 お持ちのクーポン</div>
+      <div id="couponList"></div>
+    </div>
+
     <div class="status" id="homeStatus"></div>
   </div>
 
@@ -336,15 +362,20 @@
     }
 
     async function renderReservation() {
-      const [mine, slotsRes, myGroup] = await Promise.all([
+      const [mine, slotsRes, myGroup, myCoupons] = await Promise.all([
         api("getMyReservation", { lineUserId: profile.userId }),
         api("getSlots"),
-        api("getMyGroup", { lineUserId: profile.userId })
+        api("getMyGroup", { lineUserId: profile.userId }),
+        api("getMyCoupons", { lineUserId: profile.userId })
       ]);
+
+      // 所持クーポンは常に表示
+      renderCoupons(myCoupons.coupons || []);
 
       if (!mine.reservation) {
         // 未予約 → スロット選択
         $("groupBox").classList.add("hidden");
+        $("unmatchedBox").classList.add("hidden");
         $("reservedBox").classList.add("hidden");
         $("chooseBox").classList.remove("hidden");
         renderSlots(slotsRes.slots || []);
@@ -360,14 +391,37 @@
         // マッチング済み → グループ発表を表示。予約カードは出すがキャンセルは隠す
         renderGroup(myGroup.group);
         $("groupBox").classList.remove("hidden");
+        $("unmatchedBox").classList.add("hidden");
         $("reservedBox").classList.remove("hidden");
         $("cancelBtn").classList.add("hidden");
+      } else if (myGroup.unmatched) {
+        // 不成立 → おわび案内（予約カード・キャンセルは隠す）
+        $("groupBox").classList.add("hidden");
+        $("unmatchedBox").classList.remove("hidden");
+        $("reservedBox").classList.add("hidden");
       } else {
         // 予約済み・未マッチ → 予約カード＋キャンセル
         $("groupBox").classList.add("hidden");
+        $("unmatchedBox").classList.add("hidden");
         $("reservedBox").classList.remove("hidden");
         $("cancelBtn").classList.remove("hidden");
       }
+    }
+
+    function renderCoupons(coupons) {
+      const box = $("couponBox");
+      const list = $("couponList");
+      if (!coupons.length) { box.classList.add("hidden"); return; }
+      list.innerHTML = "";
+      coupons.forEach((c) => {
+        const row = document.createElement("div");
+        row.className = "coupon";
+        row.innerHTML =
+          '<span class="amt">¥' + Number(c.amount).toLocaleString() + '</span>' +
+          '<span class="cinfo">割引クーポン<br>' + (c.reason || "") + '</span>';
+        list.appendChild(row);
+      });
+      box.classList.remove("hidden");
     }
 
     function renderGroup(g) {
