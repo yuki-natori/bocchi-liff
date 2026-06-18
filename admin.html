@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bocchi 管理画面</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    :root { --green:#2f6d4f; --paper:#faf7f0; --ink:#2b2b28; --sub:#6b6b63; --err:#d6453d; --accent:#e6a817; }
+    body { font-family:-apple-system,"Hiragino Sans",sans-serif; background:var(--paper); color:var(--ink); line-height:1.6; }
+    .wrap { max-width:760px; margin:0 auto; padding:24px 20px 64px; }
+    h1 { color:var(--green); font-size:24px; margin-bottom:4px; }
+    .sub { color:var(--sub); font-size:13px; margin-bottom:20px; }
+    .card { background:#fff; border:1px solid #ece8dc; border-radius:12px; padding:18px; margin-bottom:18px; }
+    .card h2 { font-size:16px; color:var(--green); margin-bottom:12px; }
+    label { display:block; font-size:13px; font-weight:700; margin:10px 0 4px; }
+    input, select { width:100%; padding:10px 12px; font-size:15px; border:1px solid #d9d4c6; border-radius:8px; background:#fff; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .row > div { flex:1; min-width:120px; }
+    button { padding:10px 16px; font-size:14px; font-weight:700; color:#fff; background:var(--green);
+      border:none; border-radius:8px; cursor:pointer; margin-top:12px; }
+    button.sub-btn { background:#fff; color:var(--green); border:1.5px solid var(--green); margin:4px 4px 0 0; padding:7px 12px; font-size:13px; }
+    button.warn { background:var(--accent); }
+    button:disabled { opacity:.5; cursor:default; }
+    .status { font-size:13px; margin-top:10px; min-height:18px; white-space:pre-wrap; }
+    .ok { color:var(--green); } .ng { color:var(--err); }
+    .slot-row { border:1px solid #ece8dc; border-radius:8px; padding:10px 12px; margin-bottom:10px; }
+    .slot-row .meta { font-size:13px; color:var(--sub); }
+    .slot-row .title { font-weight:700; }
+    .pill { display:inline-block; font-size:11px; background:#eef5f0; color:var(--green); border-radius:6px; padding:1px 8px; margin-left:6px; }
+    #login { max-width:360px; margin:80px auto; }
+    .hidden { display:none !important; }
+    .logout { float:right; background:none; color:var(--sub); border:1px solid #d9d4c6; font-weight:400; margin:0; padding:6px 12px; }
+    .result { background:#f6f4ec; border-radius:8px; padding:10px 12px; font-size:13px; margin-top:10px; font-family:monospace; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <!-- ログイン -->
+  <div class="wrap hidden" id="loginWrap">
+    <div id="login" class="card">
+      <h2>bocchi 管理画面</h2>
+      <label>管理者キー</label>
+      <input type="password" id="keyInput" placeholder="パスワードを入力" />
+      <button id="loginBtn" style="width:100%">ログイン</button>
+      <div class="status" id="loginStatus"></div>
+    </div>
+  </div>
+
+  <!-- 管理パネル -->
+  <div class="wrap hidden" id="panel">
+    <button class="logout" id="logoutBtn">ログアウト</button>
+    <h1>bocchi 管理画面</h1>
+    <div class="sub">当日の運用操作はここから行います</div>
+
+    <!-- スロット作成 -->
+    <div class="card">
+      <h2>① 予約枠（スロット）を作成</h2>
+      <div class="row">
+        <div><label>日付</label><input type="date" id="slotDate" /></div>
+        <div><label>時間帯</label><input type="text" id="slotTime" placeholder="13:00〜15:00" /></div>
+      </div>
+      <div class="row">
+        <div><label>定員</label><input type="number" id="slotCap" value="50" /></div>
+        <div><label>予約締切（任意）</label><input type="datetime-local" id="slotDeadline" /></div>
+      </div>
+      <button id="createSlotBtn">この枠を作成</button>
+      <div class="status" id="slotStatus"></div>
+    </div>
+
+    <!-- スロット一覧＋マッチング／通知 -->
+    <div class="card">
+      <h2>② 予約枠の一覧・マッチング・通知</h2>
+      <button class="sub-btn" id="reloadSlots">一覧を更新</button>
+      <div id="slotList"></div>
+      <div class="result hidden" id="matchResult"></div>
+    </div>
+
+    <!-- 集合場所 -->
+    <div class="card">
+      <h2>③ 集合場所を登録</h2>
+      <div class="row">
+        <div><label>種類</label>
+          <select id="spotType">
+            <option>長テーブル</option><option>丸テーブル</option><option>ソファー</option>
+          </select>
+        </div>
+        <div><label>番号</label><input type="number" id="spotNumber" value="1" /></div>
+      </div>
+      <button id="createSpotBtn">登録する</button>
+      <button class="sub-btn" id="reloadSpots">一覧を更新</button>
+      <div class="status" id="spotStatus"></div>
+      <div id="spotList" style="font-size:13px;color:var(--sub);margin-top:8px"></div>
+    </div>
+
+    <!-- リベシティID登録 -->
+    <div class="card">
+      <h2>④ 無料クーポン対象のリベシティIDを登録</h2>
+      <label>プロフィールURL または ID</label>
+      <input type="text" id="libeInput" placeholder="https://libecity.com/user_profile/xxxx" />
+      <label>メモ（任意）</label>
+      <input type="text" id="libeNote" placeholder="例：◯◯さん" />
+      <button id="registerLibeBtn">登録する</button>
+      <div class="status" id="libeStatus"></div>
+    </div>
+
+    <!-- クーポン手動発行 -->
+    <div class="card">
+      <h2>⑤ クーポンを手動発行（割引額）</h2>
+      <label>送り先 LINEユーザーID（Uから始まる）</label>
+      <input type="text" id="cpUid" placeholder="U..." />
+      <div class="row">
+        <div><label>金額（円）</label><input type="number" id="cpAmount" value="500" /></div>
+        <div><label>理由</label><input type="text" id="cpReason" placeholder="お詫び 等" /></div>
+      </div>
+      <button id="issueCouponBtn">発行する</button>
+      <div class="status" id="cpStatus"></div>
+    </div>
+  </div>
+
+  <script>
+    const BASE = "https://us-central1-bocchi-liff-test.cloudfunctions.net";
+    const KEY_STORE = "bocchi_admin_key";
+    const $ = (id) => document.getElementById(id);
+    const getKey = () => localStorage.getItem(KEY_STORE) || "";
+
+    async function api(path, params = {}, admin = true) {
+      const p = new URLSearchParams(params);
+      if (admin) p.set("adminKey", getKey());
+      const res = await fetch(BASE + "/" + path + "?" + p.toString());
+      let data;
+      try { data = await res.json(); } catch (e) { data = { error: "応答エラー" }; }
+      if (res.status === 401) { logout("管理者キーが違います。再ログインしてください"); throw new Error("401"); }
+      return data;
+    }
+    const set = (id, msg, cls) => { const e = $(id); e.textContent = msg; e.className = "status " + (cls || ""); };
+
+    // ----- ログイン -----
+    function showPanel() { $("loginWrap").classList.add("hidden"); $("panel").classList.remove("hidden"); loadSlots(); loadSpots(); }
+    function logout(msg) {
+      localStorage.removeItem(KEY_STORE);
+      $("panel").classList.add("hidden"); $("loginWrap").classList.remove("hidden");
+      if (msg) set("loginStatus", msg, "ng");
+    }
+    $("loginBtn").addEventListener("click", () => {
+      const k = $("keyInput").value.trim();
+      if (!k) { set("loginStatus", "キーを入力してください", "ng"); return; }
+      localStorage.setItem(KEY_STORE, k);
+      showPanel();
+    });
+    $("logoutBtn").addEventListener("click", () => logout(""));
+
+    // ----- ① スロット作成 -----
+    $("createSlotBtn").addEventListener("click", async () => {
+      const date = $("slotDate").value, time = $("slotTime").value.trim();
+      const capacity = $("slotCap").value, dl = $("slotDeadline").value;
+      if (!date || !time) { set("slotStatus", "日付と時間帯は必須です", "ng"); return; }
+      const params = { date, time, capacity };
+      if (dl) params.deadline = dl + "+09:00"; // 日本時間として送る
+      set("slotStatus", "作成中…", "");
+      const r = await api("createSlot", params);
+      if (r.ok) { set("slotStatus", "✅ 作成しました（" + date + " " + time + "）", "ok"); loadSlots(); }
+      else set("slotStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    // ----- ② スロット一覧 -----
+    function fmtDate(d) {
+      const [y, m, day] = d.split("-").map(Number);
+      const w = ["日","月","火","水","木","金","土"][new Date(Date.UTC(y, m-1, day)).getUTCDay()];
+      return m + "/" + day + "(" + w + ")";
+    }
+    async function loadSlots() {
+      const r = await api("getSlots", {}, false);
+      const list = $("slotList"); list.innerHTML = "";
+      (r.slots || []).forEach((s) => {
+        const div = document.createElement("div");
+        div.className = "slot-row";
+        div.innerHTML =
+          '<div class="title">' + fmtDate(s.date) + ' ' + s.time +
+          '<span class="pill">予約 ' + s.reservedCount + '/' + s.capacity + '</span>' +
+          (s.closed ? '<span class="pill">締切</span>' : '') + '</div>' +
+          '<div class="meta">slotId: ' + s.slotId + '</div>';
+        const mBtn = document.createElement("button"); mBtn.className = "sub-btn"; mBtn.textContent = "マッチング実行";
+        mBtn.onclick = () => runMatch(s.slotId);
+        const pBtn = document.createElement("button"); pBtn.className = "sub-btn"; pBtn.textContent = "通知プレビュー";
+        pBtn.onclick = () => notify(s.slotId, true);
+        const nBtn = document.createElement("button"); nBtn.className = "sub-btn warn"; nBtn.textContent = "結果を一斉通知";
+        nBtn.onclick = () => notify(s.slotId, false);
+        div.appendChild(mBtn); div.appendChild(pBtn); div.appendChild(nBtn);
+        list.appendChild(div);
+      });
+      if (!(r.slots || []).length) list.innerHTML = '<div class="meta">予約枠がありません</div>';
+    }
+    $("reloadSlots").addEventListener("click", loadSlots);
+
+    async function runMatch(slotId) {
+      if (!confirm("この枠でマッチングを実行します。よろしいですか？（再実行すると組み直されます）")) return;
+      const box = $("matchResult"); box.classList.remove("hidden"); box.textContent = "マッチング中…";
+      const r = await api("runMatching", { slotId });
+      if (r.ok) {
+        let txt = "✅ マッチング完了\n参加者: " + r.participantCount + "人 / グループ: " + r.groupCount + "個\n";
+        if (r.unmatchedCount) txt += "不成立: " + r.unmatchedCount + "人（クーポン" + r.couponsIssued + "枚発行）\n";
+        if (r.spotsUnassigned) txt += "⚠️ 集合場所が" + r.spotsUnassigned + "グループ分不足しています\n";
+        (r.groups || []).forEach((g) => { txt += "・" + g.name + "（" + (g.spot || "場所なし") + "）: " + g.members.join("、") + "\n"; });
+        box.textContent = txt;
+        loadSlots();
+      } else box.textContent = "⚠️ " + (r.error || "失敗");
+    }
+
+    async function notify(slotId, dry) {
+      const box = $("matchResult"); box.classList.remove("hidden");
+      if (!dry && !confirm("このグループ全員にLINEで結果を送信します。送信してよいですか？")) return;
+      box.textContent = dry ? "プレビュー取得中…" : "送信中…";
+      const r = await api("notifyMatchingResults", dry ? { slotId, dryRun: "1" } : { slotId });
+      if (r.ok && dry) box.textContent = "【プレビュー】対象 " + r.targetCount + "人\n――――\n" + r.sampleMessage;
+      else if (r.ok) box.textContent = "✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗";
+      else box.textContent = "⚠️ " + (r.error || "失敗");
+    }
+
+    // ----- ③ 集合場所 -----
+    $("createSpotBtn").addEventListener("click", async () => {
+      const type = $("spotType").value, number = $("spotNumber").value;
+      set("spotStatus", "登録中…", "");
+      const r = await api("createMeetingSpot", { type, number });
+      if (r.ok) { set("spotStatus", "✅ 登録：" + r.label, "ok"); loadSpots(); }
+      else set("spotStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+    $("reloadSpots").addEventListener("click", loadSpots);
+    async function loadSpots() {
+      const r = await api("getMeetingSpots", {}, false);
+      $("spotList").textContent = "登録済み: " + ((r.spots || []).map((s) => s.label).join(" / ") || "なし");
+    }
+
+    // ----- ④ リベID登録 -----
+    $("registerLibeBtn").addEventListener("click", async () => {
+      const libeId = $("libeInput").value.trim(), note = $("libeNote").value.trim();
+      if (!libeId) { set("libeStatus", "URLまたはIDを入力してください", "ng"); return; }
+      set("libeStatus", "登録中…", "");
+      const r = await api("registerLibeId", { libeId, note });
+      if (r.ok) { set("libeStatus", r.already ? "ℹ️ すでに登録済み：" + r.libeId : "✅ 登録：" + r.libeId, "ok"); $("libeInput").value = ""; $("libeNote").value = ""; }
+      else set("libeStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    // ----- ⑤ クーポン手動発行 -----
+    $("issueCouponBtn").addEventListener("click", async () => {
+      const lineUserId = $("cpUid").value.trim(), amount = $("cpAmount").value, reason = $("cpReason").value.trim();
+      if (!lineUserId) { set("cpStatus", "LINEユーザーIDを入力してください", "ng"); return; }
+      set("cpStatus", "発行中…", "");
+      const r = await api("issueCoupon", { lineUserId, amount, reason });
+      if (r.ok) { set("cpStatus", "✅ ¥" + r.amount + " クーポンを発行しました", "ok"); }
+      else set("cpStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    // 起動：保存済みキーがあればパネル表示
+    if (getKey()) showPanel(); else $("loginWrap").classList.remove("hidden");
+  </script>
+</body>
+</html>
