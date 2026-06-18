@@ -100,7 +100,19 @@
     .coupon { display:flex; align-items:center; gap:12px; background:#fffaf0;
       border:1.5px dashed var(--accent); border-radius:12px; padding:14px; margin-bottom:10px; }
     .coupon .amt { font-size:22px; font-weight:800; color:var(--accent); white-space:nowrap; }
+    .coupon .amt.free { color:var(--green); }
     .coupon .cinfo { font-size:12px; color:var(--sub); }
+
+    /* リベシティID入力 */
+    #libeBox { margin-bottom:20px; }
+    #libeBox .libe-input { display:flex; gap:8px; }
+    #libeBox input { flex:1; padding:12px 14px; font-size:15px; border:1px solid #d9d4c6;
+      border-radius:10px; background:#fff; }
+    #libeBox input:focus { outline:none; border-color:var(--green); }
+    #libeBox button { padding:0 16px; font-size:14px; font-weight:700; color:#fff;
+      background:var(--green); border:none; border-radius:10px; white-space:nowrap; }
+    #libeBox button:disabled { opacity:.5; }
+    #libeStatus { font-size:13px; margin-top:8px; min-height:18px; }
 
     /* 予約済みカード */
     .reserved { background:#eaf6ef; border:1.5px solid var(--green); border-radius:var(--radius);
@@ -234,6 +246,16 @@
     <div class="hidden" id="couponBox">
       <div class="section-title">🎟 お持ちのクーポン</div>
       <div id="couponList"></div>
+    </div>
+
+    <!-- リベシティ会員クーポン -->
+    <div id="libeBox">
+      <div class="section-title">🎫 リベシティ会員クーポン</div>
+      <div class="libe-input">
+        <input type="text" id="libeInput" placeholder="リベシティのプロフィールURL or ID" autocomplete="off" />
+        <button id="libeBtn">取得</button>
+      </div>
+      <div id="libeStatus"></div>
     </div>
 
     <div class="status" id="homeStatus"></div>
@@ -416,9 +438,13 @@
       coupons.forEach((c) => {
         const row = document.createElement("div");
         row.className = "coupon";
-        row.innerHTML =
-          '<span class="amt">¥' + Number(c.amount).toLocaleString() + '</span>' +
-          '<span class="cinfo">割引クーポン<br>' + (c.reason || "") + '</span>';
+        const isFree = (c.type === "free");
+        const amtHtml = isFree
+          ? '<span class="amt free">無料</span>'
+          : '<span class="amt">¥' + Number(c.amount).toLocaleString() + '</span>';
+        const label = isFree ? "参加無料クーポン" : "割引クーポン";
+        row.innerHTML = amtHtml +
+          '<span class="cinfo">' + label + '<br>' + (c.reason || "") + '</span>';
         list.appendChild(row);
       });
       box.classList.remove("hidden");
@@ -523,6 +549,24 @@
 
     $("editBtn").addEventListener("click", () => openRegister(true));
     $("doneBackBtn").addEventListener("click", openHome);
+
+    // リベシティID → 無料クーポン取得
+    $("libeBtn").addEventListener("click", async () => {
+      const val = $("libeInput").value.trim();
+      const st = $("libeStatus");
+      if (!val) { st.textContent = "IDまたはURLを入力してください"; st.className = "ng"; return; }
+      $("libeBtn").disabled = true;
+      st.textContent = "確認中…"; st.className = "";
+      const r = await api("redeemLibeId", { lineUserId: profile.userId, libeId: val });
+      if (r.ok) {
+        st.textContent = "✅ 無料クーポンを発行しました！"; st.className = "ok";
+        $("libeInput").value = "";
+        await renderReservation(); // クーポン一覧を更新
+      } else {
+        st.textContent = "⚠️ " + (r.error || "取得できませんでした"); st.className = "ng";
+      }
+      $("libeBtn").disabled = false;
+    });
 
     main();
   </script>
