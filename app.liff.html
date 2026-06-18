@@ -76,6 +76,8 @@
     .group-box .lead { font-size:13px; opacity:.9; }
     .group-box .gname { font-size:30px; font-weight:800; margin:6px 0 2px; }
     .group-box .gsub { font-size:12px; opacity:.9; margin-bottom:14px; }
+    .gspot { background:rgba(255,255,255,.18); border-radius:10px; padding:8px 12px;
+      margin-bottom:12px; font-size:15px; font-weight:700; }
     .group-members { background:#fff; border-radius:12px; padding:10px; }
     .checkin-status { margin-top:14px; font-size:14px; font-weight:700; }
     .checkin-status .allset { font-size:16px; }
@@ -192,6 +194,7 @@
       <div class="lead">🎉 あなたのグループが決まりました</div>
       <div class="gname" id="groupName">—</div>
       <div class="gsub" id="groupSlot"></div>
+      <div class="gspot hidden" id="groupSpot"></div>
       <div class="group-members" id="groupMembers"></div>
       <div class="checkin-status" id="checkinStatus"></div>
     </div>
@@ -370,6 +373,14 @@
     function renderGroup(g) {
       $("groupName").textContent = g.name + " グループ";
       $("groupSlot").textContent = formatSlot(g.date, g.time);
+      // 集合場所
+      const spotEl = $("groupSpot");
+      if (g.spotLabel) {
+        spotEl.textContent = "📍 集合場所：" + g.spotLabel;
+        spotEl.classList.remove("hidden");
+      } else {
+        spotEl.classList.add("hidden");
+      }
       const box = $("groupMembers");
       box.innerHTML = "";
       (g.members || []).forEach((m) => {
