@@ -68,9 +68,9 @@
     <h1>bocchi 管理画面</h1>
     <div class="sub">当日の運用操作はここから行います</div>
 
-    <!-- スロット作成 -->
+    <!-- スロット作成／編集 -->
     <div class="card">
-      <h2>① 予約枠（スロット）を作成</h2>
+      <h2 id="slotFormTitle">① 予約枠（スロット）を作成</h2>
       <div class="row">
         <div><label>日付</label><input type="date" id="slotDate" /></div>
         <div><label>時間帯</label><input type="text" id="slotTime" placeholder="13:00〜15:00" /></div>
@@ -80,6 +80,7 @@
         <div><label>予約締切（任意）</label><input type="datetime-local" id="slotDeadline" /></div>
       </div>
       <button id="createSlotBtn">この枠を作成</button>
+      <button id="cancelEditBtn" class="sub-btn hidden">編集をやめる</button>
       <div class="status" id="slotStatus"></div>
     </div>
 
@@ -166,17 +167,60 @@
     });
     $("logoutBtn").addEventListener("click", () => logout(""));
 
-    // ----- ① スロット作成 -----
+    // ----- ① スロット作成／編集 -----
+    let editingSlotId = null; // 編集中の枠（nullなら新規作成）
+
+    // ISO(UTC) → datetime-local用の文字列（ブラウザのローカル=JST）
+    function isoToLocalInput(iso) {
+      if (!iso) return "";
+      const d = new Date(iso); const p = (n) => String(n).padStart(2, "0");
+      return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+    }
+
+    function editSlot(s) {
+      editingSlotId = s.slotId;
+      $("slotDate").value = s.date;
+      $("slotTime").value = s.time;
+      $("slotCap").value = s.capacity;
+      $("slotDeadline").value = isoToLocalInput(s.deadline);
+      $("slotFormTitle").textContent = "① 予約枠を編集中";
+      $("createSlotBtn").textContent = "この内容で更新する";
+      $("cancelEditBtn").classList.remove("hidden");
+      set("slotStatus", "編集中：" + fmtDate(s.date) + " " + s.time, "");
+      $("slotFormTitle").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function endEdit() {
+      editingSlotId = null;
+      $("slotFormTitle").textContent = "① 予約枠（スロット）を作成";
+      $("createSlotBtn").textContent = "この枠を作成";
+      $("cancelEditBtn").classList.add("hidden");
+      $("slotDate").value = ""; $("slotTime").value = ""; $("slotCap").value = "50"; $("slotDeadline").value = "";
+      set("slotStatus", "", "");
+    }
+    $("cancelEditBtn").addEventListener("click", endEdit);
+
     $("createSlotBtn").addEventListener("click", async () => {
       const date = $("slotDate").value, time = $("slotTime").value.trim();
       const capacity = $("slotCap").value, dl = $("slotDeadline").value;
       if (!date || !time) { set("slotStatus", "日付と時間帯は必須です", "ng"); return; }
-      const params = { date, time, capacity };
-      if (dl) params.deadline = dl + "+09:00"; // 日本時間として送る
-      set("slotStatus", "作成中…", "");
-      const r = await api("createSlot", params);
-      if (r.ok) { set("slotStatus", "✅ 作成しました（" + date + " " + time + "）", "ok"); loadSlots(); }
-      else set("slotStatus", "⚠️ " + (r.error || "失敗"), "ng");
+
+      if (editingSlotId) {
+        // 編集（更新）
+        const params = { slotId: editingSlotId, date, time, capacity, deadline: dl ? dl + "+09:00" : "none" };
+        set("slotStatus", "更新中…", "");
+        const r = await api("updateSlot", params);
+        if (r.ok) { set("slotStatus", "✅ 更新しました（" + date + " " + time + "）", "ok"); endEdit(); loadSlots(); }
+        else set("slotStatus", "⚠️ " + (r.error || "失敗"), "ng");
+      } else {
+        // 新規作成
+        const params = { date, time, capacity };
+        if (dl) params.deadline = dl + "+09:00"; // 日本時間として送る
+        set("slotStatus", "作成中…", "");
+        const r = await api("createSlot", params);
+        if (r.ok) { set("slotStatus", "✅ 作成しました（" + date + " " + time + "）", "ok"); $("slotDate").value=""; $("slotTime").value=""; loadSlots(); }
+        else set("slotStatus", "⚠️ " + (r.error || "失敗"), "ng");
+      }
     });
 
     // ----- ② スロット一覧 -----
@@ -231,9 +275,11 @@
         pBtn.onclick = () => notify(s.slotId, true);
         const nBtn = document.createElement("button"); nBtn.className = "sub-btn warn"; nBtn.textContent = "結果を一斉通知";
         nBtn.onclick = () => notify(s.slotId, false);
+        const eBtn = document.createElement("button"); eBtn.className = "sub-btn"; eBtn.textContent = "編集";
+        eBtn.onclick = () => editSlot(s);
         const dBtn = document.createElement("button"); dBtn.className = "sub-btn danger"; dBtn.textContent = "枠を削除";
         dBtn.onclick = () => deleteSlot(s);
-        div.appendChild(mBtn); div.appendChild(vBtn); div.appendChild(pBtn); div.appendChild(nBtn); div.appendChild(dBtn);
+        div.appendChild(mBtn); div.appendChild(vBtn); div.appendChild(pBtn); div.appendChild(nBtn); div.appendChild(eBtn); div.appendChild(dBtn);
         list.appendChild(div);
       });
     }
