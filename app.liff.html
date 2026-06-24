@@ -95,6 +95,68 @@
     .unmatched-box .um-title { font-weight:800; color:var(--err); font-size:15px; margin-bottom:6px; }
     .unmatched-box .um-text { font-size:13px; color:var(--sub); }
 
+    /* ⑩ グループ成長（たまごっち） */
+    .growth-box { background:#fff; border:1px solid #ece8dc; border-radius:var(--radius);
+      padding:0 0 18px; margin-bottom:20px; overflow:hidden; }
+    .terrarium { position:relative; height:200px; background:linear-gradient(#bfe3ff,#e8f6ff 70%,#d8f0d0 70%);
+      overflow:hidden; }
+    .cloud { position:absolute; font-size:26px; opacity:.85; animation:drift 14s linear infinite; }
+    .cloud.c1 { top:24px; left:-40px; }
+    .cloud.c2 { top:54px; left:-40px; animation-duration:20s; animation-delay:-7s; font-size:20px; }
+    @keyframes drift { from { transform:translateX(0); } to { transform:translateX(420px); } }
+    .animal { position:absolute; left:50%; bottom:46px; transform:translateX(-50%);
+      font-size:76px; animation:bounce 1.6s ease-in-out infinite; transform-origin:bottom center; }
+    @keyframes bounce {
+      0%,100% { transform:translateX(-50%) translateY(0) rotate(0deg); }
+      25% { transform:translateX(-50%) translateY(-12px) rotate(-4deg); }
+      50% { transform:translateX(-50%) translateY(0) rotate(0deg); }
+      75% { transform:translateX(-50%) translateY(-6px) rotate(4deg); }
+    }
+    .ground { position:absolute; bottom:0; left:0; right:0; height:60px;
+      background:radial-gradient(ellipse at 50% 0,#cbe9bd,#bfe0ad); }
+    .growth-info { padding:14px 18px 0; text-align:center; }
+    .stage-label { font-size:18px; font-weight:800; color:var(--green); }
+    .gauge { height:12px; background:#eee7d6; border-radius:99px; overflow:hidden; margin:10px 0 4px; }
+    .gauge-fill { height:100%; width:0; background:linear-gradient(90deg,#7bc47f,var(--green));
+      border-radius:99px; transition:width .6s ease; }
+    .gauge-pct { font-size:12px; color:var(--sub); }
+    .personality { margin-top:10px; background:#f3faf5; border-radius:10px; padding:8px 12px; }
+    .personality .p-name { font-weight:800; color:var(--green); font-size:14px; }
+    .personality .p-desc { display:block; font-size:12px; color:var(--sub); margin-top:2px; }
+    .missions { padding:14px 18px 0; }
+    .missions-title { font-size:13px; font-weight:700; text-align:center; color:var(--sub);
+      margin-bottom:10px; position:relative; }
+    .mission-item { display:flex; align-items:center; gap:10px; padding:11px 12px;
+      border:1.5px solid #e3ddcd; border-radius:10px; margin-bottom:8px; cursor:pointer; font-size:14px; }
+    .mission-item.done { background:#f3faf5; border-color:var(--green); color:var(--green); font-weight:700; }
+    .mission-item .box { width:22px; height:22px; border:2px solid #c9c2ad; border-radius:6px;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; }
+    .mission-item.done .box { background:var(--green); border-color:var(--green); color:#fff; }
+    .share-btn { display:block; width:calc(100% - 36px); margin:14px 18px 0; padding:14px;
+      font-size:15px; font-weight:800; color:#fff; background:var(--accent); border:none; border-radius:12px; cursor:pointer; }
+
+    /* シェアカード オーバーレイ */
+    #shareOverlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; overflow:auto; }
+    .share-card { width:300px; background:linear-gradient(160deg,#fff,#f3faf5); border:3px solid var(--green);
+      border-radius:20px; padding:22px 18px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+    .sc-head { font-size:17px; font-weight:800; color:var(--green); }
+    .sc-animal { font-size:80px; margin:6px 0; }
+    .sc-grown { font-size:14px; font-weight:700; }
+    .sc-pers { font-size:13px; color:var(--green); font-weight:700; margin-top:6px; }
+    .sc-line { font-size:12px; color:var(--sub); margin:14px 0 4px; }
+    .sc-members { font-size:14px; font-weight:700; line-height:1.7; }
+    .sc-mission { font-size:13px; margin-top:12px; font-weight:700; color:var(--accent); }
+    .sc-tag { font-size:14px; font-weight:800; color:var(--green); margin-top:8px; }
+    .sc-date { font-size:12px; color:var(--sub); margin-top:2px; }
+    .share-actions { display:flex; flex-direction:column; gap:10px; margin-top:18px; width:300px; }
+    .share-actions button { padding:13px; font-size:15px; font-weight:800; border:none; border-radius:12px; cursor:pointer; color:#fff; background:#000; }
+    .share-actions .dl { background:var(--accent); }
+    .share-actions .close { background:#fff; color:var(--sub); border:1px solid #ccc; }
+    @media (prefers-reduced-motion: reduce) {
+      .animal, .cloud { animation:none !important; }
+    }
+
     /* クーポン */
     #couponBox { margin-top:8px; margin-bottom:20px; }
     .coupon { display:flex; align-items:center; gap:12px; background:#fffaf0;
@@ -224,6 +286,28 @@
       <div class="checkin-status" id="checkinStatus"></div>
     </div>
 
+    <!-- ⑩ グループ成長（たまごっち） -->
+    <div class="growth-box hidden" id="growthBox">
+      <div class="terrarium">
+        <div class="cloud c1">☁️</div><div class="cloud c2">☁️</div>
+        <div class="animal" id="growthAnimal">🥚</div>
+        <div class="ground"></div>
+      </div>
+      <div class="growth-info">
+        <div class="stage-label" id="growthStage">たまご</div>
+        <div class="gauge"><div class="gauge-fill" id="growthGauge"></div></div>
+        <div class="gauge-pct" id="growthPct">0%</div>
+        <div class="personality hidden" id="growthPersonality">
+          <span class="p-name" id="pName"></span><span class="p-desc" id="pDesc"></span>
+        </div>
+      </div>
+      <div class="missions">
+        <div class="missions-title">今日のミッション</div>
+        <div id="missionList"></div>
+      </div>
+      <button class="share-btn hidden" id="shareBtn">🎉 完成カードを見る</button>
+    </div>
+
     <!-- マッチング不成立の案内 -->
     <div class="unmatched-box hidden" id="unmatchedBox">
       <div class="um-title">😢 今回はグループが成立しませんでした</div>
@@ -267,6 +351,27 @@
     <h2 id="doneTitle">完了しました</h2>
     <p id="doneMsg"></p>
     <button class="back-btn" id="doneBackBtn">トップに戻る</button>
+  </div>
+
+  <!-- ⑩ シェアカード オーバーレイ -->
+  <div id="shareOverlay" class="hidden">
+    <div class="share-card" id="shareCard">
+      <div class="sc-head" id="scHead">🐰 うさぎグループ 完成！</div>
+      <div class="sc-animal" id="scAnimal">🐰</div>
+      <div class="sc-grown" id="scGrown">立派なうさぎに育った！</div>
+      <div class="sc-pers" id="scPers"></div>
+      <div class="sc-line">━ 一緒に旅した仲間 ━</div>
+      <div class="sc-members" id="scMembers"></div>
+      <div class="sc-mission" id="scMission">達成ミッション 5/5 ⭐️</div>
+      <div class="sc-tag">#ぼっちthe交流会</div>
+      <div class="sc-date" id="scDate"></div>
+    </div>
+    <div class="share-actions">
+      <button id="xShareBtn">𝕏 でシェア</button>
+      <button id="dlBtn" class="dl">🎁 記念画像をダウンロード</button>
+      <button id="closeShareBtn" class="close">閉じる</button>
+    </div>
+    <canvas id="dlCanvas" width="600" height="800" style="display:none"></canvas>
   </div>
 
   <script>
@@ -397,6 +502,7 @@
       if (!mine.reservation) {
         // 未予約 → スロット選択
         $("groupBox").classList.add("hidden");
+        $("growthBox").classList.add("hidden");
         $("unmatchedBox").classList.add("hidden");
         $("reservedBox").classList.add("hidden");
         $("chooseBox").classList.remove("hidden");
@@ -416,18 +522,128 @@
         $("unmatchedBox").classList.add("hidden");
         $("reservedBox").classList.remove("hidden");
         $("cancelBtn").classList.add("hidden");
+        loadGrowth(); // たまごっち画面を読み込み
       } else if (myGroup.unmatched) {
         // 不成立 → おわび案内（予約カード・キャンセルは隠す）
         $("groupBox").classList.add("hidden");
+        $("growthBox").classList.add("hidden");
         $("unmatchedBox").classList.remove("hidden");
         $("reservedBox").classList.add("hidden");
       } else {
         // 予約済み・未マッチ → 予約カード＋キャンセル
         $("groupBox").classList.add("hidden");
+        $("growthBox").classList.add("hidden");
         $("unmatchedBox").classList.add("hidden");
         $("reservedBox").classList.remove("hidden");
         $("cancelBtn").classList.remove("hidden");
       }
+    }
+
+    // ===== ⑩ グループ成長（たまごっち）=====
+    let growthData = null;
+
+    async function loadGrowth() {
+      const r = await api("getGroupGrowth", { lineUserId: profile.userId });
+      if (r.growth) { growthData = r.growth; renderGrowth(r.growth); $("growthBox").classList.remove("hidden"); }
+      else $("growthBox").classList.add("hidden");
+    }
+
+    function renderGrowth(g) {
+      $("growthAnimal").textContent = g.stage >= 2 ? g.animalEmoji : "🥚";
+      $("growthStage").textContent = "レベル：" + g.stageLabel;
+      $("growthGauge").style.width = g.gauge + "%";
+      $("growthPct").textContent = g.gauge + "%";
+      // 性格
+      const pBox = $("growthPersonality");
+      if (g.personality) {
+        $("pName").textContent = "性格：" + g.personality.name;
+        $("pDesc").textContent = g.personality.desc;
+        pBox.classList.remove("hidden");
+      } else pBox.classList.add("hidden");
+      // ミッション
+      const list = $("missionList");
+      list.innerHTML = "";
+      const hatched = g.stage >= 2;
+      g.missions.forEach((m, i) => {
+        const row = document.createElement("div");
+        row.className = "mission-item" + (m.done ? " done" : "");
+        row.innerHTML = '<span class="box">' + (m.done ? "✓" : "") + '</span><span>' + m.name + '</span>';
+        if (hatched) row.addEventListener("click", () => toggleMission(i, !m.done, row));
+        else row.style.opacity = ".5";
+        list.appendChild(row);
+      });
+      // 完成 → シェアボタン
+      $("shareBtn").classList.toggle("hidden", !g.completed);
+    }
+
+    async function toggleMission(index, done, rowEl) {
+      if (rowEl) rowEl.style.pointerEvents = "none";
+      const r = await api("toggleMission", { lineUserId: profile.userId, index: index, done: done });
+      if (r.ok && r.growth) { growthData = r.growth; renderGrowth(r.growth); }
+      else if (rowEl) rowEl.style.pointerEvents = "";
+    }
+
+    // シェアカード
+    $("shareBtn").addEventListener("click", () => openShareCard());
+    function fmtCardDate(d) {
+      const [y, m, day] = (d || "").split("-");
+      return y + "." + Number(m) + "." + Number(day);
+    }
+    function openShareCard() {
+      const g = growthData; if (!g) return;
+      $("scHead").textContent = g.animalEmoji + " " + g.animal + "グループ 完成！";
+      $("scAnimal").textContent = g.animalEmoji;
+      $("scGrown").textContent = "立派な" + g.animal + "に育った！";
+      $("scPers").textContent = g.personality ? "性格：" + g.personality.name : "";
+      $("scMembers").textContent = (g.memberNicknames || []).join(" / ");
+      $("scMission").textContent = "達成ミッション " + g.missionDone + "/" + g.missionTotal + " ⭐️";
+      $("scDate").textContent = fmtCardDate(g.date);
+      $("shareOverlay").classList.remove("hidden");
+    }
+    $("closeShareBtn").addEventListener("click", () => $("shareOverlay").classList.add("hidden"));
+
+    // Xシェア（Web Intent）
+    $("xShareBtn").addEventListener("click", () => {
+      const g = growthData; if (!g) return;
+      const text = g.animalEmoji + g.animal + "グループを完成させた！みんなで育てたよ🌱\n#ぼっちthe交流会";
+      window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(text), "_blank");
+    });
+
+    // 記念画像ダウンロード（canvasでPNG生成）
+    $("dlBtn").addEventListener("click", () => {
+      const g = growthData; if (!g) return;
+      const cv = $("dlCanvas"), ctx = cv.getContext("2d");
+      const W = cv.width, H = cv.height;
+      const grd = ctx.createLinearGradient(0, 0, 0, H);
+      grd.addColorStop(0, "#ffffff"); grd.addColorStop(1, "#e8f6ee");
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#2f6d4f"; ctx.lineWidth = 8; ctx.strokeStyle = "#2f6d4f";
+      ctx.strokeRect(16, 16, W - 32, H - 32);
+      ctx.textAlign = "center";
+      ctx.font = "bold 34px sans-serif"; ctx.fillText(g.animal + "グループ 完成！", W / 2, 110);
+      ctx.font = "180px sans-serif"; ctx.fillText(g.animalEmoji, W / 2, 320);
+      ctx.fillStyle = "#2b2b28"; ctx.font = "bold 26px sans-serif";
+      ctx.fillText("立派な" + g.animal + "に育った！", W / 2, 390);
+      if (g.personality) { ctx.fillStyle = "#2f6d4f"; ctx.font = "bold 24px sans-serif"; ctx.fillText("性格：" + g.personality.name, W / 2, 440); }
+      ctx.fillStyle = "#6b6b63"; ctx.font = "20px sans-serif"; ctx.fillText("━ 一緒に旅した仲間 ━", W / 2, 510);
+      ctx.fillStyle = "#2b2b28"; ctx.font = "bold 24px sans-serif";
+      wrapText(ctx, (g.memberNicknames || []).join(" / "), W / 2, 550, W - 80, 32);
+      ctx.fillStyle = "#e6a817"; ctx.font = "bold 24px sans-serif";
+      ctx.fillText("達成ミッション " + g.missionDone + "/" + g.missionTotal + " ⭐️", W / 2, 660);
+      ctx.fillStyle = "#2f6d4f"; ctx.font = "bold 26px sans-serif"; ctx.fillText("#ぼっちthe交流会", W / 2, 710);
+      ctx.fillStyle = "#6b6b63"; ctx.font = "20px sans-serif"; ctx.fillText(fmtCardDate(g.date), W / 2, 745);
+      const a = document.createElement("a");
+      a.href = cv.toDataURL("image/png");
+      a.download = "bocchi_" + g.animal + ".png";
+      a.click();
+    });
+    function wrapText(ctx, text, x, y, maxW, lh) {
+      const words = text.split(" "); let line = ""; let yy = y;
+      for (const w of words) {
+        if (ctx.measureText(line + w).width > maxW && line) { ctx.fillText(line.trim(), x, yy); line = ""; yy += lh; }
+        line += w + " ";
+      }
+      ctx.fillText(line.trim(), x, yy);
     }
 
     function renderCoupons(coupons) {
