@@ -70,6 +70,22 @@
     .link-btn { font-size:12px; color:var(--green); background:none; border:none;
       text-decoration:underline; cursor:pointer; }
 
+    /* リッチメニュー */
+    .menu-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .menu-card { display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:4px; background:#fff; border:1px solid #ece8dc; border-radius:16px; padding:22px 10px;
+      cursor:pointer; color:var(--ink); font-size:15px; font-weight:800; }
+    .menu-card:active { background:#f3faf5; }
+    .menu-card .mi { font-size:34px; }
+    .menu-card small { font-size:11px; font-weight:500; color:var(--sub); min-height:14px; }
+    .menu-card .badge { background:var(--accent); color:#fff; font-size:10px; font-weight:700;
+      border-radius:99px; padding:1px 7px; }
+    .back-link { background:none; border:none; color:var(--green); font-size:14px; font-weight:700;
+      cursor:pointer; padding:4px 0; margin-bottom:14px; }
+    .screen-title { font-size:18px; font-weight:800; color:var(--green); margin-bottom:16px; }
+    .placeholder { text-align:center; color:var(--sub); font-size:14px; padding:40px 16px;
+      background:#fff; border:1px solid #ece8dc; border-radius:var(--radius); }
+
     /* グループ発表カード */
     .group-box { background:linear-gradient(160deg,#2f6d4f,#3f8a64); color:#fff;
       border-radius:var(--radius); padding:20px 18px; margin-bottom:20px; text-align:center; }
@@ -262,19 +278,27 @@
     </form>
   </div>
 
-  <!-- ホーム（予約）-->
-  <div class="wrap hidden" id="screen-home">
-    <div class="head">
-      <div class="logo">bocchi</div>
-      <p>参加したい日時を選んで予約してね</p>
-    </div>
+  <!-- ホーム：リッチメニュー -->
+  <div class="wrap hidden" id="screen-menu">
+    <div class="head"><div class="logo">bocchi</div></div>
     <div class="profile-bar">
       <div>
         <div class="pname" id="homeName">—</div>
         <div class="pmeta" id="homeMeta"></div>
       </div>
-      <button class="link-btn" id="editBtn">プロフィール編集</button>
+      <button class="link-btn" id="editBtn">編集</button>
     </div>
+    <div class="menu-grid">
+      <button class="menu-card" id="menuGroup"><span class="mi">🐣</span>マイグループ<small id="menuGroupSub">育成・集合場所</small></button>
+      <button class="menu-card" id="menuReserve"><span class="mi">📅</span>予約<small id="menuReserveSub">日時を選ぶ</small></button>
+      <button class="menu-card" id="menuCoupon"><span class="mi">🎟</span>クーポン<small id="menuCouponSub">&nbsp;</small></button>
+      <button class="menu-card" id="menuProfile"><span class="mi">👤</span>プロフィール<small>確認・編集</small></button>
+    </div>
+  </div>
+
+  <!-- マイグループ画面 -->
+  <div class="wrap hidden" id="screen-group">
+    <button class="back-link" data-back>← メニューに戻る</button>
 
     <!-- マッチング後：グループ発表 -->
     <div class="group-box hidden" id="groupBox">
@@ -314,6 +338,18 @@
       <div class="um-text">人数が集まらず、グループを作れませんでした。<br>おわびにクーポンをお送りしました。次回ぜひご参加ください。</div>
     </div>
 
+    <!-- グループ発表前 -->
+    <div class="placeholder hidden" id="groupPlaceholder">
+      まだグループは発表されていません。<br>当日のお楽しみに 🐣
+    </div>
+    <div class="status" id="groupStatus"></div>
+  </div>
+
+  <!-- 予約画面 -->
+  <div class="wrap hidden" id="screen-reserve">
+    <button class="back-link" data-back>← メニューに戻る</button>
+    <div class="screen-title">📅 参加予約</div>
+
     <div class="reserved hidden" id="reservedBox">
       <div class="tag">✓ 予約済み</div>
       <div class="slot" id="reservedSlot">—</div>
@@ -326,9 +362,17 @@
       <button class="submit" id="reserveBtn" disabled>この日時で予約する</button>
     </div>
 
+    <div class="status" id="homeStatus"></div>
+  </div>
+
+  <!-- クーポン画面 -->
+  <div class="wrap hidden" id="screen-coupon">
+    <button class="back-link" data-back>← メニューに戻る</button>
+    <div class="screen-title">🎟 クーポン</div>
+
     <!-- 所持クーポン -->
-    <div class="hidden" id="couponBox">
-      <div class="section-title">🎟 お持ちのクーポン</div>
+    <div id="couponBox">
+      <div class="section-title">お持ちのクーポン</div>
       <div id="couponList"></div>
     </div>
 
@@ -342,7 +386,7 @@
       <div id="libeStatus"></div>
     </div>
 
-    <div class="status" id="homeStatus"></div>
+    <div class="status" id="couponStatus"></div>
   </div>
 
   <!-- 完了 -->
@@ -390,10 +434,10 @@
       const res = await fetch(BASE + "/" + path + qs);
       return res.json();
     };
+    const SCREENS = ["boot","screen-menu","screen-register","screen-group","screen-reserve","screen-coupon","screen-done"];
     function showScreen(name) {
-      ["boot","screen-register","screen-home","screen-done"].forEach(id => {
-        $(id).classList.toggle("hidden", id !== name);
-      });
+      SCREENS.forEach(id => { $(id).classList.toggle("hidden", id !== name); });
+      window.scrollTo(0, 0);
     }
     function setStatus(id, m, c) { const e=$(id); e.textContent=m; e.className="status "+(c||""); }
 
@@ -427,8 +471,10 @@
 
       if (!currentUser) {
         openRegister(false); // 新規登録
+      } else if (mode === "checkin") {
+        await openGroup(); // チェックインリンク → マイグループ画面へ
       } else {
-        await openHome();
+        openMenu();
       }
     }
     function bootError(m) {
@@ -474,69 +520,80 @@
         $("regBtn").disabled = false;
       }
     });
-    $("regBackBtn").addEventListener("click", openHome);
+    $("regBackBtn").addEventListener("click", openMenu);
 
-    // ===== ホーム（予約）=====
-    async function openHome() {
-      setStatus("homeStatus", "", ""); // 前画面のステータス文言をクリア
-      // プロフィール要約
+    // ===== メニュー（リッチメニュー風ホーム）=====
+    async function openMenu() {
       $("homeName").textContent = (currentUser.nickname || "") + " さん";
-      const meta = [currentUser.gender, currentUser.topic].filter(Boolean).join("・");
-      $("homeMeta").textContent = meta;
-      await renderReservation();
-      if (checkinError) { setStatus("homeStatus", "⚠️ " + checkinError, "ng"); checkinError = null; }
-      showScreen("screen-home");
-    }
-
-    async function renderReservation() {
-      const [mine, slotsRes, myGroup, myCoupons] = await Promise.all([
+      $("homeMeta").textContent = [currentUser.gender, currentUser.topic].filter(Boolean).join("・");
+      // 各メニューの状態ラベルを更新
+      const [mine, myGroup, myCoupons] = await Promise.all([
         api("getMyReservation", { lineUserId: profile.userId }),
-        api("getSlots"),
         api("getMyGroup", { lineUserId: profile.userId }),
         api("getMyCoupons", { lineUserId: profile.userId })
       ]);
+      $("menuReserveSub").textContent = mine.reservation ? "予約済み" : "未予約・日時を選ぶ";
+      $("menuGroupSub").textContent = myGroup.group ? "グループ発表中！" : (myGroup.unmatched ? "今回は不成立" : "発表前");
+      const cn = (myCoupons.coupons || []).length;
+      $("menuCouponSub").innerHTML = cn ? '<span class="badge">' + cn + '枚</span>' : "なし";
+      showScreen("screen-menu");
+    }
+    $("menuGroup").addEventListener("click", openGroup);
+    $("menuReserve").addEventListener("click", openReserve);
+    $("menuCoupon").addEventListener("click", openCoupon);
+    $("menuProfile").addEventListener("click", () => openRegister(true));
+    document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", openMenu));
 
-      // 所持クーポンは常に表示
-      renderCoupons(myCoupons.coupons || []);
+    // ===== マイグループ画面 =====
+    async function openGroup() {
+      setStatus("groupStatus", "", "");
+      const myGroup = await api("getMyGroup", { lineUserId: profile.userId });
+      $("groupBox").classList.add("hidden");
+      $("growthBox").classList.add("hidden");
+      $("unmatchedBox").classList.add("hidden");
+      $("groupPlaceholder").classList.add("hidden");
+      if (myGroup.group) {
+        renderGroup(myGroup.group);
+        $("groupBox").classList.remove("hidden");
+        await loadGrowth(); // たまごっち
+      } else if (myGroup.unmatched) {
+        $("unmatchedBox").classList.remove("hidden");
+      } else {
+        $("groupPlaceholder").classList.remove("hidden");
+      }
+      if (checkinError) { setStatus("groupStatus", "⚠️ " + checkinError, "ng"); checkinError = null; }
+      showScreen("screen-group");
+    }
 
-      if (!mine.reservation) {
-        // 未予約 → スロット選択
-        $("groupBox").classList.add("hidden");
-        $("growthBox").classList.add("hidden");
-        $("unmatchedBox").classList.add("hidden");
+    // ===== 予約画面 =====
+    async function openReserve() {
+      setStatus("homeStatus", "", "");
+      await renderReserve();
+      showScreen("screen-reserve");
+    }
+    async function renderReserve() {
+      const [mine, slotsRes] = await Promise.all([
+        api("getMyReservation", { lineUserId: profile.userId }),
+        api("getSlots")
+      ]);
+      if (mine.reservation) {
+        $("reservedSlot").textContent = formatSlot(mine.reservation.date, mine.reservation.time);
+        $("reservedBox").classList.remove("hidden");
+        $("cancelBtn").classList.remove("hidden");
+        $("chooseBox").classList.add("hidden");
+      } else {
         $("reservedBox").classList.add("hidden");
         $("chooseBox").classList.remove("hidden");
         renderSlots(slotsRes.slots || []);
-        return;
       }
+    }
 
-      // 予約あり
-      const r = mine.reservation;
-      $("reservedSlot").textContent = formatSlot(r.date, r.time);
-      $("chooseBox").classList.add("hidden");
-
-      if (myGroup.group) {
-        // マッチング済み → グループ発表を表示。予約カードは出すがキャンセルは隠す
-        renderGroup(myGroup.group);
-        $("groupBox").classList.remove("hidden");
-        $("unmatchedBox").classList.add("hidden");
-        $("reservedBox").classList.remove("hidden");
-        $("cancelBtn").classList.add("hidden");
-        loadGrowth(); // たまごっち画面を読み込み
-      } else if (myGroup.unmatched) {
-        // 不成立 → おわび案内（予約カード・キャンセルは隠す）
-        $("groupBox").classList.add("hidden");
-        $("growthBox").classList.add("hidden");
-        $("unmatchedBox").classList.remove("hidden");
-        $("reservedBox").classList.add("hidden");
-      } else {
-        // 予約済み・未マッチ → 予約カード＋キャンセル
-        $("groupBox").classList.add("hidden");
-        $("growthBox").classList.add("hidden");
-        $("unmatchedBox").classList.add("hidden");
-        $("reservedBox").classList.remove("hidden");
-        $("cancelBtn").classList.remove("hidden");
-      }
+    // ===== クーポン画面 =====
+    async function openCoupon() {
+      setStatus("couponStatus", "", "");
+      const myCoupons = await api("getMyCoupons", { lineUserId: profile.userId });
+      renderCoupons(myCoupons.coupons || []);
+      showScreen("screen-coupon");
     }
 
     // ===== ⑩ グループ成長（たまごっち）=====
@@ -647,9 +704,8 @@
     }
 
     function renderCoupons(coupons) {
-      const box = $("couponBox");
       const list = $("couponList");
-      if (!coupons.length) { box.classList.add("hidden"); return; }
+      if (!coupons.length) { list.innerHTML = '<div class="placeholder">お持ちのクーポンはありません</div>'; return; }
       list.innerHTML = "";
       coupons.forEach((c) => {
         const row = document.createElement("div");
@@ -663,7 +719,6 @@
           '<span class="cinfo">' + label + '<br>' + (c.reason || "") + '</span>';
         list.appendChild(row);
       });
-      box.classList.remove("hidden");
     }
 
     function renderGroup(g) {
@@ -749,7 +804,7 @@
         showScreen("screen-done");
       } else {
         setStatus("homeStatus", "予約できませんでした：" + (r.error || ""), "ng");
-        await renderReservation();
+        await renderReserve();
       }
     });
 
@@ -759,12 +814,12 @@
       setStatus("homeStatus", "キャンセル中…", "");
       const r = await api("cancelReservation", { lineUserId: profile.userId });
       $("cancelBtn").disabled = false;
-      if (r.ok) { setStatus("homeStatus", "", ""); await renderReservation(); }
+      if (r.ok) { setStatus("homeStatus", "", ""); await renderReserve(); }
       else { setStatus("homeStatus", "キャンセルに失敗：" + (r.error || ""), "ng"); }
     });
 
+    $("doneBackBtn").addEventListener("click", openMenu);
     $("editBtn").addEventListener("click", () => openRegister(true));
-    $("doneBackBtn").addEventListener("click", openHome);
 
     // リベシティID → 無料クーポン取得
     $("libeBtn").addEventListener("click", async () => {
@@ -777,7 +832,8 @@
       if (r.ok) {
         st.textContent = "✅ 無料クーポンを発行しました！"; st.className = "ok";
         $("libeInput").value = "";
-        await renderReservation(); // クーポン一覧を更新
+        const mc = await api("getMyCoupons", { lineUserId: profile.userId }); // 一覧更新
+        renderCoupons(mc.coupons || []);
       } else {
         st.textContent = "⚠️ " + (r.error || "取得できませんでした"); st.className = "ng";
       }
