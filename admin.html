@@ -31,7 +31,22 @@
     #login { max-width:360px; margin:80px auto; }
     .hidden { display:none !important; }
     .logout { float:right; background:none; color:var(--sub); border:1px solid #d9d4c6; font-weight:400; margin:0; padding:6px 12px; }
-    .result { background:#f6f4ec; border-radius:8px; padding:10px 12px; font-size:13px; margin-top:10px; font-family:monospace; white-space:pre-wrap; }
+    .result { background:#f6f4ec; border-radius:8px; padding:12px; font-size:14px; margin-top:12px; }
+    /* 日付タブ */
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0; }
+    .tab { padding:7px 14px; border-radius:99px; border:1.5px solid #d9d4c6; background:#fff;
+      cursor:pointer; font-size:13px; font-weight:700; color:var(--sub); margin:0; }
+    .tab.active { background:var(--green); color:#fff; border-color:var(--green); }
+    /* マッチング結果のグループカード */
+    .result .rhead { font-weight:800; margin-bottom:8px; }
+    .gcard { border:1px solid #e3ddcd; border-radius:10px; padding:10px 12px; margin:8px 0; background:#fff; }
+    .gcard .gh { font-weight:800; font-size:15px; }
+    .gcard .gmeta { font-size:12px; color:var(--sub); margin:2px 0 6px; }
+    .gcard .gbadge { display:inline-block; background:#eef5f0; color:var(--green); border-radius:6px;
+      padding:1px 8px; font-size:11px; font-weight:700; margin-left:6px; }
+    .chip { display:inline-block; background:#f3faf5; border:1px solid #dceadf; border-radius:99px;
+      padding:3px 10px; margin:2px; font-size:13px; }
+    .chip.in { background:#eaf6ef; border-color:var(--green); color:var(--green); font-weight:700; }
   </style>
 </head>
 <body>
@@ -71,6 +86,7 @@
     <div class="card">
       <h2>② 予約枠の一覧・マッチング・通知</h2>
       <button class="sub-btn" id="reloadSlots">一覧を更新</button>
+      <div class="tabs" id="dateTabs"></div>
       <div id="slotList"></div>
       <div class="result hidden" id="matchResult"></div>
     </div>
@@ -168,52 +184,111 @@
       const w = ["日","月","火","水","木","金","土"][new Date(Date.UTC(y, m-1, day)).getUTCDay()];
       return m + "/" + day + "(" + w + ")";
     }
+    let allSlots = [];     // 取得した全スロット
+    let selectedDate = ""; // 選択中の日付タブ
+
     async function loadSlots() {
       const r = await api("getSlots", {}, false);
+      allSlots = r.slots || [];
+      // 日付の一覧（昇順）
+      const dates = [...new Set(allSlots.map((s) => s.date))].sort();
+      if (!selectedDate || !dates.includes(selectedDate)) selectedDate = dates[0] || "";
+      renderDateTabs(dates);
+      renderSlotsForDate();
+    }
+    $("reloadSlots").addEventListener("click", loadSlots);
+
+    function renderDateTabs(dates) {
+      const tabs = $("dateTabs"); tabs.innerHTML = "";
+      dates.forEach((d) => {
+        const b = document.createElement("button");
+        b.className = "tab" + (d === selectedDate ? " active" : "");
+        const count = allSlots.filter((s) => s.date === d).length;
+        b.textContent = fmtDate(d) + "（" + count + "枠）";
+        b.onclick = () => { selectedDate = d; renderDateTabs(dates); renderSlotsForDate(); };
+        tabs.appendChild(b);
+      });
+    }
+
+    function renderSlotsForDate() {
       const list = $("slotList"); list.innerHTML = "";
-      (r.slots || []).forEach((s) => {
+      const slots = allSlots.filter((s) => s.date === selectedDate);
+      if (!slots.length) { list.innerHTML = '<div class="meta">この日の予約枠はありません</div>'; return; }
+      slots.forEach((s) => {
         const div = document.createElement("div");
         div.className = "slot-row";
         div.innerHTML =
-          '<div class="title">' + fmtDate(s.date) + ' ' + s.time +
+          '<div class="title">' + s.time +
           '<span class="pill">予約 ' + s.reservedCount + '/' + s.capacity + '</span>' +
           (s.closed ? '<span class="pill">締切</span>' : '') + '</div>' +
           '<div class="meta">slotId: ' + s.slotId + '</div>';
         const mBtn = document.createElement("button"); mBtn.className = "sub-btn"; mBtn.textContent = "マッチング実行";
         mBtn.onclick = () => runMatch(s.slotId);
+        const vBtn = document.createElement("button"); vBtn.className = "sub-btn"; vBtn.textContent = "結果を確認";
+        vBtn.onclick = () => viewResult(s.slotId);
         const pBtn = document.createElement("button"); pBtn.className = "sub-btn"; pBtn.textContent = "通知プレビュー";
         pBtn.onclick = () => notify(s.slotId, true);
         const nBtn = document.createElement("button"); nBtn.className = "sub-btn warn"; nBtn.textContent = "結果を一斉通知";
         nBtn.onclick = () => notify(s.slotId, false);
-        div.appendChild(mBtn); div.appendChild(pBtn); div.appendChild(nBtn);
+        div.appendChild(mBtn); div.appendChild(vBtn); div.appendChild(pBtn); div.appendChild(nBtn);
         list.appendChild(div);
       });
-      if (!(r.slots || []).length) list.innerHTML = '<div class="meta">予約枠がありません</div>';
     }
-    $("reloadSlots").addEventListener("click", loadSlots);
+
+    // 結果ボックスを表示して画面内にスクロール
+    function showResult(html) {
+      const box = $("matchResult");
+      box.classList.remove("hidden");
+      box.innerHTML = html;
+      box.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    // グループ一覧をHTMLに整形（カード＋メンバーをチップ表示）
+    function groupsHtml(groups) {
+      return (groups || []).map((g) => {
+        const arrivedSet = (typeof g.arrived === "number");
+        // メンバーは文字列(マッチング直後)か{nickname,checkedIn}(結果確認)のどちらか
+        const mlist = (g.members || []).map((m) => typeof m === "string" ? { nickname: m, checkedIn: false } : m);
+        const chips = mlist.map((m) =>
+          '<span class="chip' + (m.checkedIn ? ' in' : '') + '">' + (m.checkedIn ? "✓ " : "") + m.nickname + '</span>'
+        ).join("");
+        return "<div class='gcard'>" +
+          "<div class='gh'>" + (g.animalEmoji || "") + " " + g.name + "グループ" +
+          (g.stageLabel ? "<span class='gbadge'>" + g.stageLabel + "</span>" : "") + "</div>" +
+          "<div class='gmeta'>📍 " + (g.spot || "場所なし") +
+          (arrivedSet ? "　／　到着 " + g.arrived + "/" + g.total + "人" : "") +
+          "　／　" + (g.members || []).length + "人</div>" +
+          "<div>" + chips + "</div></div>";
+      }).join("");
+    }
 
     async function runMatch(slotId) {
       if (!confirm("この枠でマッチングを実行します。よろしいですか？（再実行すると組み直されます）")) return;
-      const box = $("matchResult"); box.classList.remove("hidden"); box.textContent = "マッチング中…";
+      showResult("マッチング中…");
       const r = await api("runMatching", { slotId });
       if (r.ok) {
-        let txt = "✅ マッチング完了\n参加者: " + r.participantCount + "人 / グループ: " + r.groupCount + "個\n";
-        if (r.unmatchedCount) txt += "不成立: " + r.unmatchedCount + "人（クーポン" + r.couponsIssued + "枚発行）\n";
-        if (r.spotsUnassigned) txt += "⚠️ 集合場所が" + r.spotsUnassigned + "グループ分不足しています\n";
-        (r.groups || []).forEach((g) => { txt += "・" + g.name + "（" + (g.spot || "場所なし") + "）: " + g.members.join("、") + "\n"; });
-        box.textContent = txt;
+        let head = "✅ マッチング完了：参加者 " + r.participantCount + "人 / " + r.groupCount + "グループ<br>";
+        if (r.unmatchedCount) head += "😢 不成立 " + r.unmatchedCount + "人（お詫びクーポン" + r.couponsIssued + "枚発行）<br>";
+        if (r.spotsUnassigned) head += "⚠️ 集合場所が" + r.spotsUnassigned + "グループ分不足しています<br>";
+        showResult(head + groupsHtml(r.groups));
         loadSlots();
-      } else box.textContent = "⚠️ " + (r.error || "失敗");
+      } else showResult("⚠️ " + (r.error || "失敗"));
+    }
+
+    async function viewResult(slotId) {
+      showResult("結果を読み込み中…");
+      const r = await api("getMatchingResult", { slotId });
+      if (!r.ok) { showResult("⚠️ " + (r.error || "失敗")); return; }
+      if (!r.groupCount) { showResult("この枠はまだマッチングされていません。「マッチング実行」を押してください。"); return; }
+      showResult("📋 マッチング結果（" + r.groupCount + "グループ）<br>" + groupsHtml(r.groups));
     }
 
     async function notify(slotId, dry) {
-      const box = $("matchResult"); box.classList.remove("hidden");
       if (!dry && !confirm("このグループ全員にLINEで結果を送信します。送信してよいですか？")) return;
-      box.textContent = dry ? "プレビュー取得中…" : "送信中…";
+      showResult(dry ? "プレビュー取得中…" : "送信中…");
       const r = await api("notifyMatchingResults", dry ? { slotId, dryRun: "1" } : { slotId });
-      if (r.ok && dry) box.textContent = "【プレビュー】対象 " + r.targetCount + "人\n――――\n" + r.sampleMessage;
-      else if (r.ok) box.textContent = "✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗";
-      else box.textContent = "⚠️ " + (r.error || "失敗");
+      if (r.ok && dry) showResult("【プレビュー】対象 " + r.targetCount + "人<br>――――<br>" + (r.sampleMessage || "").replace(/\n/g, "<br>"));
+      else if (r.ok) showResult("✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗");
+      else showResult("⚠️ " + (r.error || "失敗"));
     }
 
     // ----- ③ 集合場所 -----
