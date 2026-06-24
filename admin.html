@@ -21,6 +21,7 @@
       border:none; border-radius:8px; cursor:pointer; margin-top:12px; }
     button.sub-btn { background:#fff; color:var(--green); border:1.5px solid var(--green); margin:4px 4px 0 0; padding:7px 12px; font-size:13px; }
     button.warn { background:var(--accent); }
+    button.sub-btn.danger { color:var(--err); border-color:var(--err); }
     button:disabled { opacity:.5; cursor:default; }
     .status { font-size:13px; margin-top:10px; min-height:18px; white-space:pre-wrap; }
     .ok { color:var(--green); } .ng { color:var(--err); }
@@ -230,7 +231,9 @@
         pBtn.onclick = () => notify(s.slotId, true);
         const nBtn = document.createElement("button"); nBtn.className = "sub-btn warn"; nBtn.textContent = "結果を一斉通知";
         nBtn.onclick = () => notify(s.slotId, false);
-        div.appendChild(mBtn); div.appendChild(vBtn); div.appendChild(pBtn); div.appendChild(nBtn);
+        const dBtn = document.createElement("button"); dBtn.className = "sub-btn danger"; dBtn.textContent = "枠を削除";
+        dBtn.onclick = () => deleteSlot(s);
+        div.appendChild(mBtn); div.appendChild(vBtn); div.appendChild(pBtn); div.appendChild(nBtn); div.appendChild(dBtn);
         list.appendChild(div);
       });
     }
@@ -280,6 +283,19 @@
       if (!r.ok) { showResult("⚠️ " + (r.error || "失敗")); return; }
       if (!r.groupCount) { showResult("この枠はまだマッチングされていません。「マッチング実行」を押してください。"); return; }
       showResult("📋 マッチング結果（" + r.groupCount + "グループ）<br>" + groupsHtml(r.groups));
+    }
+
+    async function deleteSlot(s) {
+      const warn = s.reservedCount > 0
+        ? "⚠️ この枠には予約が" + s.reservedCount + "件あります。予約とマッチング結果も削除されます。\n"
+        : "";
+      if (!confirm(warn + fmtDate(s.date) + " " + s.time + " の枠を削除します。よろしいですか？")) return;
+      showResult("削除中…");
+      const r = await api("deleteSlot", { slotId: s.slotId });
+      if (r.ok) {
+        showResult("🗑 枠を削除しました（予約 " + r.deletedReservations + "件・グループ " + r.deletedGroups + "件も削除）");
+        loadSlots();
+      } else showResult("⚠️ " + (r.error || "失敗"));
     }
 
     async function notify(slotId, dry) {
