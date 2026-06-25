@@ -102,8 +102,21 @@
     .gmember:last-child { border-bottom:none; }
     .gmember .gm-name { font-weight:700; color:var(--ink); font-size:15px; }
     .gmember .gm-topic { font-size:11px; color:var(--sub); }
+    .gmember { cursor:pointer; }
     .gmember.me { background:#f3faf5; border-radius:8px; }
     .gmember.me .gm-name::after { content:" (あなた)"; color:var(--green); font-size:11px; }
+
+    /* メンバープロフィール モーダル */
+    #memberOverlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100;
+      display:flex; align-items:center; justify-content:center; padding:24px; }
+    .member-card { width:300px; background:#fff; border-radius:18px; padding:22px 20px; text-align:center; }
+    .mc-name { font-size:22px; font-weight:800; color:var(--green); margin-bottom:14px; }
+    .mc-row { display:flex; justify-content:space-between; font-size:14px; padding:8px 0; border-bottom:1px solid #f0ece1; }
+    .mc-label { color:var(--sub); font-weight:700; }
+    .mc-detail-label { text-align:left; font-size:12px; color:var(--sub); font-weight:700; margin:14px 0 4px; }
+    .mc-detail { text-align:left; font-size:14px; background:#f3faf5; border-radius:10px; padding:10px 12px; min-height:42px; }
+    .member-card button { margin-top:18px; width:100%; padding:12px; font-size:14px; font-weight:700;
+      color:#fff; background:var(--green); border:none; border-radius:10px; cursor:pointer; }
 
     /* 不成立カード */
     .unmatched-box { background:#fff6f5; border:1.5px solid #f0c9c5; border-radius:var(--radius);
@@ -271,6 +284,8 @@
           </select>
         </div>
         <div class="hint">同じ話題の人と組みやすくなるよ</div>
+        <input type="text" id="topicDetail" maxlength="60" placeholder="もっと詳しく（自由記入・任意）" autocomplete="off" style="margin-top:8px" />
+        <div class="hint">例：「新NISAについて語りたい」「カメラ好きさんと話したい」（60文字まで）</div>
       </div>
       <button type="submit" class="submit" id="regBtn">この内容で登録する</button>
       <button type="button" class="back-btn hidden" id="regBackBtn" style="width:100%;margin-top:10px">戻る</button>
@@ -397,6 +412,18 @@
     <button class="back-btn" id="doneBackBtn">トップに戻る</button>
   </div>
 
+  <!-- メンバープロフィール モーダル -->
+  <div id="memberOverlay" class="hidden">
+    <div class="member-card">
+      <div class="mc-name" id="mcName">—</div>
+      <div class="mc-row"><span class="mc-label">性別</span><span id="mcGender">—</span></div>
+      <div class="mc-row"><span class="mc-label">話したい話題</span><span id="mcTopic">—</span></div>
+      <div class="mc-detail-label">ひとこと</div>
+      <div class="mc-detail" id="mcDetail">—</div>
+      <button id="mcClose">閉じる</button>
+    </div>
+  </div>
+
   <!-- ⑩ シェアカード オーバーレイ -->
   <div id="shareOverlay" class="hidden">
     <div class="share-card" id="shareCard">
@@ -490,6 +517,7 @@
       $("nickname").value = currentUser ? (currentUser.nickname || "") : (profile.displayName || "");
       $("gender").value   = currentUser ? (currentUser.gender || "") : "";
       $("topic").value    = currentUser ? (currentUser.topic || "") : "";
+      $("topicDetail").value = currentUser ? (currentUser.topicDetail || "") : "";
       setStatus("regStatus", "", "");
       $("regBtn").disabled = false;
       showScreen("screen-register");
@@ -506,7 +534,8 @@
         displayName: profile.displayName || "",
         nickname: nickname,
         gender: $("gender").value,
-        topic: $("topic").value
+        topic: $("topic").value,
+        topicDetail: $("topicDetail").value.trim()
       });
       if (r.ok) {
         // 最新のユーザー情報を取り直してホームへ
@@ -721,6 +750,16 @@
       });
     }
 
+    // メンバーのプロフィールを表示
+    function openMemberProfile(m) {
+      $("mcName").textContent = (m.nickname || "") + (m.nickname === (currentUser.nickname || "") ? "（あなた）" : "");
+      $("mcGender").textContent = m.gender || "未設定";
+      $("mcTopic").textContent = m.topic || "未設定";
+      $("mcDetail").textContent = m.topicDetail || "（ひとことの記入はありません）";
+      $("memberOverlay").classList.remove("hidden");
+    }
+    $("mcClose").addEventListener("click", () => $("memberOverlay").classList.add("hidden"));
+
     function renderGroup(g) {
       $("groupName").textContent = g.name + " グループ";
       $("groupSlot").textContent = formatSlot(g.date, g.time);
@@ -740,7 +779,8 @@
         row.className = "gmember" + (isMe ? " me" : "");
         row.innerHTML =
           '<span class="gm-name">' + (m.nickname || "") + '</span>' +
-          '<span class="gm-topic">' + (m.topic || "") + '</span>';
+          '<span class="gm-topic">' + (m.topic || "") + ' ›</span>';
+        row.addEventListener("click", () => openMemberProfile(m)); // タップでプロフィール表示
         box.appendChild(row);
       });
 
