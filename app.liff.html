@@ -275,12 +275,11 @@
         <div class="select-wrap">
           <select id="topic">
             <option value="">選択しない</option>
-            <option value="副業・IT">副業・IT</option>
-            <option value="投資・お金">投資・お金</option>
+            <option value="仕事・副業">仕事・副業</option>
+            <option value="お金・投資">お金・投資</option>
             <option value="趣味・遊び">趣味・遊び</option>
-            <option value="仕事・キャリア">仕事・キャリア</option>
-            <option value="音楽・フェス">音楽・フェス</option>
-            <option value="なんでも">なんでも</option>
+            <option value="生き方・考え方">生き方・考え方</option>
+            <option value="雑談">雑談</option>
           </select>
         </div>
         <div class="hint">同じ話題の人と組みやすくなるよ</div>
@@ -368,6 +367,7 @@
     <div class="reserved hidden" id="reservedBox">
       <div class="tag">✓ 予約済み</div>
       <div class="slot" id="reservedSlot">—</div>
+      <button class="submit" id="rebookBtn" style="margin-bottom:8px">別の日時で予約し直す</button>
       <button class="btn-cancel" id="cancelBtn">予約をキャンセルする</button>
     </div>
 
@@ -438,7 +438,7 @@
       <div class="sc-date" id="scDate"></div>
     </div>
     <div class="share-actions">
-      <button id="xShareBtn">𝕏 でシェア</button>
+      <button id="xShareBtn">リベでつぶやく</button>
       <button id="dlBtn" class="dl">🎁 記念画像をダウンロード</button>
       <button id="closeShareBtn" class="close">閉じる</button>
     </div>
@@ -597,6 +597,7 @@
     // ===== 予約画面 =====
     async function openReserve() {
       setStatus("homeStatus", "", "");
+      switchingReservation = false; // 予約画面に入り直したらリセット
       await renderReserve();
       showScreen("screen-reserve");
     }
@@ -688,11 +689,16 @@
     }
     $("closeShareBtn").addEventListener("click", () => $("shareOverlay").classList.add("hidden"));
 
-    // Xシェア（Web Intent）
-    $("xShareBtn").addEventListener("click", () => {
+    // リベシティのつぶやきへ（文章はクリップボードにコピーして貼り付けやすく）
+    $("xShareBtn").addEventListener("click", async () => {
       const g = growthData; if (!g) return;
-      const text = g.animalEmoji + g.animal + "グループを完成させた！みんなで育てたよ🌱\n#ぼっちthe交流会";
-      window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(text), "_blank");
+      const text = g.animalEmoji + g.animal + "グループを完成させた！みんなで育てたよ🌱 #ぼっちthe交流会";
+      let copied = false;
+      try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
+      if (copied) alert("つぶやき文をコピーしました📋\nリベシティで貼り付けてつぶやいてね！");
+      const url = "https://libecity.com/tweet/all";
+      if (window.liff && liff.openWindow) liff.openWindow({ url: url, external: true });
+      else window.open(url, "_blank");
     });
 
     // 記念画像ダウンロード（canvasでPNG生成）
@@ -833,12 +839,31 @@
       });
     }
 
+    let switchingReservation = false; // 予約変更（取り直し）中フラグ
+
+    // 「別の日時で予約し直す」→ 現在の予約は残したまま日時選択を表示
+    $("rebookBtn").addEventListener("click", async () => {
+      switchingReservation = true;
+      selectedSlotId = null;
+      $("reserveBtn").disabled = true;
+      $("reservedBox").classList.add("hidden");
+      $("chooseBox").classList.remove("hidden");
+      const slotsRes = await api("getSlots");
+      renderSlots(slotsRes.slots || []);
+      setStatus("homeStatus", "別の日時を選んでください（決定すると今の予約は切り替わります）", "");
+    });
+
     $("reserveBtn").addEventListener("click", async () => {
       if (!selectedSlotId) return;
       $("reserveBtn").disabled = true;
       setStatus("homeStatus", "予約中…", "");
+      // 予約変更の場合は、先に今の予約をキャンセルしてから取り直す
+      if (switchingReservation) {
+        await api("cancelReservation", { lineUserId: profile.userId });
+      }
       const r = await api("reserveSlot", { lineUserId: profile.userId, slotId: selectedSlotId });
       if (r.ok) {
+        switchingReservation = false;
         $("doneTitle").textContent = "予約が完了しました";
         $("doneMsg").textContent = formatSlot(r.date, r.time) + "\n当日のグループ分けをお楽しみに！";
         showScreen("screen-done");
