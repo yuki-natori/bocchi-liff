@@ -83,6 +83,19 @@
     .back-link { background:none; border:none; color:var(--green); font-size:14px; font-weight:700;
       cursor:pointer; padding:4px 0; margin-bottom:14px; }
     .screen-title { font-size:18px; font-weight:800; color:var(--green); margin-bottom:16px; }
+    /* 時間帯タブ（複数予約の切り替え）*/
+    .band-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .band-tab { padding:8px 14px; border-radius:99px; border:1.5px solid #d9d4c6; background:#fff;
+      font-size:13px; font-weight:700; color:var(--sub); cursor:pointer; }
+    .band-tab.active { background:var(--green); color:#fff; border-color:var(--green); }
+    /* 予約リスト（予約画面）*/
+    .resv-item { display:flex; justify-content:space-between; align-items:center; background:#fff;
+      border:1px solid #ece8dc; border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; }
+    .resv-item .rtime { font-weight:800; font-size:15px; }
+    .resv-item .rcancel { font-size:12px; font-weight:700; color:var(--err); background:none;
+      border:1px solid var(--err); border-radius:8px; padding:6px 12px; cursor:pointer; }
+    .add-resv-btn { width:100%; padding:14px; font-size:15px; font-weight:800; color:var(--green);
+      background:#fff; border:1.5px dashed var(--green); border-radius:12px; cursor:pointer; margin-bottom:8px; }
     .placeholder { text-align:center; color:var(--sub); font-size:14px; padding:40px 16px;
       background:#fff; border:1px solid #ece8dc; border-radius:var(--radius); }
 
@@ -314,6 +327,14 @@
   <div class="wrap hidden" id="screen-group">
     <button class="back-link" data-back>← メニューに戻る</button>
 
+    <!-- 予約した時間帯の切り替え（複数予約のとき表示）-->
+    <div class="band-tabs hidden" id="bandTabs"></div>
+
+    <!-- 予約なしの案内 -->
+    <div class="placeholder hidden" id="noReserveBox">
+      まだ予約がありません。<br>メニューの「📅 予約」から参加日時を選んでね。
+    </div>
+
     <!-- マッチング後：グループ発表 -->
     <div class="group-box hidden" id="groupBox">
       <div class="lead">🎉 あなたのグループが決まりました</div>
@@ -364,17 +385,19 @@
     <button class="back-link" data-back>← メニューに戻る</button>
     <div class="screen-title">📅 参加予約</div>
 
-    <div class="reserved hidden" id="reservedBox">
-      <div class="tag">✓ 予約済み</div>
-      <div class="slot" id="reservedSlot">—</div>
-      <button class="submit" id="rebookBtn" style="margin-bottom:8px">別の日時で予約し直す</button>
-      <button class="btn-cancel" id="cancelBtn">予約をキャンセルする</button>
+    <!-- 予約済みリスト（複数）＋追加ボタン -->
+    <div id="myReserveBox">
+      <div class="section-title">予約中の時間帯</div>
+      <div id="reserveList"></div>
+      <button class="add-resv-btn" id="addReserveBtn">＋ 別の時間帯を予約する</button>
     </div>
 
-    <div id="chooseBox">
-      <div class="section-title">参加できる日時</div>
+    <!-- 日時選択 -->
+    <div class="hidden" id="chooseBox">
+      <div class="section-title">参加できる日時を選ぶ</div>
       <div id="slotList"></div>
       <button class="submit" id="reserveBtn" disabled>この日時で予約する</button>
+      <button class="back-link" id="chooseBackBtn" style="display:block;margin:10px auto 0">予約一覧に戻る</button>
     </div>
 
     <div class="status" id="homeStatus"></div>
@@ -488,18 +511,19 @@
       const r = await api("getUser", { lineUserId: profile.userId });
       currentUser = r.user;
 
-      // チェックインリンク（?mode=checkin）で開かれたら、先にチェックインを実行
-      const mode = new URLSearchParams(window.location.search).get("mode");
-      if (currentUser && mode === "checkin") {
-        const c = await api("checkIn", { lineUserId: profile.userId });
-        checkinJustDone = c.ok ? c : null;
+      // チェックインリンク（?mode=checkin&slot=…）で開かれたら、その枠をチェックイン
+      const qp = new URLSearchParams(window.location.search);
+      const mode = qp.get("mode");
+      const checkinSlot = qp.get("slot");
+      if (currentUser && mode === "checkin" && checkinSlot) {
+        const c = await api("checkIn", { lineUserId: profile.userId, slotId: checkinSlot });
         if (!c.ok) checkinError = c.error || "チェックインに失敗しました";
       }
 
       if (!currentUser) {
         openRegister(false); // 新規登録
-      } else if (mode === "checkin") {
-        await openGroup(); // チェックインリンク → マイグループ画面へ
+      } else if (mode === "checkin" && checkinSlot) {
+        await openGroup(checkinSlot); // チェックインリンク → その枠のマイグループへ
       } else {
         openMenu();
       }
@@ -555,14 +579,18 @@
     async function openMenu() {
       $("homeName").textContent = (currentUser.nickname || "") + " さん";
       $("homeMeta").textContent = [currentUser.gender, currentUser.topic].filter(Boolean).join("・");
-      // 各メニューの状態ラベルを更新
-      const [mine, myGroup, myCoupons] = await Promise.all([
+      // 各メニューの状態ラベルを更新（予約は複数対応）
+      const [mine, myCoupons] = await Promise.all([
         api("getMyReservation", { lineUserId: profile.userId }),
-        api("getMyGroup", { lineUserId: profile.userId }),
         api("getMyCoupons", { lineUserId: profile.userId })
       ]);
-      $("menuReserveSub").textContent = mine.reservation ? "予約済み" : "未予約・日時を選ぶ";
-      $("menuGroupSub").textContent = myGroup.group ? "グループ発表中！" : (myGroup.unmatched ? "今回は不成立" : "発表前");
+      const resvs = mine.reservations || [];
+      $("menuReserveSub").textContent = resvs.length ? (resvs.length + "件予約中") : "未予約・日時を選ぶ";
+      // グループ状況は予約への書き戻し（groupName/unmatched）から判定
+      const anyGroup = resvs.some((r) => r.groupName);
+      const anyUnmatched = resvs.some((r) => r.unmatched);
+      $("menuGroupSub").textContent = !resvs.length ? "予約してね"
+        : anyGroup ? "グループ発表中！" : anyUnmatched ? "今回は不成立" : "発表前";
       const cn = (myCoupons.coupons || []).length;
       $("menuCouponSub").innerHTML = cn ? '<span class="badge">' + cn + '枚</span>' : "なし";
       showScreen("screen-menu");
@@ -573,50 +601,104 @@
     $("menuProfile").addEventListener("click", () => openRegister(true));
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", openMenu));
 
-    // ===== マイグループ画面 =====
-    async function openGroup() {
+    // ===== マイグループ画面（複数予約対応）=====
+    let currentGroupSlotId = null;
+    let myReservationsCache = [];
+
+    async function openGroup(preferredSlotId) {
       setStatus("groupStatus", "", "");
-      const myGroup = await api("getMyGroup", { lineUserId: profile.userId });
-      $("groupBox").classList.add("hidden");
-      $("growthBox").classList.add("hidden");
-      $("unmatchedBox").classList.add("hidden");
-      $("groupPlaceholder").classList.add("hidden");
+      const mine = await api("getMyReservation", { lineUserId: profile.userId });
+      myReservationsCache = mine.reservations || [];
+      showScreen("screen-group");
+      if (!myReservationsCache.length) {
+        // 予約なし
+        ["groupBox","growthBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
+        $("bandTabs").classList.add("hidden");
+        $("noReserveBox").classList.remove("hidden");
+        return;
+      }
+      $("noReserveBox").classList.add("hidden");
+      // 表示する枠を決定（指定があればそれ、なければ先頭）
+      const exists = myReservationsCache.some((r) => r.slotId === preferredSlotId);
+      currentGroupSlotId = exists ? preferredSlotId : myReservationsCache[0].slotId;
+      renderBandTabs();
+      await renderGroupDetail(currentGroupSlotId);
+    }
+
+    // 予約した時間帯のタブ（2件以上で表示）
+    function renderBandTabs() {
+      const tabs = $("bandTabs");
+      if (myReservationsCache.length <= 1) { tabs.classList.add("hidden"); tabs.innerHTML = ""; return; }
+      tabs.classList.remove("hidden");
+      tabs.innerHTML = "";
+      myReservationsCache.forEach((r) => {
+        const b = document.createElement("button");
+        b.className = "band-tab" + (r.slotId === currentGroupSlotId ? " active" : "");
+        b.textContent = formatSlot(r.date, r.time);
+        b.onclick = async () => { currentGroupSlotId = r.slotId; renderBandTabs(); await renderGroupDetail(r.slotId); };
+        tabs.appendChild(b);
+      });
+    }
+
+    async function renderGroupDetail(slotId) {
+      ["groupBox","growthBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
+      const myGroup = await api("getMyGroup", { lineUserId: profile.userId, slotId: slotId });
       if (myGroup.group) {
         renderGroup(myGroup.group);
         $("groupBox").classList.remove("hidden");
-        await loadGrowth(); // たまごっち
+        await loadGrowth(slotId);
       } else if (myGroup.unmatched) {
         $("unmatchedBox").classList.remove("hidden");
       } else {
         $("groupPlaceholder").classList.remove("hidden");
       }
       if (checkinError) { setStatus("groupStatus", "⚠️ " + checkinError, "ng"); checkinError = null; }
-      showScreen("screen-group");
     }
 
-    // ===== 予約画面 =====
+    // ===== 予約画面（複数予約対応）=====
     async function openReserve() {
       setStatus("homeStatus", "", "");
-      switchingReservation = false; // 予約画面に入り直したらリセット
       await renderReserve();
       showScreen("screen-reserve");
     }
+    // 予約一覧を表示（選択UIは隠す）
     async function renderReserve() {
-      const [mine, slotsRes] = await Promise.all([
-        api("getMyReservation", { lineUserId: profile.userId }),
-        api("getSlots")
-      ]);
-      if (mine.reservation) {
-        $("reservedSlot").textContent = formatSlot(mine.reservation.date, mine.reservation.time);
-        $("reservedBox").classList.remove("hidden");
-        $("cancelBtn").classList.remove("hidden");
-        $("chooseBox").classList.add("hidden");
-      } else {
-        $("reservedBox").classList.add("hidden");
-        $("chooseBox").classList.remove("hidden");
-        renderSlots(slotsRes.slots || []);
+      $("chooseBox").classList.add("hidden");
+      $("myReserveBox").classList.remove("hidden");
+      const mine = await api("getMyReservation", { lineUserId: profile.userId });
+      const resvs = mine.reservations || [];
+      const list = $("reserveList");
+      list.innerHTML = "";
+      if (!resvs.length) {
+        list.innerHTML = '<div class="placeholder">まだ予約がありません</div>';
+        return;
       }
+      resvs.forEach((r) => {
+        const div = document.createElement("div");
+        div.className = "resv-item";
+        div.innerHTML = '<span class="rtime">' + formatSlot(r.date, r.time) + '</span>';
+        const c = document.createElement("button");
+        c.className = "rcancel"; c.textContent = "キャンセル";
+        c.onclick = () => cancelResv(r.slotId);
+        div.appendChild(c);
+        list.appendChild(div);
+      });
     }
+    async function cancelResv(slotId) {
+      if (!confirm("この予約をキャンセルしますか？")) return;
+      const r = await api("cancelReservation", { lineUserId: profile.userId, slotId: slotId });
+      if (r.ok) { setStatus("homeStatus", "キャンセルしました", ""); await renderReserve(); }
+      else setStatus("homeStatus", "キャンセルに失敗：" + (r.error || ""), "ng");
+    }
+    // 「＋別の時間帯を予約する」→ 日時選択を表示
+    $("addReserveBtn").addEventListener("click", async () => {
+      $("myReserveBox").classList.add("hidden");
+      $("chooseBox").classList.remove("hidden");
+      setStatus("homeStatus", "", "");
+      const slotsRes = await api("getSlots");
+      renderSlots(slotsRes.slots || []);
+    });
+    $("chooseBackBtn").addEventListener("click", renderReserve);
 
     // ===== クーポン画面 =====
     async function openCoupon() {
@@ -629,8 +711,8 @@
     // ===== ⑩ グループ成長（たまごっち）=====
     let growthData = null;
 
-    async function loadGrowth() {
-      const r = await api("getGroupGrowth", { lineUserId: profile.userId });
+    async function loadGrowth(slotId) {
+      const r = await api("getGroupGrowth", { lineUserId: profile.userId, slotId: slotId });
       if (r.growth) { growthData = r.growth; renderGrowth(r.growth); $("growthBox").classList.remove("hidden"); }
       else $("growthBox").classList.add("hidden");
     }
@@ -665,7 +747,7 @@
 
     async function toggleMission(index, done, rowEl) {
       if (rowEl) rowEl.style.pointerEvents = "none";
-      const r = await api("toggleMission", { lineUserId: profile.userId, index: index, done: done });
+      const r = await api("toggleMission", { lineUserId: profile.userId, slotId: currentGroupSlotId, index: index, done: done });
       if (r.ok && r.growth) { growthData = r.growth; renderGrowth(r.growth); }
       else if (rowEl) rowEl.style.pointerEvents = "";
     }
@@ -839,48 +921,19 @@
       });
     }
 
-    let switchingReservation = false; // 予約変更（取り直し）中フラグ
-
-    // 「別の日時で予約し直す」→ 現在の予約は残したまま日時選択を表示
-    $("rebookBtn").addEventListener("click", async () => {
-      switchingReservation = true;
-      selectedSlotId = null;
-      $("reserveBtn").disabled = true;
-      $("reservedBox").classList.add("hidden");
-      $("chooseBox").classList.remove("hidden");
-      const slotsRes = await api("getSlots");
-      renderSlots(slotsRes.slots || []);
-      setStatus("homeStatus", "別の日時を選んでください（決定すると今の予約は切り替わります）", "");
-    });
-
+    // 日時を選んで予約（追加）
     $("reserveBtn").addEventListener("click", async () => {
       if (!selectedSlotId) return;
       $("reserveBtn").disabled = true;
       setStatus("homeStatus", "予約中…", "");
-      // 予約変更の場合は、先に今の予約をキャンセルしてから取り直す
-      if (switchingReservation) {
-        await api("cancelReservation", { lineUserId: profile.userId });
-      }
       const r = await api("reserveSlot", { lineUserId: profile.userId, slotId: selectedSlotId });
       if (r.ok) {
-        switchingReservation = false;
-        $("doneTitle").textContent = "予約が完了しました";
-        $("doneMsg").textContent = formatSlot(r.date, r.time) + "\n当日のグループ分けをお楽しみに！";
-        showScreen("screen-done");
+        setStatus("homeStatus", "✅ 予約しました（" + formatSlot(r.date, r.time) + "）", "ok");
+        await renderReserve(); // 予約一覧に戻る（追加された状態）
       } else {
         setStatus("homeStatus", "予約できませんでした：" + (r.error || ""), "ng");
-        await renderReserve();
+        $("reserveBtn").disabled = false;
       }
-    });
-
-    $("cancelBtn").addEventListener("click", async () => {
-      if (!confirm("予約をキャンセルしますか？")) return;
-      $("cancelBtn").disabled = true;
-      setStatus("homeStatus", "キャンセル中…", "");
-      const r = await api("cancelReservation", { lineUserId: profile.userId });
-      $("cancelBtn").disabled = false;
-      if (r.ok) { setStatus("homeStatus", "", ""); await renderReserve(); }
-      else { setStatus("homeStatus", "キャンセルに失敗：" + (r.error || ""), "ng"); }
     });
 
     $("doneBackBtn").addEventListener("click", openMenu);
