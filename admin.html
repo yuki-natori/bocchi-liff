@@ -134,6 +134,28 @@
       <button id="issueCouponBtn">発行する</button>
       <div class="status" id="cpStatus"></div>
     </div>
+
+    <!-- イベント進行（自動アナウンス／不在対応）-->
+    <div class="card">
+      <h2>⑥ イベント進行（自動アナウンス・不在対応）</h2>
+      <div class="sub" style="margin-bottom:10px">
+        当日は<b>1分ごとに自動</b>で「締切→開始/不成立／終了予告／終了」を処理します。<br>
+        下は手動実行・動作テスト用です（時刻を指定すると、その時刻だと仮定して処理します）。
+      </div>
+      <label>対象スロットID</label>
+      <input type="text" id="tickSlot" placeholder="slotId（②の一覧でコピー）" />
+
+      <label style="margin-top:14px">テスト用チェックイン（LINEユーザーIDを入れて押す）</label>
+      <div class="row">
+        <div style="flex:2"><input type="text" id="tickCheckinUid" placeholder="U... または Ud_01 など" /></div>
+        <div style="flex:0"><button id="tickCheckinBtn" class="sub-btn" style="margin-top:0">チェックイン</button></div>
+      </div>
+
+      <label style="margin-top:14px">現在時刻として扱う日時（テスト用・空なら今）</label>
+      <input type="datetime-local" id="tickNow" />
+      <button id="runTickBtn">この枠を進行処理する</button>
+      <div class="status" id="tickStatus"></div>
+    </div>
   </div>
 
   <script>
@@ -429,6 +451,29 @@
       const r = await api("issueCoupon", { lineUserId, amount, reason });
       if (r.ok) { set("cpStatus", "✅ ¥" + r.amount + " クーポンを発行しました", "ok"); }
       else set("cpStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    // ----- ⑥ イベント進行 -----
+    $("tickCheckinBtn").addEventListener("click", async () => {
+      const slotId = $("tickSlot").value.trim();
+      const lineUserId = $("tickCheckinUid").value.trim();
+      if (!slotId || !lineUserId) { set("tickStatus", "スロットIDとユーザーIDを入力してください", "ng"); return; }
+      set("tickStatus", "チェックイン中…", "");
+      const r = await api("checkIn", { lineUserId, slotId }, false); // checkInは公開関数
+      if (r.ok) { set("tickStatus", "✅ チェックイン（到着 " + r.arrived + "/" + r.total + "人）", "ok"); $("tickCheckinUid").value = ""; }
+      else set("tickStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    $("runTickBtn").addEventListener("click", async () => {
+      const slotId = $("tickSlot").value.trim();
+      if (!slotId) { set("tickStatus", "スロットIDを入力してください", "ng"); return; }
+      const nowVal = $("tickNow").value;
+      set("tickStatus", "処理中…", "");
+      const params = { slotId };
+      if (nowVal) params.now = nowVal + "+09:00"; // 日本時間として送る
+      const r = await api("runEventTick", params);
+      if (r.ok) set("tickStatus", "✅ " + r.processedGroups + "グループを処理しました（基準時刻 " + r.at + "）", "ok");
+      else set("tickStatus", "⚠️ " + (r.error || "失敗"), "ng");
     });
 
     // 起動：保存済みキーがあればパネル表示

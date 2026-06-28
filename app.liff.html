@@ -643,7 +643,10 @@
     async function renderGroupDetail(slotId) {
       ["groupBox","growthBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
       const myGroup = await api("getMyGroup", { lineUserId: profile.userId, slotId: slotId });
-      if (myGroup.group) {
+      if (myGroup.group && myGroup.group.status === "failed") {
+        // 不在で不成立 → お詫び案内
+        $("unmatchedBox").classList.remove("hidden");
+      } else if (myGroup.group) {
         renderGroup(myGroup.group);
         $("groupBox").classList.remove("hidden");
         await loadGrowth(slotId);
