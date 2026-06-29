@@ -48,6 +48,19 @@
     .chip { display:inline-block; background:#f3faf5; border:1px solid #dceadf; border-radius:99px;
       padding:3px 10px; margin:2px; font-size:13px; }
     .chip.in { background:#eaf6ef; border-color:var(--green); color:var(--green); font-weight:700; }
+    /* 危険操作の2段階確認モーダル */
+    #confirmOverlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200;
+      display:flex; align-items:center; justify-content:center; padding:24px; }
+    .confirm-card { width:340px; background:#fff; border-radius:14px; padding:22px 20px; }
+    .confirm-card .cc-title { font-size:17px; font-weight:800; color:var(--err); margin-bottom:10px; }
+    .confirm-card .cc-body { font-size:14px; line-height:1.6; margin-bottom:4px; white-space:pre-wrap; }
+    .confirm-card .cc-target { background:#fdf1f0; border:1px solid #f0c9c5; border-radius:8px;
+      padding:8px 12px; font-weight:700; margin:10px 0; text-align:center; }
+    .confirm-card .cc-step { font-size:12px; color:var(--err); min-height:16px; margin-bottom:12px; }
+    .confirm-card .cc-btns { display:flex; gap:10px; }
+    .confirm-card .cc-btns button { flex:1; margin-top:0; }
+    .confirm-card .cc-cancel { background:#ece8dc; color:var(--ink); }
+    .confirm-card .cc-ok { background:var(--err); }
   </style>
 </head>
 <body>
@@ -158,6 +171,20 @@
     </div>
   </div>
 
+  <!-- 危険操作の2段階確認モーダル -->
+  <div id="confirmOverlay" class="hidden">
+    <div class="confirm-card">
+      <div class="cc-title" id="ccTitle">確認</div>
+      <div class="cc-body" id="ccBody"></div>
+      <div class="cc-target" id="ccTarget"></div>
+      <div class="cc-step" id="ccStep"></div>
+      <div class="cc-btns">
+        <button class="cc-cancel" id="ccCancel">やめる</button>
+        <button class="cc-ok" id="ccOk">削除する</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const BASE = "https://asia-northeast1-bocchi-liff-test.cloudfunctions.net";
     const KEY_STORE = "bocchi_admin_key";
@@ -174,6 +201,36 @@
       return data;
     }
     const set = (id, msg, cls) => { const e = $(id); e.textContent = msg; e.className = "status " + (cls || ""); };
+
+    // 危険操作の2段階確認モーダル（対象を明記・赤ボタン・2回押しで実行）
+    function dangerConfirm({ title, body, target, confirmText }) {
+      return new Promise((resolve) => {
+        $("ccTitle").textContent = title || "確認";
+        $("ccBody").textContent = body || "";
+        $("ccTarget").textContent = target || "";
+        $("ccTarget").style.display = target ? "block" : "none";
+        $("ccOk").textContent = confirmText || "削除する";
+        $("ccStep").textContent = "";
+        let armed = false;
+        const overlay = $("confirmOverlay");
+        overlay.classList.remove("hidden");
+        const cleanup = (result) => {
+          overlay.classList.add("hidden");
+          $("ccOk").onclick = null; $("ccCancel").onclick = null;
+          resolve(result);
+        };
+        $("ccCancel").onclick = () => cleanup(false);
+        $("ccOk").onclick = () => {
+          if (!armed) {
+            armed = true;
+            $("ccStep").textContent = "⚠️ 取り消せません。もう一度押すと実行します。";
+            $("ccOk").textContent = "本当に" + (confirmText || "削除する");
+            return;
+          }
+          cleanup(true);
+        };
+      });
+    }
 
     // ----- ログイン -----
     function showPanel() { $("loginWrap").classList.add("hidden"); $("panel").classList.remove("hidden"); loadSlots(); loadSpots(); }
@@ -356,9 +413,15 @@
 
     async function deleteSlot(s) {
       const warn = s.reservedCount > 0
-        ? "⚠️ この枠には予約が" + s.reservedCount + "件あります。予約とマッチング結果も削除されます。\n"
-        : "";
-      if (!confirm(warn + fmtDate(s.date) + " " + s.time + " の枠を削除します。よろしいですか？")) return;
+        ? "この枠には予約が" + s.reservedCount + "件あります。予約とマッチング結果もすべて削除されます。"
+        : "この枠を削除します。";
+      const ok = await dangerConfirm({
+        title: "予約枠を削除",
+        body: warn,
+        target: fmtDate(s.date) + " " + s.time + " の枠",
+        confirmText: "削除する"
+      });
+      if (!ok) return;
       showResult("削除中…");
       const r = await api("deleteSlot", { slotId: s.slotId });
       if (r.ok) {
@@ -411,7 +474,13 @@
     }
     $("cancelSpotEditBtn").addEventListener("click", endSpotEdit);
     async function deleteSpot(s) {
-      if (!confirm(s.label + " を削除しますか？")) return;
+      const ok = await dangerConfirm({
+        title: "集合場所を削除",
+        body: "この集合場所を削除します。よろしいですか？",
+        target: s.label,
+        confirmText: "削除する"
+      });
+      if (!ok) return;
       const r = await api("deleteMeetingSpot", { spotId: s.spotId });
       if (r.ok) { set("spotStatus", "🗑 削除しました：" + s.label, "ok"); loadSpots(); }
       else set("spotStatus", "⚠️ " + (r.error || "失敗"), "ng");

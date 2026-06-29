@@ -107,6 +107,10 @@
     .group-box .gsub { font-size:12px; opacity:.9; margin-bottom:14px; }
     .gspot { background:rgba(255,255,255,.18); border-radius:10px; padding:8px 12px;
       margin-bottom:12px; font-size:15px; font-weight:700; }
+    .gpass { background:rgba(255,255,255,.18); border-radius:10px; padding:8px 12px;
+      margin-bottom:12px; font-size:14px; line-height:1.5; }
+    .gpass .pw { font-size:18px; font-weight:800; }
+    .gpass .pn { display:block; font-size:11px; font-weight:400; opacity:.85; margin-top:2px; }
     .group-members { background:#fff; border-radius:12px; padding:10px; }
     .checkin-status { margin-top:14px; font-size:14px; font-weight:700; }
     .checkin-status .allset { font-size:16px; }
@@ -130,6 +134,21 @@
     .mc-detail { text-align:left; font-size:14px; background:#f3faf5; border-radius:10px; padding:10px 12px; min-height:42px; }
     .member-card button { margin-top:18px; width:100%; padding:12px; font-size:14px; font-weight:700;
       color:#fff; background:var(--green); border:none; border-radius:10px; cursor:pointer; }
+
+    /* 危険操作の2段階確認モーダル */
+    #confirmOverlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:120;
+      display:flex; align-items:center; justify-content:center; padding:24px; }
+    .confirm-card { width:320px; background:#fff; border-radius:18px; padding:22px 20px; }
+    .confirm-card .cc-title { font-size:17px; font-weight:800; color:var(--err); margin-bottom:10px; text-align:center; }
+    .confirm-card .cc-body { font-size:14px; line-height:1.6; color:var(--ink); margin-bottom:6px; }
+    .confirm-card .cc-target { background:#fff6f5; border:1px solid #f0c9c5; border-radius:10px;
+      padding:8px 12px; font-weight:700; margin:10px 0; text-align:center; }
+    .confirm-card .cc-step { font-size:12px; color:var(--sub); text-align:center; margin-bottom:12px; }
+    .confirm-card .cc-btns { display:flex; gap:10px; }
+    .confirm-card .cc-btns button { flex:1; padding:12px; font-size:14px; font-weight:700;
+      border:none; border-radius:10px; cursor:pointer; }
+    .confirm-card .cc-cancel { background:#eee7d6; color:var(--ink); }
+    .confirm-card .cc-ok { background:var(--err); color:#fff; }
 
     /* 不成立カード */
     .unmatched-box { background:#fff6f5; border:1.5px solid #f0c9c5; border-radius:var(--radius);
@@ -341,6 +360,7 @@
       <div class="gname" id="groupName">—</div>
       <div class="gsub" id="groupSlot"></div>
       <div class="gspot hidden" id="groupSpot"></div>
+      <div class="gpass hidden" id="groupPass"></div>
       <div class="group-members" id="groupMembers"></div>
       <div class="checkin-status" id="checkinStatus"></div>
     </div>
@@ -444,6 +464,20 @@
       <div class="mc-detail-label">ひとこと</div>
       <div class="mc-detail" id="mcDetail">—</div>
       <button id="mcClose">閉じる</button>
+    </div>
+  </div>
+
+  <!-- 危険操作の2段階確認モーダル -->
+  <div id="confirmOverlay" class="hidden">
+    <div class="confirm-card">
+      <div class="cc-title" id="ccTitle">確認</div>
+      <div class="cc-body" id="ccBody"></div>
+      <div class="cc-target" id="ccTarget"></div>
+      <div class="cc-step" id="ccStep"></div>
+      <div class="cc-btns">
+        <button class="cc-cancel" id="ccCancel">やめる</button>
+        <button class="cc-ok" id="ccOk">削除する</button>
+      </div>
     </div>
   </div>
 
@@ -682,13 +716,48 @@
         div.innerHTML = '<span class="rtime">' + formatSlot(r.date, r.time) + '</span>';
         const c = document.createElement("button");
         c.className = "rcancel"; c.textContent = "キャンセル";
-        c.onclick = () => cancelResv(r.slotId);
+        c.onclick = () => cancelResv(r.slotId, formatSlot(r.date, r.time));
         div.appendChild(c);
         list.appendChild(div);
       });
     }
-    async function cancelResv(slotId) {
-      if (!confirm("この予約をキャンセルしますか？")) return;
+    // 危険操作の2段階確認モーダル（対象を明記・赤ボタン・2回タップで実行）
+    function dangerConfirm({ title, body, target, confirmText }) {
+      return new Promise((resolve) => {
+        $("ccTitle").textContent = title || "確認";
+        $("ccBody").textContent = body || "";
+        $("ccTarget").textContent = target || "";
+        $("ccTarget").style.display = target ? "block" : "none";
+        $("ccOk").textContent = confirmText || "削除する";
+        $("ccStep").textContent = "";
+        let armed = false;
+        const overlay = $("confirmOverlay");
+        overlay.classList.remove("hidden");
+        const cleanup = (result) => {
+          overlay.classList.add("hidden");
+          $("ccOk").onclick = null; $("ccCancel").onclick = null;
+          resolve(result);
+        };
+        $("ccCancel").onclick = () => cleanup(false);
+        $("ccOk").onclick = () => {
+          if (!armed) {
+            armed = true;
+            $("ccStep").textContent = "⚠️ 取り消せません。もう一度押すと実行します。";
+            $("ccOk").textContent = "本当に" + (confirmText || "削除する");
+            return;
+          }
+          cleanup(true);
+        };
+      });
+    }
+    async function cancelResv(slotId, label) {
+      const ok = await dangerConfirm({
+        title: "予約をキャンセル",
+        body: "次の予約をキャンセルします。よろしいですか？",
+        target: label || "この予約",
+        confirmText: "キャンセルする"
+      });
+      if (!ok) return;
       const r = await api("cancelReservation", { lineUserId: profile.userId, slotId: slotId });
       if (r.ok) { setStatus("homeStatus", "キャンセルしました", ""); await renderReserve(); }
       else setStatus("homeStatus", "キャンセルに失敗：" + (r.error || ""), "ng");
@@ -732,16 +801,19 @@
         $("pDesc").textContent = g.personality.desc;
         pBox.classList.remove("hidden");
       } else pBox.classList.add("hidden");
-      // ミッション
+      // ミッション（解放済みのものだけ表示。時間経過 or 前ミッション達成で1つずつ増える）
       const list = $("missionList");
       list.innerHTML = "";
-      const hatched = g.stage >= 2;
+      const revealed = g.missions.filter((m) => m.revealed);
+      if (!revealed.length) {
+        list.innerHTML = '<div class="placeholder">グループが始まると、最初のミッションが現れます 🐣</div>';
+      }
       g.missions.forEach((m, i) => {
+        if (!m.revealed) return; // 未解放は表示しない
         const row = document.createElement("div");
         row.className = "mission-item" + (m.done ? " done" : "");
         row.innerHTML = '<span class="box">' + (m.done ? "✓" : "") + '</span><span>' + m.name + '</span>';
-        if (hatched) row.addEventListener("click", () => toggleMission(i, !m.done, row));
-        else row.style.opacity = ".5";
+        row.addEventListener("click", () => toggleMission(i, !m.done, row));
         list.appendChild(row);
       });
       // 完成 → シェアボタン
@@ -861,6 +933,15 @@
         spotEl.classList.remove("hidden");
       } else {
         spotEl.classList.add("hidden");
+      }
+      // 合言葉（アイスブレイク用・任意）
+      const passEl = $("groupPass");
+      if (g.passphrase) {
+        passEl.innerHTML = '🔑 合言葉：<span class="pw">' + g.passphrase + '</span>'
+          + '<span class="pn">会えた人と言い合うと打ち解けやすいよ（本人確認には使いません）</span>';
+        passEl.classList.remove("hidden");
+      } else {
+        passEl.classList.add("hidden");
       }
       const box = $("groupMembers");
       box.innerHTML = "";
