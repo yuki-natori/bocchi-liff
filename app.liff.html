@@ -82,6 +82,18 @@
       border-radius:99px; padding:1px 7px; }
     .back-link { background:none; border:none; color:var(--green); font-size:14px; font-weight:700;
       cursor:pointer; padding:4px 0; margin-bottom:14px; }
+    /* 今やることバナー（状態に応じてマイグループ上部に表示） */
+    .action-banner { background:#fff; border:2px solid var(--green); border-radius:var(--radius);
+      padding:14px 16px; margin-bottom:14px; box-shadow:0 2px 10px rgba(47,109,79,.12); }
+    .action-banner .ab-label { font-size:11px; font-weight:700; color:var(--sub); margin-bottom:2px; }
+    .action-banner .ab-title { font-size:16px; font-weight:800; color:var(--green); line-height:1.5; }
+    .action-banner .ab-sub { font-size:12.5px; color:var(--sub); margin-top:4px; line-height:1.6; }
+    .action-banner .ab-btn { width:100%; margin-top:10px; padding:12px; font-size:14px; font-weight:800;
+      color:#fff; background:var(--green); border:none; border-radius:10px; cursor:pointer; }
+    .action-banner .ab-btn:disabled { opacity:.6; }
+    /* 残り時間カウントダウン（たまごっち画面） */
+    .growth-timer { text-align:center; font-size:12.5px; font-weight:700; color:var(--accent); margin-top:6px; }
+    .growth-timer .gt-note { font-size:10.5px; font-weight:500; color:var(--sub); }
     .screen-title { font-size:18px; font-weight:800; color:var(--green); margin-bottom:16px; }
     /* 時間帯タブ（複数予約の切り替え）*/
     .band-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
@@ -351,6 +363,9 @@
     <!-- 予約した時間帯の切り替え（複数予約のとき表示）-->
     <div class="band-tabs hidden" id="bandTabs"></div>
 
+    <!-- 今やることバナー（状態に応じて表示） -->
+    <div class="action-banner hidden" id="actionBanner"></div>
+
     <!-- 予約なしの案内 -->
     <div class="placeholder hidden" id="noReserveBox">
       まだ予約がありません。<br>メニューの「📅 予約」から参加日時を選んでね。
@@ -378,6 +393,7 @@
         <div class="stage-label" id="growthStage">たまご</div>
         <div class="gauge"><div class="gauge-fill" id="growthGauge"></div></div>
         <div class="gauge-pct" id="growthPct">0%</div>
+        <div class="growth-timer hidden" id="growthTimer"></div>
         <div class="personality hidden" id="growthPersonality">
           <span class="p-name" id="pName"></span><span class="p-desc" id="pDesc"></span>
         </div>
@@ -523,6 +539,7 @@
     const SCREENS = ["boot","screen-menu","screen-register","screen-group","screen-reserve","screen-coupon","screen-done"];
     function showScreen(name) {
       SCREENS.forEach(id => { $(id).classList.toggle("hidden", id !== name); });
+      if (name !== "screen-group" && typeof stopTick === "function") stopTick(); // 画面を離れたらカウントダウン停止
       window.scrollTo(0, 0);
     }
     function setStatus(id, m, c) { const e=$(id); e.textContent=m; e.className="status "+(c||""); }
@@ -685,12 +702,14 @@
     }
 
     async function renderGroupDetail(slotId) {
-      ["groupBox","growthBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
+      ["actionBanner","groupBox","growthBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
+      currentGroup = null;
       const myGroup = await api("getMyGroup", { lineUserId: profile.userId, slotId: slotId });
       if (myGroup.group && myGroup.group.status === "failed") {
         // 不在で不成立 → お詫び案内
         $("unmatchedBox").classList.remove("hidden");
       } else if (myGroup.group) {
+        currentGroup = myGroup.group;
         renderGroup(myGroup.group);
         $("groupBox").classList.remove("hidden");
         await loadGrowth(slotId);
@@ -699,7 +718,113 @@
       } else {
         $("groupPlaceholder").classList.remove("hidden");
       }
+      renderActionBanner();
       if (checkinError) { setStatus("groupStatus", "⚠️ " + checkinError, "ng"); checkinError = null; }
+    }
+
+    // ===== 今やることバナー＋カウントダウン =====
+    let currentGroup = null;       // 表示中の枠のグループ情報（getMyGroupの結果）
+    let tickInterval = null;       // カウントダウンのタイマー
+    let autoRefreshedAt = 0;       // お題解放の境界越えで再取得した時刻（連打防止）
+
+    // スロット時間帯の先頭 "HH:MM" → その日のエポックms（JST）
+    function slotStartMs(dateStr, timeStr) {
+      const m = (timeStr || "").match(/(\d{1,2}):(\d{2})/);
+      if (!m || !dateStr) return null;
+      return new Date(dateStr + "T" + String(m[1]).padStart(2, "0") + ":" + m[2] + ":00+09:00").getTime();
+    }
+    function fmtHM(ms) { const d = new Date(ms); return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); }
+    function fmtMMSS(ms) {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    }
+
+    function renderActionBanner() {
+      const box = $("actionBanner");
+      const g = currentGroup;
+      if (!g || g.status === "failed") { box.classList.add("hidden"); return; }
+      const now = Date.now();
+      const startMs = slotStartMs(g.date, g.time);
+      const endMs = g.endsAt ? Date.parse(g.endsAt) : null;
+      let html = "";
+
+      if (g.status === "waiting") {
+        if (!g.checkedIn) {
+          // 開始前・未チェックイン → 集合場所と合言葉、その場でチェックイン
+          html = '<div class="ab-title">⏰ ' + (startMs ? fmtHM(startMs) + 'までに ' : '') + '📍' + (g.spotLabel || "集合場所") + ' へ</div>'
+            + (g.passphrase ? '<div class="ab-sub">合言葉は「' + g.passphrase + '」</div>' : '')
+            + '<button class="ab-btn" id="abCheckinBtn">✋ 到着しました（チェックイン）</button>';
+        } else {
+          // 開始前・チェックイン済み → 待つだけ
+          html = '<div class="ab-title">✅ チェックイン済み</div>'
+            + '<div class="ab-sub">全員そろうと自動でスタートします'
+            + (startMs ? '（遅くとも ' + fmtHM(startMs + 10 * 60000) + ' に開始）' : '') + '</div>';
+        }
+      } else if (g.status === "started") {
+        if (endMs && now >= endMs) {
+          // 終了後 → シェアカード＆ノベルティ案内
+          html = '<div class="ab-title">🎉 交流タイム終了！おつかれさまでした</div>'
+            + '<div class="ab-sub">ノベルティは運営ブースで受け取ってね</div>'
+            + (growthData && growthData.completed ? '<button class="ab-btn" id="abShareBtn">🎁 シェアカードを見る</button>' : '');
+        } else {
+          // 交流中 → 今のお題（解放済みで未達成の最初のもの）
+          const cur = growthData && (growthData.missions || []).find((m) => m.revealed && !m.done);
+          html = cur
+            ? '<div class="ab-label">今のお題</div><div class="ab-title">「' + cur.name + '」</div>'
+            : '<div class="ab-title">🌟 全部のお題をクリア！</div><div class="ab-sub">残りの時間も自由に楽しんでね</div>';
+        }
+      }
+
+      if (!html) { box.classList.add("hidden"); return; }
+      box.innerHTML = html;
+      box.classList.remove("hidden");
+      const cb = $("abCheckinBtn"); if (cb) cb.onclick = doCheckinFromBanner;
+      const sb = $("abShareBtn"); if (sb) sb.onclick = openShareCard;
+    }
+
+    async function doCheckinFromBanner() {
+      const b = $("abCheckinBtn");
+      if (b) { b.disabled = true; b.textContent = "チェックイン中…"; }
+      const r = await api("checkIn", { lineUserId: profile.userId, slotId: currentGroupSlotId });
+      if (r.ok) await renderGroupDetail(currentGroupSlotId);
+      else {
+        setStatus("groupStatus", "⚠️ " + (r.error || "チェックインに失敗しました"), "ng");
+        if (b) { b.disabled = false; b.textContent = "✋ 到着しました（チェックイン）"; }
+      }
+    }
+
+    // カウントダウン（1秒ごと）。お題解放・終了の境界を越えたら自動で再取得して表示を進める。
+    function startTick() { stopTick(); tickInterval = setInterval(tick, 1000); tick(); }
+    function stopTick() { if (tickInterval) { clearInterval(tickInterval); tickInterval = null; } }
+    function tick() {
+      const el = $("growthTimer");
+      const gd = growthData;
+      if (!gd || gd.status !== "started" || !gd.startedAt) { el.classList.add("hidden"); stopTick(); return; }
+      const now = Date.now();
+      const startMs = Date.parse(gd.startedAt);
+      const endMs = gd.endsAt ? Date.parse(gd.endsAt) : startMs + 90 * 60000;
+      if (now >= endMs) {
+        el.textContent = "⏱ 交流タイムは終了しました";
+        el.classList.remove("hidden");
+        renderActionBanner(); // 交流中→終了後にバナーを切り替え
+        stopTick();
+        return;
+      }
+      let html = "⏱ 終了まで " + fmtMMSS(endMs - now);
+      const next = (gd.missions || []).find((m) => !m.revealed);
+      if (next) {
+        const nextMs = startMs + (next.revealAt || 0) * 60000;
+        if (now < nextMs) {
+          html += "　／　次のお題まで " + fmtMMSS(nextMs - now)
+            + '<br><span class="gt-note">前のお題を達成すると早く出るよ</span>';
+        } else if (now - autoRefreshedAt > 15000) {
+          // 解放時刻を越えたのにまだ出ていない → サーバーから取り直す（15秒に1回まで）
+          autoRefreshedAt = now;
+          loadGrowth(currentGroupSlotId).then(renderActionBanner);
+        }
+      }
+      el.innerHTML = html;
+      el.classList.remove("hidden");
     }
 
     // ===== 予約画面（複数予約対応）=====
@@ -795,8 +920,9 @@
 
     async function loadGrowth(slotId) {
       const r = await api("getGroupGrowth", { lineUserId: profile.userId, slotId: slotId });
-      if (r.growth) { growthData = r.growth; renderGrowth(r.growth); $("growthBox").classList.remove("hidden"); }
-      else $("growthBox").classList.add("hidden");
+      growthData = r.growth || null; // 枠切替時に別枠の古いデータを残さない
+      if (r.growth) { renderGrowth(r.growth); $("growthBox").classList.remove("hidden"); }
+      else { $("growthBox").classList.add("hidden"); stopTick(); }
     }
 
     function renderGrowth(g) {
@@ -828,12 +954,13 @@
       });
       // 完成 → シェアボタン
       $("shareBtn").classList.toggle("hidden", !g.completed);
+      startTick(); // 残り時間・次のお題カウントダウン（未開始なら中で自動停止）
     }
 
     async function toggleMission(index, done, rowEl) {
       if (rowEl) rowEl.style.pointerEvents = "none";
       const r = await api("toggleMission", { lineUserId: profile.userId, slotId: currentGroupSlotId, index: index, done: done });
-      if (r.ok && r.growth) { growthData = r.growth; renderGrowth(r.growth); }
+      if (r.ok && r.growth) { growthData = r.growth; renderGrowth(r.growth); renderActionBanner(); }
       else if (rowEl) rowEl.style.pointerEvents = "";
     }
 
