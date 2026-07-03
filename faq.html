@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>よくある質問 | ぼっち the 交流会</title>
+  <meta name="description" content="ぼっち the 交流会 のよくある質問（FAQ）と運営へのお問い合わせ。当日の流れ・集合場所・合言葉・困ったときの対応をまとめています。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #1E3A2A;
+      --ink-soft:   #5C6E62;
+      --paper:      #FBF9F3;
+      --paper-deep: #F3EFE3;
+      --line:       #06C755;
+      --line-dark:  #059A43;
+      --matcha:     #E7F3DF;
+      --yamabuki:   #FFB525;
+      --yamabuki-soft: #FFF3D6;
+      --white:      #ffffff;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --shadow: 0 8px 32px rgba(30,58,42,0.10);
+      --shadow-sm: 0 2px 12px rgba(30,58,42,0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.8;
+      font-size: 16px;
+    }
+
+    h1, h2, h3, .display {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 900;
+      line-height: 1.4;
+      letter-spacing: 0.01em;
+    }
+
+    img, svg { display: block; }
+    a { color: inherit; }
+
+    :focus-visible {
+      outline: 3px solid var(--yamabuki);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ================= HEADER ================= */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(251,249,243,0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(30,58,42,0.08);
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(16px, 4vw, 32px);
+    }
+
+    .logo {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 900;
+      font-size: 18px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .logo em { font-style: normal; color: var(--line-dark); }
+
+    /* ── buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+      cursor: pointer;
+      border: none;
+      line-height: 1.4;
+    }
+
+    .btn-line { background: var(--line); color: #fff; }
+    .btn-line:hover {
+      background: var(--line-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(6,199,85,0.35);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 2px solid rgba(30,58,42,0.25);
+    }
+    .btn-ghost:hover { border-color: var(--ink); background: var(--white); }
+
+    .line-icon { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
+
+    /* ================= PAGE HEAD ================= */
+    .page-head {
+      padding: 116px clamp(16px, 4vw, 32px) 0;
+      background:
+        radial-gradient(circle at 12% 20%, rgba(255,181,37,0.12) 0, transparent 34%),
+        radial-gradient(circle at 88% 60%, rgba(6,199,85,0.10) 0, transparent 38%),
+        var(--paper);
+    }
+    .page-head-inner { max-width: 820px; margin: 0 auto; padding-bottom: 8px; }
+
+    .section-tag {
+      display: inline-block;
+      background: var(--matcha);
+      color: var(--line-dark);
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+
+    .page-head h1 { font-size: clamp(28px, 5vw, 42px); margin-bottom: 14px; }
+    .page-head p { color: var(--ink-soft); font-size: 15.5px; max-width: 34em; }
+
+    /* ================= SECTION ================= */
+    section { padding: clamp(40px, 6vw, 64px) clamp(16px, 4vw, 32px); }
+    .container { max-width: 820px; margin: 0 auto; }
+
+    .cat-title {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 900;
+      font-size: 18px;
+      color: var(--ink);
+      margin: 8px 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cat-title .cat-emoji { font-size: 22px; }
+    .cat-title:not(:first-child) { margin-top: 40px; }
+
+    /* ── FAQ accordion (details/summary) ── */
+    .faq-list { display: flex; flex-direction: column; gap: 12px; }
+
+    details.faq-item {
+      background: var(--white);
+      border: 1.5px solid var(--paper-deep);
+      border-radius: var(--radius-sm);
+      padding: 4px 22px;
+      transition: border-color 0.2s;
+    }
+    details.faq-item[open] { border-color: rgba(6,199,85,0.4); box-shadow: var(--shadow-sm); }
+
+    summary.faq-q {
+      list-style: none;
+      cursor: pointer;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 700;
+      font-size: 15.5px;
+      padding: 16px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    summary.faq-q::-webkit-details-marker { display: none; }
+
+    summary.faq-q::before {
+      content: 'Q';
+      background: var(--ink);
+      color: var(--yamabuki);
+      width: 26px; height: 26px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    summary.faq-q .chev {
+      margin-left: auto;
+      flex-shrink: 0;
+      color: var(--ink-soft);
+      transition: transform 0.2s;
+      font-size: 14px;
+      margin-top: 3px;
+    }
+    details[open] summary.faq-q .chev { transform: rotate(180deg); }
+
+    .faq-a {
+      font-size: 14.5px;
+      color: var(--ink-soft);
+      padding: 0 0 18px 38px;
+      line-height: 1.85;
+    }
+    .faq-a strong { color: var(--line-dark); }
+
+    /* ================= CONTACT ================= */
+    .contact-section { background: var(--paper-deep); }
+
+    .contact-box {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: clamp(28px, 5vw, 40px);
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+    }
+    .contact-box h2 { font-size: clamp(22px, 3.4vw, 28px); margin-bottom: 12px; }
+    .contact-box p { color: var(--ink-soft); font-size: 15px; margin-bottom: 26px; }
+    .contact-box .btn-line { font-size: 16px; padding: 16px 36px; }
+
+    .notice-box {
+      background: var(--yamabuki-soft);
+      border: 1.5px solid rgba(255,181,37,0.5);
+      border-radius: var(--radius-sm);
+      padding: 22px 24px;
+      margin-top: 24px;
+      text-align: left;
+    }
+    .notice-box h4 { font-size: 14.5px; color: #8A5E00; margin-bottom: 10px; }
+    .notice-box ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .notice-box li {
+      font-size: 13.5px;
+      color: #6E4D00;
+      padding-left: 16px;
+      position: relative;
+      line-height: 1.7;
+    }
+    .notice-box li::before { content: '・'; position: absolute; left: 0; }
+
+    /* ================= FOOTER ================= */
+    footer {
+      background: var(--ink);
+      color: rgba(251,249,243,0.6);
+      padding: 48px clamp(16px, 4vw, 32px) 32px;
+    }
+    .footer-inner { max-width: 820px; margin: 0 auto; }
+    .footer-logo {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 900;
+      font-size: 20px;
+      color: var(--paper);
+      margin-bottom: 8px;
+    }
+    .footer-logo em { font-style: normal; color: var(--line); }
+    .footer-tagline { font-size: 13.5px; margin-bottom: 28px; }
+    .footer-links { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 26px; }
+    .footer-links a {
+      color: rgba(251,249,243,0.6);
+      text-decoration: none;
+      font-size: 13.5px;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--paper); }
+    .footer-bottom {
+      border-top: 1px solid rgba(251,249,243,0.1);
+      padding-top: 22px;
+      font-size: 12.5px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header>
+  <a href="index_ver2.html" class="logo">
+    <span class="logo-mark">ぼ</span>
+    ぼっち <em>the</em> 交流会
+  </a>
+  <a href="https://line.me/R/ti/p/@534oibuu" class="btn btn-line" style="padding: 10px 20px; font-size: 14px;">
+    <svg class="line-icon" viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+    運営に連絡
+  </a>
+</header>
+
+<!-- ================= PAGE HEAD ================= -->
+<div class="page-head">
+  <div class="page-head-inner">
+    <span class="section-tag">よくある質問</span>
+    <h1>困ったときは、<br>まずここを見てね</h1>
+    <p>当日の流れや、うまくいかないときの対処をまとめました。ここで解決しない場合は、ページ下の「運営に連絡」からお問い合わせください。</p>
+  </div>
+</div>
+
+<!-- ================= FAQ ================= -->
+<section>
+  <div class="container">
+
+    <!-- 参加・予約について -->
+    <div class="cat-title"><span class="cat-emoji">📝</span>参加・予約について</div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary class="faq-q">参加するにはどうすればいいですか？<span class="chev">▾</span></summary>
+        <div class="faq-a">公式LINEを友だち追加し、ミニアプリで<strong>プロフィール登録</strong>→<strong>参加したい日時を予約</strong>するだけです。当日は会場でチェックインすれば交流がスタートします。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">匿名で参加できますか？<span class="chev">▾</span></summary>
+        <div class="faq-a">はい。<strong>ニックネームで参加でき、本名は不要</strong>です。他の参加者にあなたのLINE IDや本名が表示されることはありません。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">予約のキャンセルはできますか？<span class="chev">▾</span></summary>
+        <div class="faq-a">できます。ミニアプリの「<strong>予約</strong>」から、対象の時間帯をキャンセルできます。キャンセル時は確認画面が出るので、誤操作の心配はありません。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">複数の時間帯に参加できますか？<span class="chev">▾</span></summary>
+        <div class="faq-a">はい。予約画面の「<strong>＋別の時間帯を予約する</strong>」から、複数の回に予約できます。当日は時間帯を切り替えて、それぞれのグループを確認できます。</div>
+      </details>
+    </div>
+
+    <!-- 当日の流れ -->
+    <div class="cat-title"><span class="cat-emoji">🎪</span>当日の流れ</div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary class="faq-q">会場に着いたら何をすればいいですか？<span class="chev">▾</span></summary>
+        <div class="faq-a">グループ発表のLINEメッセージに入っている「<strong>チェックインリンク</strong>」をタップしてください。それだけで受付完了です。グループ全員がそろうと、お知らせが届きます。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">集合場所はどこですか？<span class="chev">▾</span></summary>
+        <div class="faq-a">グループ発表のときに、あなたのグループ専用の集合場所（例：<strong>長テーブル①</strong>）を、LINEのメッセージとミニアプリの「マイグループ」に表示します。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">「合言葉」ってなんですか？<span class="chev">▾</span></summary>
+        <div class="faq-a">グループごとにお配りする<strong>アイスブレイク用の言葉</strong>です。会えた人と言い合うと、打ち解けるきっかけになります。※本人確認のためのものではありません。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">ミッションはなんのためにありますか？<span class="chev">▾</span></summary>
+        <div class="faq-a">会話のきっかけになる<strong>お題</strong>です。時間の経過とともに順番に現れ、みんなでクリアしていくと、グループの<strong>十二支の動物が育ちます</strong>。完成すると記念の完成カードを受け取れます。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">グループの人が時間になっても来ません<span class="chev">▾</span></summary>
+        <div class="faq-a">開始時刻を過ぎると、<strong>実際に集まったメンバーだけで交流を始めます</strong>。来られなかった方は自動的に表示から外れるので、気にせず楽しんでください。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">人数が集まらなかったらどうなりますか？<span class="chev">▾</span></summary>
+        <div class="faq-a">開始から10分後の時点で参加者が3人に満たない場合、そのグループは<strong>不成立</strong>となります。その際は<strong>参加費は全額返金し、お詫びのクーポン</strong>をお送りします。楽しみにされていたのに申し訳ありません。またのご参加をお待ちしています。</div>
+      </details>
+    </div>
+
+    <!-- 困ったとき・安全 -->
+    <div class="cat-title"><span class="cat-emoji">🆘</span>困ったとき・安全について</div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary class="faq-q">ミニアプリがうまく開かない／最新の画面にならない<span class="chev">▾</span></summary>
+        <div class="faq-a">一度LINEのトーク画面に戻り、<strong>開き直して</strong>みてください。多くの場合これで最新の状態になります。それでも解決しないときは、ページ下の「運営に連絡」からお知らせください。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">体調が悪くなった・ケガをしたときは？<span class="chev">▾</span></summary>
+        <div class="faq-a">お急ぎのときは、LINEではなく<strong>会場の救護室・インフォメーションのスタッフに直接お声がけ</strong>ください。LINEは運営が会場対応中で、すぐに気づけないことがあります。</div>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">出会い・恋愛目的のサービスですか？<span class="chev">▾</span></summary>
+        <div class="faq-a">いいえ。参加者同士の<strong>交流支援が目的</strong>で、恋愛・出会い系サービスではありません。ナンパ行為や交際目的での利用は禁止しています。また、18歳未満の方はご利用いただけません。</div>
+      </details>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section class="contact-section">
+  <div class="container">
+    <div class="contact-box">
+      <h2>解決しないときは</h2>
+      <p>公式LINEのトークからお気軽にお問い合わせください。<br>いただいたメッセージには順次お返事します。</p>
+      <a href="https://line.me/R/ti/p/@534oibuu" class="btn btn-line">
+        <svg class="line-icon" viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+        公式LINEで問い合わせる
+      </a>
+      <div class="notice-box">
+        <h4>⚠ お問い合わせの前に</h4>
+        <ul>
+          <li>当日は運営が会場対応中のため、返信が遅れることがあります</li>
+          <li>お急ぎのとき・ケガ・体調不良は、会場の<strong>インフォメーション／救護室</strong>へ直接お声がけください</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">ぼっち <em>the</em> 交流会</div>
+    <div class="footer-tagline">ひとり参加が、いちばん楽しい日になる。</div>
+    <div class="footer-links">
+      <a href="index_ver2.html">ホーム</a>
+      <a href="privacy.html">プライバシーポリシー</a>
+      <a href="terms.html">利用規約</a>
+      <a href="https://line.me/R/ti/p/@534oibuu">運営に連絡</a>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 ぼっち the 交流会 運営：みゃー</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

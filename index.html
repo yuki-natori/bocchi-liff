@@ -3,545 +3,794 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ぼっち the 交流会 | LINEで繋がるイベント交流サービス</title>
-  <meta name="description" content="イベント後のぎこちなさをなくす。4〜5人のグループで、90分間の心地よい交流体験をLINEでお届けします。">
+  <title>ぼっち the 交流会 | ひとり参加が、いちばん楽しい日になる</title>
+  <meta name="description" content="フェス・イベントのひとり参加者同士をLINEがそっと引き合わせる。5人前後の小さなグループで、90分のちょうどいい交流体験を。2027年7月、幕張メッセのお金の勉強フェスで。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --green: #06C755;
-      --green-dark: #05a847;
-      --green-light: #e8faf0;
-      --dark: #1a1a2e;
-      --gray: #6b7280;
-      --light: #f8fafc;
-      --white: #ffffff;
-      --shadow: 0 4px 24px rgba(0,0,0,0.08);
-      --radius: 16px;
+      --ink:        #1E3A2A;
+      --ink-soft:   #5C6E62;
+      --paper:      #FBF9F3;
+      --paper-deep: #F3EFE3;
+      --line:       #06C755;
+      --line-dark:  #059A43;
+      --matcha:     #E7F3DF;
+      --yamabuki:   #FFB525;
+      --yamabuki-soft: #FFF3D6;
+      --white:      #ffffff;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --shadow: 0 8px 32px rgba(30,58,42,0.10);
+      --shadow-sm: 0 2px 12px rgba(30,58,42,0.07);
     }
+
+    html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Noto Sans JP', sans-serif;
-      color: var(--dark);
-      background: var(--white);
-      line-height: 1.7;
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.8;
+      font-size: 16px;
     }
 
-    /* ===== HEADER ===== */
+    h1, h2, h3, .display {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 900;
+      line-height: 1.4;
+      letter-spacing: 0.01em;
+    }
+
+    img, svg { display: block; }
+    a { color: inherit; }
+
+    :focus-visible {
+      outline: 3px solid var(--yamabuki);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ================= HEADER ================= */
     header {
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 100;
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid #e5e7eb;
-      padding: 0 24px;
+      background: rgba(251,249,243,0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(30,58,42,0.08);
       height: 64px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 0 clamp(16px, 4vw, 32px);
     }
 
     .logo {
+      font-family: 'Zen Maru Gothic', sans-serif;
       font-weight: 900;
       font-size: 18px;
-      color: var(--dark);
       text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .logo span { color: var(--green); }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
 
-    nav { display: flex; gap: 32px; align-items: center; }
+    .logo em { font-style: normal; color: var(--line-dark); }
+
+    nav { display: flex; gap: 28px; align-items: center; }
 
     nav a {
       text-decoration: none;
-      color: var(--gray);
+      color: var(--ink-soft);
       font-size: 14px;
       font-weight: 500;
       transition: color 0.2s;
     }
+    nav a:hover { color: var(--ink); }
 
-    nav a:hover { color: var(--dark); }
-
+    /* ── buttons ── */
     .btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 12px 28px;
-      border-radius: 50px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      font-family: 'Zen Maru Gothic', sans-serif;
       font-weight: 700;
       font-size: 15px;
       text-decoration: none;
-      transition: all 0.2s;
+      transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
       cursor: pointer;
       border: none;
+      line-height: 1.4;
     }
 
-    .btn-line {
-      background: var(--green);
-      color: white;
-    }
-
+    .btn-line { background: var(--line); color: #fff; }
     .btn-line:hover {
-      background: var(--green-dark);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(6,199,85,0.35);
+      background: var(--line-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(6,199,85,0.35);
     }
 
-    .btn-outline {
+    .btn-ghost {
       background: transparent;
-      color: var(--green);
-      border: 2px solid var(--green);
+      color: var(--ink);
+      border: 2px solid rgba(30,58,42,0.25);
     }
+    .btn-ghost:hover { border-color: var(--ink); background: var(--white); }
 
-    .btn-outline:hover {
-      background: var(--green-light);
-    }
+    .line-icon { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
 
-    /* LINE icon SVG */
-    .line-icon {
-      width: 20px;
-      height: 20px;
-      fill: white;
-    }
-
-    /* ===== HERO ===== */
+    /* ================= HERO ================= */
     .hero {
-      padding: 120px 24px 80px;
-      text-align: center;
-      background: linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%);
+      padding: 128px clamp(16px, 4vw, 32px) 0;
       position: relative;
       overflow: hidden;
+      background:
+        radial-gradient(circle at 12% 20%, rgba(255,181,37,0.12) 0, transparent 32%),
+        radial-gradient(circle at 88% 70%, rgba(6,199,85,0.10) 0, transparent 36%),
+        var(--paper);
     }
 
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -100px; right: -100px;
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(6,199,85,0.1) 0%, transparent 70%);
-      pointer-events: none;
+    .hero-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: clamp(32px, 5vw, 64px);
+      align-items: center;
+      padding-bottom: 72px;
     }
 
-    .badge {
-      display: inline-block;
-      background: var(--green-light);
-      color: var(--green-dark);
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--yamabuki-soft);
+      color: #9A6A00;
       font-size: 13px;
       font-weight: 700;
-      padding: 6px 16px;
-      border-radius: 50px;
-      margin-bottom: 24px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      margin-bottom: 28px;
     }
 
     .hero h1 {
-      font-size: clamp(32px, 6vw, 60px);
-      font-weight: 900;
-      line-height: 1.25;
+      font-size: clamp(34px, 5.2vw, 56px);
       margin-bottom: 24px;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.005em;
     }
 
-    .hero h1 .accent { color: var(--green); }
-
-    .hero p {
-      font-size: clamp(16px, 2.5vw, 20px);
-      color: var(--gray);
-      max-width: 580px;
-      margin: 0 auto 40px;
+    .hero h1 .marker {
+      background: linear-gradient(transparent 62%, var(--yamabuki-soft) 62%);
+      padding: 0 2px;
     }
 
-    .hero-cta {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
+    .hero h1 .accent { color: var(--line-dark); }
+
+    .hero-lead {
+      font-size: clamp(15px, 1.8vw, 17px);
+      color: var(--ink-soft);
+      margin-bottom: 36px;
+      max-width: 30em;
     }
 
-    .hero-stats {
-      display: flex;
-      justify-content: center;
-      gap: 48px;
-      margin-top: 64px;
-      flex-wrap: wrap;
-    }
+    .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 44px; }
 
-    .stat-item {
-      text-align: center;
-    }
+    .hero-stats { display: flex; gap: 36px; flex-wrap: wrap; }
+
+    .stat-item { display: flex; align-items: baseline; gap: 8px; }
 
     .stat-num {
-      font-size: 36px;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 34px;
       font-weight: 900;
-      color: var(--green);
-      display: block;
+      color: var(--ink);
+    }
+    .stat-num small { font-size: 16px; }
+    .stat-label { font-size: 13px; color: var(--ink-soft); }
+
+    /* ── phone mockup ── */
+    .phone-wrap { display: flex; justify-content: center; position: relative; }
+
+    .phone-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 10% -8% -6% -8%;
+      background: radial-gradient(ellipse at center, rgba(6,199,85,0.13) 0, transparent 65%);
+      z-index: 0;
+      pointer-events: none;
     }
 
-    .stat-label {
-      font-size: 13px;
-      color: var(--gray);
+    .phone {
+      position: relative;
+      z-index: 1;
+      width: min(320px, 84vw);
+      background: var(--ink);
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow: 0 24px 64px rgba(30,58,42,0.28);
     }
 
-    /* ===== SECTION ===== */
-    section {
-      padding: 80px 24px;
+    .phone-screen {
+      background: #8FA4C4;
+      border-radius: 30px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 560px;
     }
 
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    .section-tag {
-      display: inline-block;
-      background: var(--green-light);
-      color: var(--green-dark);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 12px;
-      border-radius: 50px;
-      margin-bottom: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .section-title {
-      font-size: clamp(24px, 4vw, 36px);
-      font-weight: 900;
-      margin-bottom: 16px;
-      line-height: 1.3;
-    }
-
-    .section-desc {
-      color: var(--gray);
-      font-size: 16px;
-      max-width: 600px;
-    }
-
-    .section-header {
-      margin-bottom: 48px;
-    }
-
-    /* ===== PROBLEM ===== */
-    .problem { background: var(--dark); color: white; }
-
-    .problem .section-tag {
-      background: rgba(255,255,255,0.1);
-      color: #9ca3af;
-    }
-
-    .problem .section-title { color: white; }
-    .problem .section-desc { color: #9ca3af; }
-
-    .problem-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
-    }
-
-    .problem-card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: var(--radius);
-      padding: 28px;
-    }
-
-    .problem-card .emoji { font-size: 32px; margin-bottom: 12px; }
-
-    .problem-card h3 {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: white;
-    }
-
-    .problem-card p {
+    .chat-header {
+      background: #2E3A4E;
+      color: #fff;
+      padding: 18px 16px 12px;
       font-size: 14px;
-      color: #9ca3af;
-      line-height: 1.6;
-    }
-
-    /* ===== FEATURES ===== */
-    .features { background: var(--light); }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 24px;
-    }
-
-    .feature-card {
-      background: white;
-      border-radius: var(--radius);
-      padding: 32px 24px;
-      box-shadow: var(--shadow);
-      text-align: center;
-      transition: transform 0.2s;
-    }
-
-    .feature-card:hover { transform: translateY(-4px); }
-
-    .feature-icon {
-      width: 64px;
-      height: 64px;
-      background: var(--green-light);
-      border-radius: 20px;
+      font-weight: 700;
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      margin: 0 auto 20px;
+      gap: 8px;
+      flex-shrink: 0;
     }
 
-    .feature-card h3 {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: 10px;
+    .chat-header .dot { width: 8px; height: 8px; background: var(--line); border-radius: 50%; }
+
+    .chat-body {
+      flex: 1;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
     }
 
-    .feature-card p {
-      font-size: 14px;
-      color: var(--gray);
-      line-height: 1.6;
+    .msg {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: msgIn 0.55s cubic-bezier(.2,.8,.3,1) forwards;
     }
 
-    /* ===== HOW IT WORKS ===== */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0;
-      position: relative;
-    }
+    .msg:nth-of-type(1) { animation-delay: 0.7s; }
+    .msg:nth-of-type(2) { animation-delay: 1.7s; }
+    .msg:nth-of-type(3) { animation-delay: 3.0s; }
 
-    .step {
-      text-align: center;
-      padding: 32px 16px;
-      position: relative;
-    }
+    @keyframes msgIn { to { opacity: 1; transform: translateY(0); } }
 
-    .step:not(:last-child)::after {
-      content: '→';
-      position: absolute;
-      right: -12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 24px;
-      color: var(--green);
-      font-weight: 900;
-    }
-
-    .step-num {
-      width: 56px;
-      height: 56px;
-      background: var(--green);
-      color: white;
+    .avatar {
+      width: 32px; height: 32px;
+      background: var(--matcha);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
-      font-weight: 900;
-      margin: 0 auto 20px;
-    }
-
-    .step h3 {
       font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 8px;
+      flex-shrink: 0;
     }
 
-    .step p {
+    .bubble {
+      background: #fff;
+      border-radius: 4px 16px 16px 16px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      line-height: 1.65;
+      max-width: 230px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .bubble strong { color: var(--line-dark); }
+
+    .bubble .b-title {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 700;
       font-size: 13px;
-      color: var(--gray);
-    }
-
-    /* ===== CTA SECTION ===== */
-    .cta-section {
-      background: linear-gradient(135deg, #06C755, #05a847);
-      color: white;
-      text-align: center;
-      border-radius: 24px;
-      padding: 64px 32px;
-      margin: 0 24px 80px;
-    }
-
-    .cta-section h2 {
-      font-size: clamp(24px, 4vw, 36px);
-      font-weight: 900;
-      margin-bottom: 16px;
-    }
-
-    .cta-section p {
-      font-size: 16px;
-      opacity: 0.9;
-      margin-bottom: 32px;
-    }
-
-    .btn-white {
-      background: white;
-      color: var(--green-dark);
-      font-weight: 900;
-    }
-
-    .btn-white:hover {
-      background: #f0fdf4;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-
-    /* ===== ANIMAL CONCIERGE ===== */
-    .animal-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 16px;
-    }
-
-    .animal-card {
-      background: var(--light);
-      border-radius: var(--radius);
-      padding: 24px 16px;
-      text-align: center;
-      border: 2px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .animal-card:hover {
-      border-color: var(--green);
-      background: var(--green-light);
-    }
-
-    .animal-emoji { font-size: 40px; margin-bottom: 8px; }
-
-    .animal-name {
-      font-size: 14px;
-      font-weight: 700;
       margin-bottom: 4px;
     }
 
-    .animal-desc {
-      font-size: 12px;
-      color: var(--gray);
+    .bubble .b-row { display: flex; gap: 6px; margin-top: 3px; }
+    .bubble .b-key { color: #9aa3ad; flex-shrink: 0; }
+
+    .bubble.celebrate {
+      background: linear-gradient(135deg, #FFF6DF, #FFEFC2);
+      border: 1px solid rgba(255,181,37,0.5);
     }
 
-    /* ===== FAQ ===== */
-    .faq-list { display: flex; flex-direction: column; gap: 16px; }
+    /* ================= ZODIAC PARADE ================= */
+    .parade {
+      overflow: hidden;
+      background: var(--ink);
+      padding: 18px 0;
+      position: relative;
+    }
+
+    .parade-track {
+      display: flex;
+      gap: 40px;
+      width: max-content;
+      animation: parade 36s linear infinite;
+    }
+
+    @keyframes parade { to { transform: translateX(-50%); } }
+
+    .parade-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(251,249,243,0.85);
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .parade-item .p-emoji { font-size: 20px; }
+
+    /* ================= SECTION BASE ================= */
+    section { padding: clamp(64px, 9vw, 104px) clamp(16px, 4vw, 32px); }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    .section-tag {
+      display: inline-block;
+      background: var(--matcha);
+      color: var(--line-dark);
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(25px, 3.8vw, 36px);
+      margin-bottom: 16px;
+    }
+
+    .section-desc { color: var(--ink-soft); font-size: 15.5px; max-width: 36em; }
+
+    .section-header { margin-bottom: 52px; }
+
+    /* ================= EVENT BANNER ================= */
+    .event-banner {
+      background: var(--paper-deep);
+      padding: clamp(40px, 6vw, 56px) clamp(16px, 4vw, 32px);
+    }
+
+    .event-card {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: var(--radius);
+      padding: clamp(28px, 4vw, 44px);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .event-card .ev-tag {
+      display: inline-block;
+      background: rgba(255,181,37,0.16);
+      color: var(--yamabuki);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .event-card h3 { font-size: clamp(19px, 2.6vw, 24px); margin-bottom: 12px; color: var(--paper); }
+
+    .event-meta { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: rgba(251,249,243,0.8); }
+    .event-meta .em-row { display: flex; gap: 10px; }
+    .event-meta .em-key { color: var(--yamabuki); font-weight: 700; min-width: 44px; }
+
+    .event-emoji { font-size: clamp(48px, 8vw, 72px); text-align: center; }
+
+    /* ================= PROBLEM ================= */
+    .problem { background: var(--ink); color: var(--paper); }
+
+    .problem .section-tag { background: rgba(255,181,37,0.16); color: var(--yamabuki); }
+    .problem .section-desc { color: rgba(251,249,243,0.65); }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .thought {
+      background: rgba(251,249,243,0.06);
+      border: 1px solid rgba(251,249,243,0.12);
+      border-radius: var(--radius);
+      padding: 30px 26px 26px;
+      position: relative;
+    }
+
+    .thought::before {
+      content: '・・・';
+      position: absolute;
+      top: -14px; left: 26px;
+      background: var(--yamabuki);
+      color: var(--ink);
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 2px;
+      padding: 3px 12px;
+      border-radius: 999px;
+      line-height: 1.4;
+    }
+
+    .thought h3 {
+      font-size: 17px;
+      margin-bottom: 10px;
+      color: var(--paper);
+    }
+
+    .thought p { font-size: 14px; color: rgba(251,249,243,0.66); line-height: 1.75; }
+
+    /* ================= FEATURES ================= */
+    .features { background: var(--paper-deep); }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 22px;
+    }
+
+    .feature-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 30px 26px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+
+    .feature-icon {
+      width: 52px; height: 52px;
+      background: var(--matcha);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .feature-card h3 { font-size: 16.5px; margin-bottom: 6px; }
+    .feature-card p { font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+
+    /* ================= STEPS ================= */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 18px;
+    }
+
+    .step {
+      background: var(--white);
+      border: 1.5px solid var(--paper-deep);
+      border-radius: var(--radius);
+      padding: 30px 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .step-num {
+      width: 48px; height: 48px;
+      background: var(--ink);
+      color: var(--yamabuki);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 20px;
+      font-weight: 900;
+      margin: 0 auto 18px;
+    }
+
+    .step h3 { font-size: 15.5px; margin-bottom: 8px; }
+    .step p { font-size: 13px; color: var(--ink-soft); line-height: 1.65; }
+
+    /* ================= GROWTH (たまごっち) ================= */
+    .growth { background: var(--ink); color: var(--paper); }
+    .growth .section-tag { background: rgba(255,181,37,0.16); color: var(--yamabuki); }
+    .growth .section-desc { color: rgba(251,249,243,0.68); }
+
+    .growth-inner {
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: clamp(28px, 5vw, 56px);
+      align-items: center;
+    }
+
+    /* たまごっち風パネル */
+    .tama {
+      background: linear-gradient(160deg, #2C4A38, #223A2C);
+      border: 1px solid rgba(251,249,243,0.14);
+      border-radius: 28px;
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow: inset 0 2px 20px rgba(0,0,0,0.2);
+    }
+
+    .tama-sky {
+      background: rgba(251,249,243,0.06);
+      border-radius: 18px;
+      padding: 24px 0 18px;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tama-cloud { position: absolute; font-size: 16px; opacity: 0.5; }
+    .tama-cloud.c1 { top: 14px; left: 22px; }
+    .tama-cloud.c2 { top: 26px; right: 26px; }
+
+    .tama-animal {
+      font-size: 60px;
+      display: inline-block;
+      animation: hop 1.4s ease-in-out infinite;
+    }
+    @keyframes hop {
+      0%, 100% { transform: translateY(0); }
+      30%      { transform: translateY(-12px); }
+      45%      { transform: translateY(0); }
+    }
+
+    .tama-ground {
+      height: 3px;
+      width: 70%;
+      margin: 6px auto 0;
+      background: rgba(251,249,243,0.25);
+      border-radius: 3px;
+    }
+
+    .tama-level { font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--paper); }
+
+    .tama-gauge {
+      height: 10px;
+      background: rgba(251,249,243,0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .tama-gauge span {
+      display: block;
+      height: 100%;
+      width: 66%;
+      background: linear-gradient(90deg, var(--line), var(--yamabuki));
+      border-radius: 999px;
+    }
+
+    .tama-personality {
+      font-size: 12.5px;
+      color: var(--yamabuki);
+      font-weight: 700;
+    }
+
+    /* 成長ステップ */
+    .growth-stages {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .g-stage { text-align: center; flex: 1; min-width: 60px; }
+    .g-stage .g-emoji { font-size: 30px; }
+    .g-stage .g-name { font-size: 11.5px; color: rgba(251,249,243,0.75); margin-top: 4px; }
+    .g-arrow { color: rgba(251,249,243,0.4); font-size: 18px; flex-shrink: 0; }
+
+    .mission-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .mission {
+      background: rgba(251,249,243,0.06);
+      border: 1px solid rgba(251,249,243,0.12);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 13.5px;
+    }
+    .mission .m-check {
+      width: 20px; height: 20px;
+      border-radius: 6px;
+      background: var(--line);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .mission .m-time { color: var(--yamabuki); font-weight: 700; font-size: 11.5px; }
+
+    /* ================= ZODIAC GRID ================= */
+    .zodiac-section { background: var(--paper-deep); }
+
+    .animal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .animal-card {
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      padding: 22px 14px;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .animal-card:hover { border-color: var(--yamabuki); transform: translateY(-3px); }
+
+    .animal-emoji { font-size: 36px; margin-bottom: 8px; }
+    .animal-name { font-family: 'Zen Maru Gothic', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .animal-desc { font-size: 11.5px; color: var(--ink-soft); line-height: 1.55; }
+
+    /* ================= CTA ================= */
+    .cta-section {
+      margin: 0 clamp(16px, 4vw, 32px) clamp(64px, 9vw, 104px);
+    }
+
+    .cta-box {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, #0E8C46, var(--line));
+      color: #fff;
+      text-align: center;
+      border-radius: 28px;
+      padding: clamp(48px, 7vw, 72px) 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 240px; height: 240px;
+      background: radial-gradient(circle, rgba(255,255,255,0.16) 0, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-box h2 { font-size: clamp(24px, 3.6vw, 34px); margin-bottom: 14px; }
+    .cta-box p { font-size: 15.5px; opacity: 0.92; margin-bottom: 30px; }
+
+    .btn-white {
+      background: #fff;
+      color: var(--line-dark);
+      font-weight: 900;
+      padding: 16px 36px;
+      font-size: 16px;
+    }
+    .btn-white:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+    }
+
+    /* ================= FAQ ================= */
+    .faq-list { display: flex; flex-direction: column; gap: 14px; }
 
     .faq-item {
-      background: var(--light);
-      border-radius: var(--radius);
-      padding: 24px;
+      background: var(--white);
+      border: 1.5px solid var(--paper-deep);
+      border-radius: var(--radius-sm);
+      padding: 22px 24px;
     }
 
     .faq-q {
+      font-family: 'Zen Maru Gothic', sans-serif;
       font-weight: 700;
-      font-size: 16px;
+      font-size: 15.5px;
       margin-bottom: 10px;
       display: flex;
       gap: 12px;
+      align-items: flex-start;
     }
 
     .faq-q::before {
       content: 'Q';
-      background: var(--green);
-      color: white;
-      width: 28px;
-      height: 28px;
+      background: var(--ink);
+      color: var(--yamabuki);
+      width: 26px; height: 26px;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
       flex-shrink: 0;
+      margin-top: 2px;
     }
 
-    .faq-a {
-      font-size: 15px;
-      color: var(--gray);
-      padding-left: 40px;
-    }
+    .faq-a { font-size: 14.5px; color: var(--ink-soft); padding-left: 38px; line-height: 1.8; }
 
-    /* ===== OPERATOR ===== */
+    /* ================= OPERATOR ================= */
+    .operator-section { background: var(--paper-deep); }
+
     .operator-box {
-      background: var(--light);
+      background: var(--white);
       border-radius: var(--radius);
-      padding: 40px;
+      padding: 36px;
       max-width: 600px;
+      box-shadow: var(--shadow-sm);
     }
 
     .operator-box h3 {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 2px solid #e5e7eb;
+      font-size: 18px;
+      margin-bottom: 22px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--paper-deep);
     }
 
     .operator-row {
       display: flex;
       gap: 16px;
       padding: 12px 0;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 15px;
+      border-bottom: 1px solid var(--paper-deep);
+      font-size: 14.5px;
     }
 
-    .operator-label {
-      min-width: 120px;
-      color: var(--gray);
-      font-weight: 500;
-    }
+    .operator-label { min-width: 120px; color: var(--ink-soft); font-weight: 500; }
+    .operator-value a { color: var(--line-dark); }
 
-    .operator-value { color: var(--dark); }
-
-    /* ===== NOTICE ===== */
     .notice-box {
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      border-radius: var(--radius);
+      background: var(--yamabuki-soft);
+      border: 1.5px solid rgba(255,181,37,0.5);
+      border-radius: var(--radius-sm);
       padding: 24px;
-      margin-top: 32px;
+      margin-top: 28px;
+      max-width: 600px;
     }
 
-    .notice-box h4 {
-      font-size: 15px;
-      font-weight: 700;
-      color: #c2410c;
-      margin-bottom: 10px;
-    }
+    .notice-box h4 { font-size: 14.5px; color: #8A5E00; margin-bottom: 10px; }
 
-    .notice-box ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .notice-box ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
 
     .notice-box li {
-      font-size: 14px;
-      color: #7c3d12;
+      font-size: 13.5px;
+      color: #6E4D00;
       padding-left: 16px;
       position: relative;
+      line-height: 1.7;
     }
+    .notice-box li::before { content: '・'; position: absolute; left: 0; }
 
-    .notice-box li::before {
-      content: '・';
-      position: absolute;
-      left: 0;
-    }
-
-    /* ===== FOOTER ===== */
+    /* ================= FOOTER ================= */
     footer {
-      background: var(--dark);
-      color: #9ca3af;
-      padding: 48px 24px 32px;
+      background: var(--ink);
+      color: rgba(251,249,243,0.6);
+      padding: 56px clamp(16px, 4vw, 32px) 32px;
     }
 
-    .footer-inner {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
+    .footer-inner { max-width: 1000px; margin: 0 auto; }
 
     .footer-top {
       display: flex;
@@ -549,74 +798,87 @@
       align-items: flex-start;
       flex-wrap: wrap;
       gap: 32px;
-      margin-bottom: 40px;
+      margin-bottom: 44px;
     }
 
     .footer-logo {
+      font-family: 'Zen Maru Gothic', sans-serif;
       font-weight: 900;
       font-size: 20px;
-      color: white;
+      color: var(--paper);
       margin-bottom: 8px;
     }
+    .footer-logo em { font-style: normal; color: var(--line); }
 
-    .footer-logo span { color: var(--green); }
+    .footer-tagline { font-size: 13.5px; }
 
-    .footer-tagline {
-      font-size: 14px;
-      color: #6b7280;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
+    .footer-links { display: flex; gap: 22px; flex-wrap: wrap; }
 
     .footer-links a {
-      color: #9ca3af;
+      color: rgba(251,249,243,0.6);
       text-decoration: none;
-      font-size: 14px;
+      font-size: 13.5px;
       transition: color 0.2s;
     }
-
-    .footer-links a:hover { color: white; }
+    .footer-links a:hover { color: var(--paper); }
 
     .footer-bottom {
-      border-top: 1px solid rgba(255,255,255,0.08);
+      border-top: 1px solid rgba(251,249,243,0.1);
       padding-top: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       gap: 16px;
+      font-size: 12.5px;
     }
 
-    .footer-bottom p { font-size: 13px; }
+    .footer-bottom a { color: rgba(251,249,243,0.5); font-size: 12.5px; text-decoration: none; }
+    .footer-bottom a:hover { color: var(--paper); }
 
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 768px) {
+    /* ── scroll reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.is-in { opacity: 1; transform: none; }
+
+    /* ================= RESPONSIVE ================= */
+    @media (max-width: 860px) {
       nav { display: none; }
+      .hero-inner { grid-template-columns: 1fr; padding-bottom: 56px; }
+      .phone-screen { height: 480px; }
+      .hero-stats { gap: 24px; }
+      .event-card { grid-template-columns: 1fr; text-align: center; }
+      .event-meta .em-row { justify-content: center; }
+      .growth-inner { grid-template-columns: 1fr; }
+    }
 
-      .step:not(:last-child)::after { display: none; }
-
-      .operator-row { flex-direction: column; gap: 4px; }
-
-      .hero-stats { gap: 32px; }
-
-      .cta-section { margin: 0 0 60px; border-radius: 0; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .msg { animation: none; opacity: 1; transform: none; }
+      .parade-track { animation: none; }
+      .tama-animal { animation: none; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .btn, .feature-card, .animal-card { transition: none; }
     }
   </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- ================= HEADER ================= -->
 <header>
-  <a href="/" class="logo">ぼっち <span>the</span> 交流会</a>
+  <a href="/" class="logo">
+    <span class="logo-mark">ぼ</span>
+    ぼっち <em>the</em> 交流会
+  </a>
   <nav>
     <a href="#features">特徴</a>
     <a href="#howto">使い方</a>
+    <a href="#growth">育成</a>
+    <a href="#zodiac">グループ</a>
     <a href="#faq">よくある質問</a>
-    <a href="#operator">運営情報</a>
   </nav>
   <a href="#line-register" class="btn btn-line" style="padding: 10px 20px; font-size: 14px;">
     <svg class="line-icon" viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
@@ -624,232 +886,419 @@
   </a>
 </header>
 
-<!-- HERO -->
+<!-- ================= HERO ================= -->
 <section class="hero">
-  <div class="badge">2027年 サービス開始予定</div>
-  <h1>
-    「知り合い以上、<br>
-    友人未満」を<br>
-    <span class="accent">卒業しよう。</span>
-  </h1>
-  <p>イベントで出会った人と、もっと話したかった。<br>そんな気持ちに応える、LINEで完結する交流支援サービス。</p>
-  <div class="hero-cta">
-    <a href="#line-register" class="btn btn-line">
-      <svg class="line-icon" viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.30-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-      LINEで友達登録する
-    </a>
-    <a href="#features" class="btn btn-outline">サービスを詳しく見る</a>
-  </div>
-  <div class="hero-stats">
-    <div class="stat-item">
-      <span class="stat-num">90<small style="font-size:18px">分</small></span>
-      <span class="stat-label">1回の交流時間</span>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-badge">🎪 お金の勉強フェス2027（幕張メッセ）で開催</div>
+      <h1>
+        ひとりで来た日が、<br>
+        <span class="marker">いちばん</span>楽しかった<br>
+        <span class="accent">日になる。</span>
+      </h1>
+      <p class="hero-lead">
+        フェスのひとり参加者同士を、LINEがそっと引き合わせる。
+        5人前後の小さなグループで、90分のちょうどいい交流を。
+        専用アプリのダウンロードは不要です。
+      </p>
+      <div class="hero-cta">
+        <a href="#line-register" class="btn btn-line">
+          <svg class="line-icon" viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+          LINEで友達登録する
+        </a>
+        <a href="#howto" class="btn btn-ghost">使い方を見る</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-num">90<small>分</small></span>
+          <span class="stat-label">1回の交流時間</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">5<small>人前後</small></span>
+          <span class="stat-label">少人数グループ</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">DL<small>不要</small></span>
+          <span class="stat-label">LINEで完結</span>
+        </div>
+      </div>
     </div>
-    <div class="stat-item">
-      <span class="stat-num">4〜5<small style="font-size:18px">人</small></span>
-      <span class="stat-label">少人数グループ</span>
+
+    <!-- phone mockup : マッチングが届く瞬間 -->
+    <div class="phone-wrap" aria-hidden="true">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="chat-header"><span class="dot"></span> ぼっち the 交流会</div>
+          <div class="chat-body">
+            <div class="msg">
+              <div class="avatar">🐰</div>
+              <div class="bubble">マッチングが完了したよ🎉</div>
+            </div>
+            <div class="msg">
+              <div class="avatar">🐰</div>
+              <div class="bubble">
+                <div class="b-title">あなたは<strong>【うさぎグループ】</strong>だよ😊</div>
+                <div class="b-row"><span class="b-key">日時</span><span>14:25〜</span></div>
+                <div class="b-row"><span class="b-key">集合</span><span>長テーブル①</span></div>
+                <div class="b-row"><span class="b-key">合言葉</span><span>「うさぎ、ですか?」</span></div>
+              </div>
+            </div>
+            <div class="msg">
+              <div class="avatar">🐰</div>
+              <div class="bubble celebrate">✨ 全員集合！<br>まずは「今日ここに来た理由」を話してみよう</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- PROBLEM -->
+<!-- ================= ZODIAC PARADE ================= -->
+<div class="parade" aria-hidden="true">
+  <div class="parade-track">
+    <span class="parade-item"><span class="p-emoji">🐭</span>子グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐮</span>丑グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐯</span>寅グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐰</span>卯グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐉</span>辰グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐍</span>巳グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐴</span>午グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐑</span>未グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐵</span>申グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐔</span>酉グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐶</span>戌グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐗</span>亥グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐭</span>子グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐮</span>丑グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐯</span>寅グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐰</span>卯グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐉</span>辰グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐍</span>巳グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐴</span>午グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐑</span>未グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐵</span>申グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐔</span>酉グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐶</span>戌グループ</span>
+    <span class="parade-item"><span class="p-emoji">🐗</span>亥グループ</span>
+  </div>
+</div>
+
+<!-- ================= EVENT BANNER ================= -->
+<div class="event-banner">
+  <div class="event-card reveal">
+    <div>
+      <span class="ev-tag">初開催イベント</span>
+      <h3>リベ大 お金の勉強フェス2027 に登場予定</h3>
+      <div class="event-meta">
+        <div class="em-row"><span class="em-key">会期</span><span>2027年7月2日(金)〜4日(日)</span></div>
+        <div class="em-row"><span class="em-key">会場</span><span>幕張メッセ 国際展示場 4・5・6ホール</span></div>
+        <div class="em-row"><span class="em-key">参加</span><span>会期中、ひとり参加の方ならどなたでも</span></div>
+      </div>
+    </div>
+    <div class="event-emoji" aria-hidden="true">🎪</div>
+  </div>
+</div>
+
+<!-- ================= PROBLEM ================= -->
 <section class="problem" id="problem">
   <div class="container">
-    <div class="section-header">
-      <span class="section-tag">こんな経験ありませんか？</span>
-      <h2 class="section-title" style="color:white">イベント後、<br>せっかくの出会いが消えていく</h2>
-      <p class="section-desc">一緒にイベントを楽しんだのに、終わった後は疎遠に。そんな経験に心当たりはありませんか？</p>
+    <div class="section-header reveal">
+      <span class="section-tag">ひとり参加のホンネ</span>
+      <h2 class="section-title">会場に着いた。<br>さて、誰と話そう……？</h2>
+      <p class="section-desc">興味のあるイベントには行きたい。でも、ひとりだとちょっと心細い。そんな気持ち、心当たりはありませんか？</p>
     </div>
     <div class="problem-grid">
-      <div class="problem-card">
-        <div class="emoji">😶</div>
+      <div class="thought reveal">
         <h3>話しかけるきっかけがない</h3>
-        <p>イベントでは盛り上がったのに、終わった後は誰も話しかけてこない。どうしたらいいかわからない。</p>
+        <p>まわりは盛り上がっているのに、輪に入るタイミングがつかめない。気づけばスマホを眺めている。</p>
       </div>
-      <div class="problem-card">
-        <div class="emoji">😟</div>
+      <div class="thought reveal">
         <h3>大人数だと発言しづらい</h3>
-        <p>大勢の交流会では目立てず、結局知らない人と話せないまま終わってしまう。</p>
+        <p>大きな交流会では目立てず、結局誰とも話せないまま終わってしまう。</p>
       </div>
-      <div class="problem-card">
-        <div class="emoji">😔</div>
-        <h3>SNSで繋がっても続かない</h3>
-        <p>フォローし合っても会話が続かない。イベント限りの関係で終わってしまいがち。</p>
+      <div class="thought reveal">
+        <h3>何を話せばいいか分からない</h3>
+        <p>せっかく話しかけても、会話が続かない。沈黙が気まずくて、距離を縮められないまま。</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- FEATURES -->
+<!-- ================= FEATURES ================= -->
 <section class="features" id="features">
   <div class="container">
-    <div class="section-header">
+    <div class="section-header reveal">
       <span class="section-tag">サービスの特徴</span>
-      <h2 class="section-title">「ぼっち the 交流会」が<br>選ばれる4つの理由</h2>
+      <h2 class="section-title">「ぼっち the 交流会」が<br>選ばれる理由</h2>
       <p class="section-desc">LINEだけで完結。難しい操作は一切不要。心地よい交流体験をデザインしました。</p>
     </div>
     <div class="features-grid">
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">👥</div>
-        <h3>少人数グループで<br>話しやすい</h3>
-        <p>4〜5人の少人数グループだから、全員と自然に会話できる。大人数の交流会とは違う安心感。</p>
+        <div>
+          <h3>5人前後の少人数グループ</h3>
+          <p>基本5人の少人数グループだから、全員と自然に会話できる。大人数の交流会とは違う安心感があります。</p>
+        </div>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">🦁</div>
-        <h3>アニマルコンシェルジュが<br>サポート</h3>
-        <p>各グループに専任のコンシェルジュが付いて、会話のきっかけをそっと作ってくれます。</p>
+      <div class="feature-card reveal">
+        <div class="feature-icon">💬</div>
+        <div>
+          <h3>会話のお題が届く</h3>
+          <p>「今日ここに来た理由」など、時間に合わせてお題が届きます。何を話すか迷わず、自然と会話が弾みます。</p>
+        </div>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal">
+        <div class="feature-icon">🥚</div>
+        <div>
+          <h3>グループで十二支を育てる</h3>
+          <p>お題をクリアするたびに、グループの動物が成長。共通のゴールがあるから、初対面でも一体感が生まれます。</p>
+        </div>
+      </div>
+      <div class="feature-card reveal">
         <div class="feature-icon">🎭</div>
-        <h3>匿名で参加できる</h3>
-        <p>登録は匿名OK。好きな表示名で参加できるから、プライバシーを守りながら自由に交流できます。</p>
+        <div>
+          <h3>匿名で参加できる</h3>
+          <p>登録は匿名OK。好きなニックネームで参加できるから、プライバシーを守りながら自由に交流できます。</p>
+        </div>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">⏰</div>
-        <h3>ちょうどいい90分</h3>
-        <p>長すぎず短すぎない90分間の体験設計。疲れずに充実した時間を過ごせます。</p>
-      </div>
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">📱</div>
-        <h3>LINEで完結</h3>
-        <p>専用アプリのダウンロード不要。普段使いのLINEから、いつでも簡単に参加できます。</p>
+        <div>
+          <h3>LINEで完結</h3>
+          <p>専用アプリのダウンロード不要。普段使いのLINEから、登録・予約・当日の案内まですべて完結します。</p>
+        </div>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">🎁</div>
-        <h3>参加後にノベルティ<br>プレゼント</h3>
-        <p>交流会終了後、参加者全員にオリジナルノベルティをプレゼント。思い出に残る体験を。</p>
+        <div>
+          <h3>参加後にノベルティ</h3>
+          <p>交流会終了後、運営ブースでオリジナルノベルティをプレゼント。思い出に残る体験をお持ち帰りください。</p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
+<!-- ================= HOW IT WORKS ================= -->
 <section id="howto">
   <div class="container">
-    <div class="section-header">
+    <div class="section-header reveal">
       <span class="section-tag">使い方</span>
-      <h2 class="section-title">たった4ステップで<br>交流スタート</h2>
+      <h2 class="section-title">登録から交流まで、<br>かんたん5ステップ</h2>
     </div>
     <div class="steps">
-      <div class="step">
+      <div class="step reveal">
         <div class="step-num">1</div>
         <h3>LINE友達登録</h3>
-        <p>公式LINEアカウントを友達追加するだけ</p>
+        <p>公式LINEを友達追加してミニアプリを開く</p>
       </div>
-      <div class="step">
+      <div class="step reveal">
         <div class="step-num">2</div>
-        <h3>ユーザー登録</h3>
-        <p>ニックネーム・性別・アイコン写真を設定</p>
+        <h3>プロフィール登録</h3>
+        <p>ニックネーム・話したい話題などを設定</p>
       </div>
-      <div class="step">
+      <div class="step reveal">
         <div class="step-num">3</div>
-        <h3>日時を選択</h3>
-        <p>参加したいイベントの日時を選ぶ</p>
+        <h3>日時を予約</h3>
+        <p>参加したい時間帯を選んで予約（複数可）</p>
       </div>
-      <div class="step">
+      <div class="step reveal">
         <div class="step-num">4</div>
+        <h3>グループ発表</h3>
+        <p>マッチング結果・集合場所・合言葉が届く</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">5</div>
         <h3>交流スタート！</h3>
-        <p>グループに割り振られ、90分の交流が始まる</p>
+        <p>合言葉で合流し、90分の交流が始まる</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ANIMAL CONCIERGE -->
-<section style="background: var(--light);">
+<!-- ================= GROWTH (たまごっち) ================= -->
+<section class="growth" id="growth">
   <div class="container">
-    <div class="section-header">
-      <span class="section-tag">アニマルコンシェルジュ</span>
-      <h2 class="section-title">個性豊かな動物キャラが<br>あなたの交流をサポート</h2>
-      <p class="section-desc">グループごとに異なるアニマルコンシェルジュが担当。それぞれ個性的なアプローチで会話を盛り上げます。</p>
+    <div class="section-header reveal">
+      <span class="section-tag">グループ育成</span>
+      <h2 class="section-title">みんなで、ひとつの<br>動物を育てよう🌱</h2>
+      <p class="section-desc">あなたのグループには十二支の動物がひとり。お題をクリアするたびに、たまごから成体へと育っていきます。共通のゴールがあるから、会話が自然と生まれます。</p>
+    </div>
+    <div class="growth-inner">
+      <!-- たまごっち風パネル -->
+      <div class="tama reveal" aria-hidden="true">
+        <div class="tama-sky">
+          <span class="tama-cloud c1">☁️</span>
+          <span class="tama-cloud c2">☁️</span>
+          <span class="tama-animal">🐰</span>
+          <div class="tama-ground"></div>
+        </div>
+        <div class="tama-level">レベル：こうさぎ</div>
+        <div class="tama-gauge"><span></span></div>
+        <div class="tama-personality">性格：好奇心旺盛</div>
+      </div>
+
+      <!-- 成長ステップ & ミッション -->
+      <div class="reveal">
+        <div class="growth-stages">
+          <div class="g-stage"><div class="g-emoji">🥚</div><div class="g-name">たまご</div></div>
+          <span class="g-arrow">→</span>
+          <div class="g-stage"><div class="g-emoji">🐣</div><div class="g-name">あかちゃん</div></div>
+          <span class="g-arrow">→</span>
+          <div class="g-stage"><div class="g-emoji">🐰</div><div class="g-name">こども</div></div>
+          <span class="g-arrow">→</span>
+          <div class="g-stage"><div class="g-emoji">🐰✨</div><div class="g-name">完成</div></div>
+        </div>
+
+        <div class="mission-list">
+          <div class="mission">
+            <div class="m-check">✓</div>
+            <div><span class="m-time">開始すぐ</span><br>今日ここに来た理由を、一人ずつ話そう</div>
+          </div>
+          <div class="mission">
+            <div class="m-check">✓</div>
+            <div><span class="m-time">40分ごろ</span><br>あなたの「推し（好きなもの）」を紹介しよう</div>
+          </div>
+          <div class="mission">
+            <div class="m-check">✓</div>
+            <div><span class="m-time">ラスト10分</span><br>今日会えた人に、ありがとうを伝えよう</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ZODIAC GRID ================= -->
+<section class="zodiac-section" id="zodiac">
+  <div class="container">
+    <div class="section-header reveal">
+      <span class="section-tag">十二支グループ</span>
+      <h2 class="section-title">当日、あなたは<br>どの動物のグループ？</h2>
+      <p class="section-desc">グループ名は十二支の動物から。育てた動物は、性格まで一匹ずつ違います。同じ組み合わせは二度とない、その日だけの相棒です。</p>
     </div>
     <div class="animal-grid">
-      <div class="animal-card">
+      <div class="animal-card reveal">
         <div class="animal-emoji">🐭</div>
         <div class="animal-name">子（ねずみ）</div>
         <div class="animal-desc">機転が利く好奇心旺盛タイプ</div>
       </div>
-      <div class="animal-card">
+      <div class="animal-card reveal">
+        <div class="animal-emoji">🐮</div>
+        <div class="animal-name">丑（うし）</div>
+        <div class="animal-desc">マイペースで聞き上手なタイプ</div>
+      </div>
+      <div class="animal-card reveal">
         <div class="animal-emoji">🐯</div>
         <div class="animal-name">寅（とら）</div>
         <div class="animal-desc">力強くグループをリードするタイプ</div>
       </div>
-      <div class="animal-card">
+      <div class="animal-card reveal">
         <div class="animal-emoji">🐰</div>
         <div class="animal-name">卯（うさぎ）</div>
         <div class="animal-desc">穏やかで場を和ませるタイプ</div>
       </div>
-      <div class="animal-card">
+      <div class="animal-card reveal">
         <div class="animal-emoji">🐉</div>
         <div class="animal-name">辰（たつ）</div>
         <div class="animal-desc">カリスマ性で場を盛り上げるタイプ</div>
       </div>
-      <div class="animal-card">
+      <div class="animal-card reveal">
+        <div class="animal-emoji">🐍</div>
+        <div class="animal-name">巳（へび）</div>
+        <div class="animal-desc">落ち着いた洞察で深い話を引き出すタイプ</div>
+      </div>
+      <div class="animal-card reveal">
         <div class="animal-emoji">🐴</div>
         <div class="animal-name">午（うま）</div>
         <div class="animal-desc">行動力があり会話を引っ張るタイプ</div>
       </div>
-      <div class="animal-card">
+      <div class="animal-card reveal">
+        <div class="animal-emoji">🐑</div>
+        <div class="animal-name">未（ひつじ）</div>
+        <div class="animal-desc">やさしく寄り添う平和主義タイプ</div>
+      </div>
+      <div class="animal-card reveal">
+        <div class="animal-emoji">🐵</div>
+        <div class="animal-name">申（さる）</div>
+        <div class="animal-desc">ユーモアで場を明るくするタイプ</div>
+      </div>
+      <div class="animal-card reveal">
+        <div class="animal-emoji">🐔</div>
+        <div class="animal-name">酉（とり）</div>
+        <div class="animal-desc">気配り上手でテンポを作るタイプ</div>
+      </div>
+      <div class="animal-card reveal">
         <div class="animal-emoji">🐶</div>
         <div class="animal-name">戌（いぬ）</div>
         <div class="animal-desc">誠実で仲間思いのサポートタイプ</div>
+      </div>
+      <div class="animal-card reveal">
+        <div class="animal-emoji">🐗</div>
+        <div class="animal-name">亥（いのしし）</div>
+        <div class="animal-desc">まっすぐ全力で楽しむタイプ</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
+<!-- ================= CTA ================= -->
 <div class="cta-section" id="line-register">
-  <div class="container" style="text-align:center">
+  <div class="cta-box reveal">
     <h2>まずはLINE友達登録から</h2>
-    <p>サービス開始のお知らせや先行案内をお届けします。<br>いつでも解除できます。</p>
-    <a href="#" class="btn btn-white" style="display:inline-flex; align-items:center; gap:8px;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="#05a847"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+    <p>サービス開始のお知らせや、フェス当日の先行案内をお届けします。いつでも解除できます。</p>
+    <a href="#" class="btn btn-white">
+      <svg class="line-icon" viewBox="0 0 24 24" style="fill:#059A43"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
       LINEで友達登録する（無料）
     </a>
   </div>
 </div>
 
-<!-- FAQ -->
+<!-- ================= FAQ ================= -->
 <section id="faq">
   <div class="container">
-    <div class="section-header">
+    <div class="section-header reveal">
       <span class="section-tag">よくある質問</span>
       <h2 class="section-title">FAQ</h2>
     </div>
     <div class="faq-list">
-      <div class="faq-item">
+      <div class="faq-item reveal">
         <div class="faq-q">出会い系・恋愛目的のサービスですか？</div>
         <div class="faq-a">いいえ、本サービスはイベント参加者同士のコミュニケーション支援を目的としており、恋愛・出会い系サービスではありません。交際目的での利用・ナンパ行為は固く禁じています。</div>
       </div>
-      <div class="faq-item">
+      <div class="faq-item reveal">
         <div class="faq-q">本名を公開する必要がありますか？</div>
-        <div class="faq-a">いいえ、匿名での参加が可能です。登録時に自由に表示名（ニックネーム）を設定できます。</div>
+        <div class="faq-a">いいえ、匿名での参加が可能です。登録時に自由に表示名（ニックネーム）を設定でき、当日グループ内で共有されるのもニックネームのみです。</div>
       </div>
-      <div class="faq-item">
-        <div class="faq-q">どんなイベントに対応していますか？</div>
-        <div class="faq-a">様々なイベントに対応予定です。詳細はサービス開始時にご案内します。</div>
+      <div class="faq-item reveal">
+        <div class="faq-q">1グループは何人ですか？交流時間は？</div>
+        <div class="faq-a">1グループは基本5人前後の少人数で、1回の交流時間は90分です。全員と自然に会話できる人数と、長すぎず短すぎない時間設計にしています。</div>
       </div>
-      <div class="faq-item">
-        <div class="faq-q">いつサービスが始まりますか？</div>
-        <div class="faq-a">2027年夏のサービス開始を予定しています。LINE友達登録いただいた方には先行案内をお送りします。</div>
+      <div class="faq-item reveal">
+        <div class="faq-q">当日、メンバーが集まらなかったら？</div>
+        <div class="faq-a">集合時間から一定時間内に人数が集まらず開催できなかった場合は、参加費を全額返金し、あわせてお詫びのクーポンをお送りします。安心してご参加ください。</div>
       </div>
-      <div class="faq-item">
+      <div class="faq-item reveal">
+        <div class="faq-q">どのイベントで参加できますか？</div>
+        <div class="faq-a">2027年7月2日〜4日に幕張メッセで開催される「リベ大 お金の勉強フェス2027」での提供を予定しています。今後、対応イベントを広げていく予定です。</div>
+      </div>
+      <div class="faq-item reveal">
         <div class="faq-q">トラブルが起きた場合はどうすればいいですか？</div>
-        <div class="faq-a">LINE公式メニューからいつでも運営チームに直接連絡できます。迅速に対応いたします。</div>
+        <div class="faq-a">LINE公式メニューからいつでも運営に直接ご連絡いただけます。当日は運営スタッフが会場におりますので、その場でのサポートも可能です。</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- OPERATOR INFO -->
-<section id="operator" style="background: var(--light);">
+<!-- ================= OPERATOR INFO ================= -->
+<section class="operator-section" id="operator">
   <div class="container">
-    <div class="section-header">
+    <div class="section-header reveal">
       <span class="section-tag">運営情報</span>
       <h2 class="section-title">サービス運営者情報</h2>
     </div>
-    <div class="operator-box">
+    <div class="operator-box reveal">
       <h3>運営者情報</h3>
       <div class="operator-row">
         <span class="operator-label">運営者名</span>
@@ -861,14 +1310,14 @@
       </div>
       <div class="operator-row">
         <span class="operator-label">お問い合わせ</span>
-        <span class="operator-value"><a href="mailto:hy.natori.0625@gmail.com" style="color:var(--green)">hy.natori.0625@gmail.com</a></span>
+        <span class="operator-value"><a href="mailto:hy.natori.0625@gmail.com">hy.natori.0625@gmail.com</a></span>
       </div>
       <div class="operator-row">
-        <span class="operator-label">サービス開始</span>
-        <span class="operator-value">2027年夏 予定</span>
+        <span class="operator-label">提供予定</span>
+        <span class="operator-value">2027年7月・お金の勉強フェス2027</span>
       </div>
     </div>
-    <div class="notice-box">
+    <div class="notice-box reveal">
       <h4>⚠ ご利用上の注意</h4>
       <ul>
         <li>本サービスは恋愛・出会い系サービスではありません</li>
@@ -880,17 +1329,18 @@
   </div>
 </section>
 
-<!-- FOOTER -->
+<!-- ================= FOOTER ================= -->
 <footer>
   <div class="footer-inner">
     <div class="footer-top">
       <div>
-        <div class="footer-logo">ぼっち <span>the</span> 交流会</div>
-        <div class="footer-tagline">イベントの出会いを、もっと深く。</div>
+        <div class="footer-logo">ぼっち <em>the</em> 交流会</div>
+        <div class="footer-tagline">ひとり参加が、いちばん楽しい日になる。</div>
       </div>
       <div class="footer-links">
         <a href="#features">サービス特徴</a>
         <a href="#howto">使い方</a>
+        <a href="#growth">グループ育成</a>
         <a href="#faq">よくある質問</a>
         <a href="privacy.html">プライバシーポリシー</a>
         <a href="terms.html">利用規約</a>
@@ -898,14 +1348,26 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2025 ぼっち the 交流会 運営：みゃー</p>
+      <p>&copy; 2026 ぼっち the 交流会 運営：みゃー</p>
       <div style="display:flex; gap:16px;">
-        <a href="privacy.html" style="color:#6b7280; font-size:13px; text-decoration:none;">プライバシーポリシー</a>
-        <a href="terms.html" style="color:#6b7280; font-size:13px; text-decoration:none;">利用規約</a>
+        <a href="privacy.html">プライバシーポリシー</a>
+        <a href="terms.html">利用規約</a>
       </div>
     </div>
   </div>
 </footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('is-in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
 
 </body>
 </html>
