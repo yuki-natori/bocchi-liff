@@ -338,7 +338,9 @@
       <button class="menu-card" id="menuGroup"><span class="mi">🐣</span>マイグループ<small id="menuGroupSub">育成・集合場所</small></button>
       <button class="menu-card" id="menuReserve"><span class="mi">📅</span>予約<small id="menuReserveSub">日時を選ぶ</small></button>
       <button class="menu-card" id="menuCoupon"><span class="mi">🎟</span>クーポン<small id="menuCouponSub">&nbsp;</small></button>
-      <button class="menu-card" id="menuProfile"><span class="mi">👤</span>プロフィール<small>確認・編集</small></button>
+      <button class="menu-card" id="menuMap"><span class="mi">🗺</span>会場マップ<small>近日公開</small></button>
+      <button class="menu-card" id="menuFaq"><span class="mi">❓</span>よくある質問<small>困ったときは</small></button>
+      <button class="menu-card" id="menuContact"><span class="mi">✉️</span>運営に連絡<small>公式LINEへ</small></button>
     </div>
   </div>
 
@@ -632,7 +634,15 @@
     $("menuGroup").addEventListener("click", openGroup);
     $("menuReserve").addEventListener("click", openReserve);
     $("menuCoupon").addEventListener("click", openCoupon);
-    $("menuProfile").addEventListener("click", () => openRegister(true));
+    // 外部リンクを開く（LINE内ではliff、外ではwindow.open）
+    function openExternal(url) {
+      if (window.liff && liff.openWindow) liff.openWindow({ url: url, external: true });
+      else window.open(url, "_blank");
+    }
+    // プロフィールの確認・編集はロゴ下の「編集」ボタンに集約（menuProfileカードは廃止）
+    $("menuMap").addEventListener("click", () => alert("🗺 会場マップは近日公開予定です。\n当日をお楽しみに！"));
+    $("menuFaq").addEventListener("click", () => openExternal("https://yuki-natori.github.io/bocchi-liff/faq.html"));
+    $("menuContact").addEventListener("click", () => openExternal("https://line.me/R/ti/p/@534oibuu"));
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", openMenu));
 
     // ===== マイグループ画面（複数予約対応）=====
