@@ -539,7 +539,7 @@
     const SCREENS = ["boot","screen-menu","screen-register","screen-group","screen-reserve","screen-coupon","screen-done"];
     function showScreen(name) {
       SCREENS.forEach(id => { $(id).classList.toggle("hidden", id !== name); });
-      if (name !== "screen-group" && typeof stopTick === "function") stopTick(); // 画面を離れたらカウントダウン停止
+      if (name !== "screen-group" && typeof stopTick === "function") { stopTick(); stopGroupPoll(); } // 画面を離れたら自動更新停止
       window.scrollTo(0, 0);
     }
     function setStatus(id, m, c) { const e=$(id); e.textContent=m; e.className="status "+(c||""); }
@@ -719,6 +719,7 @@
         $("groupPlaceholder").classList.remove("hidden");
       }
       renderActionBanner();
+      if (currentGroup) startGroupPoll(); // グループ表示中は10秒ごとに自動更新
       if (checkinError) { setStatus("groupStatus", "⚠️ " + checkinError, "ng"); checkinError = null; }
     }
 
@@ -769,9 +770,17 @@
         } else {
           // 交流中 → 今のお題（解放済みで未達成の最初のもの）
           const cur = growthData && (growthData.missions || []).find((m) => m.revealed && !m.done);
-          html = cur
-            ? '<div class="ab-label">今のお題</div><div class="ab-title">「' + cur.name + '」</div>'
-            : '<div class="ab-title">🌟 全部のお題をクリア！</div><div class="ab-sub">残りの時間も自由に楽しんでね</div>';
+          const nextM = growthData && (growthData.missions || []).find((m) => !m.revealed);
+          if (cur) {
+            html = '<div class="ab-label">今のお題</div><div class="ab-title">「' + cur.name + '」</div>';
+          } else if (nextM && growthData && growthData.startedAt) {
+            // 今のお題は達成済み・次は時間になるまで出ない → フリートークタイム
+            const nextMs = Date.parse(growthData.startedAt) + (nextM.revealAt || 0) * 60000;
+            html = '<div class="ab-title">✅ お題クリア！</div>'
+              + '<div class="ab-sub">次のお題は ' + fmtHM(nextMs) + ' ごろ届くよ。それまでフリートークを楽しんでね</div>';
+          } else {
+            html = '<div class="ab-title">🌟 全部のお題をクリア！</div><div class="ab-sub">残りの時間も自由に楽しんでね</div>';
+          }
         }
       }
 
@@ -791,6 +800,43 @@
         setStatus("groupStatus", "⚠️ " + (r.error || "チェックインに失敗しました"), "ng");
         if (b) { b.disabled = false; b.textContent = "✋ 到着しました（チェックイン）"; }
       }
+    }
+
+    // ===== グループ画面の自動更新（10秒ごと） =====
+    // 仲間のチェックイン・お題チェック・開始/終了の状態変化を、開き直さなくても反映する。
+    const GROUP_POLL_MS = 10000;
+    let groupPollInterval = null;
+    let groupPollBusy = false;
+    function startGroupPoll() {
+      stopGroupPoll();
+      groupPollInterval = setInterval(refreshGroupQuiet, GROUP_POLL_MS);
+    }
+    function stopGroupPoll() {
+      if (groupPollInterval) { clearInterval(groupPollInterval); groupPollInterval = null; }
+    }
+    async function refreshGroupQuiet() {
+      // 画面を離れた・不成立・終了済みなら止める
+      if ($("screen-group").classList.contains("hidden")) { stopGroupPoll(); return; }
+      const g = currentGroup;
+      if (!g || g.status === "failed") { stopGroupPoll(); return; }
+      const endMs = g.endsAt ? Date.parse(g.endsAt) : null;
+      if (endMs && Date.now() >= endMs + 60000) { stopGroupPoll(); return; } // 終了1分後まで見たら停止
+      if (groupPollBusy) return; // 前の更新が終わっていなければスキップ
+      groupPollBusy = true;
+      try {
+        const slotId = currentGroupSlotId;
+        const myGroup = await api("getMyGroup", { lineUserId: profile.userId, slotId: slotId });
+        if (slotId !== currentGroupSlotId) return; // 更新中にタブが切り替わったら破棄
+        if (!myGroup.group) return;
+        if (myGroup.group.status === "failed") { await renderGroupDetail(slotId); return; } // 不成立に変化→全体を出し直す
+        // 画面を隠さず差し替え（チラつき防止）
+        currentGroup = myGroup.group;
+        renderGroup(myGroup.group);
+        $("groupBox").classList.remove("hidden");
+        await loadGrowth(slotId);
+        renderActionBanner();
+      } catch (e) { /* 一時的な通信エラーは次の周期に任せる */ }
+      finally { groupPollBusy = false; }
     }
 
     // カウントダウン（1秒ごと）。お題解放・終了の境界を越えたら自動で再取得して表示を進める。
@@ -815,8 +861,7 @@
       if (next) {
         const nextMs = startMs + (next.revealAt || 0) * 60000;
         if (now < nextMs) {
-          html += "　／　次のお題まで " + fmtMMSS(nextMs - now)
-            + '<br><span class="gt-note">前のお題を達成すると早く出るよ</span>';
+          html += "　／　次のお題まで " + fmtMMSS(nextMs - now);
         } else if (now - autoRefreshedAt > 15000) {
           // 解放時刻を越えたのにまだ出ていない → サーバーから取り直す（15秒に1回まで）
           autoRefreshedAt = now;
