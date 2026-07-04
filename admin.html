@@ -528,7 +528,8 @@
       const lineUserId = $("tickCheckinUid").value.trim();
       if (!slotId || !lineUserId) { set("tickStatus", "スロットIDとユーザーIDを入力してください", "ng"); return; }
       set("tickStatus", "チェックイン中…", "");
-      const r = await api("checkIn", { lineUserId, slotId }, false); // checkInは公開関数
+      // adminKey付きで呼ぶと「開始10分前から」の時間制限をバイパスできる（未来日付のテスト用）
+      const r = await api("checkIn", { lineUserId, slotId });
       if (r.ok) { set("tickStatus", "✅ チェックイン（到着 " + r.arrived + "/" + r.total + "人）", "ok"); $("tickCheckinUid").value = ""; }
       else set("tickStatus", "⚠️ " + (r.error || "失敗"), "ng");
     });
