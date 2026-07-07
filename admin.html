@@ -33,6 +33,13 @@
     .hidden { display:none !important; }
     .logout { float:right; background:none; color:var(--sub); border:1px solid #d9d4c6; font-weight:400; margin:0; padding:6px 12px; }
     .result { background:#f6f4ec; border-radius:8px; padding:12px; font-size:14px; margin-top:12px; }
+    /* 画面切り替えタブ（上部固定） */
+    .admin-tabs { position:sticky; top:0; z-index:50; display:flex; gap:6px; overflow-x:auto;
+      background:var(--paper); padding:10px 0 12px; margin-bottom:14px;
+      border-bottom:1px solid #e3ddcd; -webkit-overflow-scrolling:touch; }
+    .atab { flex-shrink:0; padding:9px 16px; border-radius:99px; border:1.5px solid #d9d4c6;
+      background:#fff; cursor:pointer; font-size:13.5px; font-weight:700; color:var(--sub); margin:0; }
+    .atab.active { background:var(--green); color:#fff; border-color:var(--green); }
     /* 日付タブ */
     .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0; }
     .tab { padding:7px 14px; border-radius:99px; border:1.5px solid #d9d4c6; background:#fff;
@@ -81,6 +88,18 @@
     <h1>bocchi 管理画面</h1>
     <div class="sub">当日の運用操作はここから行います</div>
 
+    <!-- 画面切り替えタブ -->
+    <div class="admin-tabs">
+      <button class="atab active" data-tab="tab-slots">📅 予約枠</button>
+      <button class="atab" data-tab="tab-ops">🎪 当日運用</button>
+      <button class="atab" data-tab="tab-coupons">🎟 クーポン</button>
+      <button class="atab" data-tab="tab-spots">📍 集合場所</button>
+      <button class="atab" data-tab="tab-users">👤 ユーザー</button>
+    </div>
+
+    <!-- ===== タブ: 予約枠 ===== -->
+    <div id="tab-slots" class="tab-page">
+
     <!-- スロット作成／編集 -->
     <div class="card">
       <h2 id="slotFormTitle">① 予約枠（スロット）を作成</h2>
@@ -106,6 +125,11 @@
       <div class="result hidden" id="matchResult"></div>
     </div>
 
+    </div><!-- /tab-slots -->
+
+    <!-- ===== タブ: 集合場所 ===== -->
+    <div id="tab-spots" class="tab-page hidden">
+
     <!-- 集合場所 -->
     <div class="card">
       <h2 id="spotFormTitle">③ 集合場所を登録</h2>
@@ -123,6 +147,11 @@
       <div class="status" id="spotStatus"></div>
       <div id="spotList" style="margin-top:10px"></div>
     </div>
+
+    </div><!-- /tab-spots -->
+
+    <!-- ===== タブ: クーポン ===== -->
+    <div id="tab-coupons" class="tab-page hidden">
 
     <!-- リベシティID登録 -->
     <div class="card">
@@ -147,6 +176,11 @@
       <button id="issueCouponBtn">発行する</button>
       <div class="status" id="cpStatus"></div>
     </div>
+
+    </div><!-- /tab-coupons -->
+
+    <!-- ===== タブ: 当日運用 ===== -->
+    <div id="tab-ops" class="tab-page hidden">
 
     <!-- イベント進行（自動アナウンス／不在対応）-->
     <div class="card">
@@ -193,6 +227,26 @@
       <div class="status" id="bcStatus"></div>
     </div>
 
+    </div><!-- /tab-ops -->
+
+    <!-- ===== タブ: ユーザー ===== -->
+    <div id="tab-users" class="tab-page hidden">
+
+    <!-- ユーザー検索 -->
+    <div class="card">
+      <h2>⑨ ユーザー検索</h2>
+      <div class="sub" style="margin-bottom:10px">
+        ニックネーム（前方一致）または LINEユーザーID（U…）で検索します。<br>
+        「予約できていますか？」などの問い合わせ対応用。予約・グループ・クーポンの状況をまとめて確認できます。
+      </div>
+      <div class="row">
+        <div style="flex:2"><input type="text" id="usQuery" placeholder="ニックネーム or U…" /></div>
+        <div style="flex:0"><button id="usBtn" style="margin-top:0">検索</button></div>
+      </div>
+      <div class="status" id="usStatus"></div>
+      <div id="usResults" style="margin-top:10px"></div>
+    </div>
+
     <!-- 返金対応リスト -->
     <div class="card">
       <h2>⑧ 返金対応リスト</h2>
@@ -203,6 +257,8 @@
       <button class="sub-btn" id="reloadRefunds">一覧を更新</button>
       <div id="refundList" style="margin-top:10px"></div>
     </div>
+
+    </div><!-- /tab-users -->
   </div>
 
   <!-- 危険操作の2段階確認モーダル -->
@@ -270,7 +326,21 @@
     }
 
     // ----- ログイン -----
-    function showPanel() { $("loginWrap").classList.add("hidden"); $("panel").classList.remove("hidden"); loadSlots(); loadSpots(); loadRefunds(); }
+    // ----- 画面切り替えタブ -----
+    const TAB_STORE = "bocchi_admin_tab";
+    function showTab(id) {
+      if (!document.getElementById(id)) id = "tab-slots";
+      document.querySelectorAll(".tab-page").forEach((p) => p.classList.toggle("hidden", p.id !== id));
+      document.querySelectorAll(".atab").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
+      localStorage.setItem(TAB_STORE, id);
+    }
+    document.querySelectorAll(".atab").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+    function showPanel() {
+      $("loginWrap").classList.add("hidden"); $("panel").classList.remove("hidden");
+      showTab(localStorage.getItem(TAB_STORE) || "tab-slots"); // 前回開いていたタブを復元
+      loadSlots(); loadSpots(); loadRefunds();
+    }
     function logout(msg) {
       localStorage.removeItem(KEY_STORE);
       $("panel").classList.add("hidden"); $("loginWrap").classList.remove("hidden");
@@ -701,6 +771,45 @@
       }
     }
     $("reloadRefunds").addEventListener("click", loadRefunds);
+
+    // ----- ⑨ ユーザー検索 -----
+    async function searchUsers() {
+      const q = $("usQuery").value.trim();
+      if (!q) { set("usStatus", "ニックネーム か LINEユーザーIDを入力してください", "ng"); return; }
+      set("usStatus", "検索中…", "");
+      $("usResults").innerHTML = "";
+      const r = await api("searchUser", { query: q });
+      if (!r.ok) { set("usStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      if (!r.users.length) { set("usStatus", "該当するユーザーが見つかりません", ""); return; }
+      set("usStatus", r.users.length + "人見つかりました", "ok");
+      const box = $("usResults");
+      r.users.forEach((u) => {
+        const div = document.createElement("div");
+        div.className = "slot-row";
+        const resvHtml = (u.reservations || []).map((v) =>
+          '<div class="meta">📅 ' + fmtDate(v.date) + " " + esc(v.time) +
+          (v.groupName
+            ? "　🐣 " + esc(v.groupName) + "グループ" + (v.spotLabel ? "・" + esc(v.spotLabel) : "")
+            : (v.unmatched ? "　😢 不成立" : "　（グループ未発表）")) +
+          (v.checkedIn ? "　✅チェックイン済" : "") +
+          (v.noShow ? "　🚫ノーショー" : "") +
+          (v.refundPending ? "　💰要返金" : "") +
+          '</div>').join("") || '<div class="meta">予約なし</div>';
+        const cpHtml = (u.coupons || []).map((c) =>
+          '<div class="meta">🎟 ' + (c.type === "free" ? "無料" : "¥" + Number(c.amount).toLocaleString()) +
+          "（" + esc(c.reason || "") + "）" +
+          (c.status === "used" ? "・使用済み" : (c.expired ? "・期限切れ" : "・有効")) +
+          '</div>').join("");
+        div.innerHTML =
+          '<div class="title">' + esc(u.nickname || "(名前なし)") +
+          '<span class="pill">' + esc([u.gender, u.topic].filter(Boolean).join("・") || "プロフィール未設定") + '</span></div>' +
+          '<div class="meta">' + esc(u.lineUserId) + (u.libeId ? "　／　リベID: " + esc(u.libeId) : "") + '</div>' +
+          resvHtml + cpHtml;
+        box.appendChild(div);
+      });
+    }
+    $("usBtn").addEventListener("click", searchUsers);
+    $("usQuery").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchUsers(); } });
 
     // 起動：保存済みキーがあればパネル表示
     if (getKey()) showPanel(); else $("loginWrap").classList.remove("hidden");
