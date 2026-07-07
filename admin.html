@@ -192,6 +192,17 @@
       <button class="warn" id="bcSendBtn">送信する</button>
       <div class="status" id="bcStatus"></div>
     </div>
+
+    <!-- 返金対応リスト -->
+    <div class="card">
+      <h2>⑧ 返金対応リスト</h2>
+      <div class="sub" style="margin-bottom:10px">
+        グループ不成立などで「要返金」になった人の一覧です。返金の手続きが済んだら「対応済みにする」を押してください。<br>
+        （⑦決済の導入までは、実際の返金は手動で行い、ここは対応漏れを防ぐチェックリストとして使います）
+      </div>
+      <button class="sub-btn" id="reloadRefunds">一覧を更新</button>
+      <div id="refundList" style="margin-top:10px"></div>
+    </div>
   </div>
 
   <!-- 危険操作の2段階確認モーダル -->
@@ -224,6 +235,9 @@
       return data;
     }
     const set = (id, msg, cls) => { const e = $(id); e.textContent = msg; e.className = "status " + (cls || ""); };
+    // ユーザー入力（ニックネーム等）やAPI応答をinnerHTMLに入れる前は必ずこれでエスケープする
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+      ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 
     // 危険操作の2段階確認モーダル（対象を明記・赤ボタン・2回押しで実行）
     function dangerConfirm({ title, body, target, confirmText }) {
@@ -256,7 +270,7 @@
     }
 
     // ----- ログイン -----
-    function showPanel() { $("loginWrap").classList.add("hidden"); $("panel").classList.remove("hidden"); loadSlots(); loadSpots(); }
+    function showPanel() { $("loginWrap").classList.add("hidden"); $("panel").classList.remove("hidden"); loadSlots(); loadSpots(); loadRefunds(); }
     function logout(msg) {
       localStorage.removeItem(KEY_STORE);
       $("panel").classList.add("hidden"); $("loginWrap").classList.remove("hidden");
@@ -366,10 +380,10 @@
         const div = document.createElement("div");
         div.className = "slot-row";
         div.innerHTML =
-          '<div class="title">' + s.time +
-          '<span class="pill">予約 ' + s.reservedCount + '/' + s.capacity + '</span>' +
+          '<div class="title">' + esc(s.time) +
+          '<span class="pill">予約 ' + esc(s.reservedCount) + '/' + esc(s.capacity) + '</span>' +
           (s.closed ? '<span class="pill">締切</span>' : '') + '</div>' +
-          '<div class="meta">slotId: ' + s.slotId + '</div>';
+          '<div class="meta">slotId: ' + esc(s.slotId) + '</div>';
         const mBtn = document.createElement("button"); mBtn.className = "sub-btn"; mBtn.textContent = "マッチング実行";
         mBtn.onclick = () => runMatch(s.slotId);
         const vBtn = document.createElement("button"); vBtn.className = "sub-btn"; vBtn.textContent = "結果を確認";
@@ -401,12 +415,12 @@
         // メンバーは文字列(マッチング直後)か{nickname,checkedIn}(結果確認)のどちらか
         const mlist = (g.members || []).map((m) => typeof m === "string" ? { nickname: m, checkedIn: false } : m);
         const chips = mlist.map((m) =>
-          '<span class="chip' + (m.checkedIn ? ' in' : '') + '">' + (m.checkedIn ? "✓ " : "") + m.nickname + '</span>'
+          '<span class="chip' + (m.checkedIn ? ' in' : '') + '">' + (m.checkedIn ? "✓ " : "") + esc(m.nickname) + '</span>'
         ).join("");
         return "<div class='gcard'>" +
-          "<div class='gh'>" + (g.animalEmoji || "") + " " + g.name + "グループ" +
-          (g.stageLabel ? "<span class='gbadge'>" + g.stageLabel + "</span>" : "") + "</div>" +
-          "<div class='gmeta'>📍 " + (g.spot || "場所なし") +
+          "<div class='gh'>" + esc(g.animalEmoji || "") + " " + esc(g.name) + "グループ" +
+          (g.stageLabel ? "<span class='gbadge'>" + esc(g.stageLabel) + "</span>" : "") + "</div>" +
+          "<div class='gmeta'>📍 " + esc(g.spot || "場所なし") +
           (arrivedSet ? "　／　到着 " + g.arrived + "/" + g.total + "人" : "") +
           "　／　" + (g.members || []).length + "人</div>" +
           "<div>" + chips + "</div></div>";
@@ -423,13 +437,13 @@
         if (r.spotsUnassigned) head += "⚠️ 集合場所が" + r.spotsUnassigned + "グループ分不足しています<br>";
         showResult(head + groupsHtml(r.groups));
         loadSlots();
-      } else showResult("⚠️ " + (r.error || "失敗"));
+      } else showResult("⚠️ " + esc(r.error || "失敗"));
     }
 
     async function viewResult(slotId) {
       showResult("結果を読み込み中…");
       const r = await api("getMatchingResult", { slotId });
-      if (!r.ok) { showResult("⚠️ " + (r.error || "失敗")); return; }
+      if (!r.ok) { showResult("⚠️ " + esc(r.error || "失敗")); return; }
       if (!r.groupCount) { showResult("この枠はまだマッチングされていません。「マッチング実行」を押してください。"); return; }
       showResult("📋 マッチング結果（" + r.groupCount + "グループ）<br>" + groupsHtml(r.groups));
     }
@@ -450,16 +464,16 @@
       if (r.ok) {
         showResult("🗑 枠を削除しました（予約 " + r.deletedReservations + "件・グループ " + r.deletedGroups + "件も削除）");
         loadSlots();
-      } else showResult("⚠️ " + (r.error || "失敗"));
+      } else showResult("⚠️ " + esc(r.error || "失敗"));
     }
 
     async function notify(slotId, dry) {
       if (!dry && !confirm("このグループ全員にLINEで結果を送信します。送信してよいですか？")) return;
       showResult(dry ? "プレビュー取得中…" : "送信中…");
       const r = await api("notifyMatchingResults", dry ? { slotId, dryRun: "1" } : { slotId });
-      if (r.ok && dry) showResult("【プレビュー】対象 " + r.targetCount + "人<br>――――<br>" + (r.sampleMessage || "").replace(/\n/g, "<br>"));
+      if (r.ok && dry) showResult("【プレビュー】対象 " + r.targetCount + "人<br>――――<br>" + esc(r.sampleMessage || "").replace(/\n/g, "<br>"));
       else if (r.ok) showResult("✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗");
-      else showResult("⚠️ " + (r.error || "失敗"));
+      else showResult("⚠️ " + esc(r.error || "失敗"));
     }
 
     // ----- ③ 集合場所（登録・編集・削除）-----
@@ -517,7 +531,7 @@
       spots.forEach((s) => {
         const div = document.createElement("div");
         div.className = "slot-row";
-        div.innerHTML = '<span class="title">' + s.label + '</span>';
+        div.innerHTML = '<span class="title">' + esc(s.label) + '</span>';
         const e = document.createElement("button"); e.className = "sub-btn"; e.textContent = "編集"; e.onclick = () => editSpot(s);
         const d = document.createElement("button"); d.className = "sub-btn danger"; d.textContent = "削除"; d.onclick = () => deleteSpot(s);
         div.appendChild(e); div.appendChild(d);
@@ -625,6 +639,68 @@
       if (r.ok) { set("bcStatus", "✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗（対象" + r.targetCount + "人）", "ok"); $("bcMsg").value = ""; }
       else set("bcStatus", "⚠️ " + (r.error || "失敗"), "ng");
     });
+
+    // ----- ⑧ 返金対応リスト -----
+    async function loadRefunds() {
+      const box = $("refundList");
+      box.innerHTML = '<div class="meta">読み込み中…</div>';
+      const r = await api("listRefunds");
+      if (!r.ok) { box.innerHTML = '<div class="meta">⚠️ ' + esc(r.error || "失敗") + '</div>'; return; }
+      box.innerHTML = "";
+      if (!r.pending.length && !r.done.length) {
+        box.innerHTML = '<div class="meta">返金対象はありません 🎉</div>';
+        return;
+      }
+      const addHead = (text) => {
+        const h = document.createElement("div");
+        h.className = "meta"; h.style.margin = "10px 0 6px"; h.style.fontWeight = "700";
+        h.textContent = text; box.appendChild(h);
+      };
+      if (r.pending.length) {
+        addHead("💰 未対応 " + r.pending.length + "件");
+        r.pending.forEach((p) => {
+          const div = document.createElement("div");
+          div.className = "slot-row";
+          div.innerHTML =
+            '<div class="title">' + esc(p.nickname || "(名前なし)") +
+            '<span class="pill">' + fmtDate(p.date) + " " + esc(p.time) + '</span></div>' +
+            '<div class="meta">' + esc(p.lineUserId) + '</div>';
+          const b = document.createElement("button");
+          b.className = "sub-btn"; b.textContent = "✅ 対応済みにする";
+          b.onclick = async () => {
+            b.disabled = true;
+            const rr = await api("markRefunded", { lineUserId: p.lineUserId, slotId: p.slotId });
+            if (rr.ok) loadRefunds(); else { b.disabled = false; alert("⚠️ " + (rr.error || "失敗")); }
+          };
+          div.appendChild(b);
+          box.appendChild(div);
+        });
+      }
+      if (r.done.length) {
+        addHead("✓ 対応済み " + r.done.length + "件");
+        r.done.forEach((p) => {
+          const div = document.createElement("div");
+          div.className = "slot-row"; div.style.opacity = ".65";
+          const at = p.refundedAt ? new Date(p.refundedAt) : null;
+          const atLabel = at ? (at.getMonth() + 1) + "/" + at.getDate() + " " +
+            at.getHours() + ":" + String(at.getMinutes()).padStart(2, "0") : "";
+          div.innerHTML =
+            '<div class="title">✓ ' + esc(p.nickname || "(名前なし)") +
+            '<span class="pill">' + fmtDate(p.date) + " " + esc(p.time) + '</span></div>' +
+            (atLabel ? '<div class="meta">対応日時: ' + atLabel + '</div>' : "");
+          const b = document.createElement("button");
+          b.className = "sub-btn"; b.textContent = "未対応に戻す";
+          b.onclick = async () => {
+            b.disabled = true;
+            const rr = await api("markRefunded", { lineUserId: p.lineUserId, slotId: p.slotId, undo: "1" });
+            if (rr.ok) loadRefunds(); else { b.disabled = false; alert("⚠️ " + (rr.error || "失敗")); }
+          };
+          div.appendChild(b);
+          box.appendChild(div);
+        });
+      }
+    }
+    $("reloadRefunds").addEventListener("click", loadRefunds);
 
     // 起動：保存済みキーがあればパネル表示
     if (getKey()) showPanel(); else $("loginWrap").classList.remove("hidden");
