@@ -14,7 +14,7 @@
     .card { background:#fff; border:1px solid #ece8dc; border-radius:12px; padding:18px; margin-bottom:18px; }
     .card h2 { font-size:16px; color:var(--green); margin-bottom:12px; }
     label { display:block; font-size:13px; font-weight:700; margin:10px 0 4px; }
-    input, select { width:100%; padding:10px 12px; font-size:15px; border:1px solid #d9d4c6; border-radius:8px; background:#fff; }
+    input, select, textarea { width:100%; padding:10px 12px; font-size:15px; border:1px solid #d9d4c6; border-radius:8px; background:#fff; font-family:inherit; }
     .row { display:flex; gap:10px; flex-wrap:wrap; }
     .row > div { flex:1; min-width:120px; }
     button { padding:10px 16px; font-size:14px; font-weight:700; color:#fff; background:var(--green);
@@ -173,6 +173,24 @@
         「枠の前日20時以降」や「開始60分前」にして実行。スロットIDを入れておくと、その枠の送信済みフラグをリセットしてから実行します（再テスト用）。
       </div>
       <div class="status" id="tickStatus"></div>
+    </div>
+
+    <!-- 一斉お知らせ配信 -->
+    <div class="card">
+      <h2>⑦ 一斉お知らせ配信</h2>
+      <div class="sub" style="margin-bottom:10px">
+        対象の予約者全員にLINEでメッセージを送ります（開始遅れ・集合場所変更・雨天案内など）。<br>
+        枠IDと日付の両方を入れた場合は<b>枠IDを優先</b>します。日付指定は同じ人が複数予約していても1通だけ届きます。
+      </div>
+      <div class="row">
+        <div><label>枠ID（この枠の予約者へ）</label><input type="text" id="bcSlot" placeholder="slotId（②の一覧でコピー）" /></div>
+        <div><label>または日付（この日の予約者全員へ）</label><input type="date" id="bcDate" /></div>
+      </div>
+      <label>メッセージ</label>
+      <textarea id="bcMsg" rows="4" placeholder="例：雨のため集合場所を屋内（〇〇前）に変更します。気をつけてお越しください。"></textarea>
+      <button class="sub-btn" id="bcPreviewBtn">対象人数とプレビューを確認</button>
+      <button class="warn" id="bcSendBtn">送信する</button>
+      <div class="status" id="bcStatus"></div>
     </div>
   </div>
 
@@ -565,6 +583,47 @@
         const hour = (r.hour || []).map((x) => x.time + "(" + x.sent + "人)").join("・") || "なし";
         set("tickStatus", "✅ 前日リマインド: " + day + " ／ 直前リマインド: " + hour + "（基準時刻 " + r.at + "）", "ok");
       } else set("tickStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    // ----- ⑦ 一斉お知らせ配信 -----
+    function bcParams() {
+      const slotId = $("bcSlot").value.trim();
+      const date = $("bcDate").value;
+      const message = $("bcMsg").value.trim();
+      if (!message) { set("bcStatus", "メッセージを入力してください", "ng"); return null; }
+      if (!slotId && !date) { set("bcStatus", "枠ID か 日付 のどちらかを指定してください", "ng"); return null; }
+      const p = { message };
+      if (slotId) p.slotId = slotId; else p.date = date; // 枠ID優先
+      return p;
+    }
+
+    $("bcPreviewBtn").addEventListener("click", async () => {
+      const p = bcParams(); if (!p) return;
+      set("bcStatus", "確認中…", "");
+      const r = await api("broadcastMessage", { ...p, dryRun: "1" });
+      if (r.ok) set("bcStatus", "対象：" + r.target + "（" + r.targetCount + "人）\n――――\n" + r.sample, "ok");
+      else set("bcStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    $("bcSendBtn").addEventListener("click", async () => {
+      const p = bcParams(); if (!p) return;
+      set("bcStatus", "対象を確認中…", "");
+      // まず対象人数を取得してから、2段階確認して送信
+      const pre = await api("broadcastMessage", { ...p, dryRun: "1" });
+      if (!pre.ok) { set("bcStatus", "⚠️ " + (pre.error || "失敗"), "ng"); return; }
+      if (!pre.targetCount) { set("bcStatus", "対象の予約者がいません", "ng"); return; }
+      set("bcStatus", "", "");
+      const ok = await dangerConfirm({
+        title: "一斉お知らせを送信",
+        body: "次の対象にLINEでメッセージを送ります。送信後は取り消せません。",
+        target: pre.target + "（" + pre.targetCount + "人）",
+        confirmText: "送信する"
+      });
+      if (!ok) return;
+      set("bcStatus", "送信中…", "");
+      const r = await api("broadcastMessage", p);
+      if (r.ok) { set("bcStatus", "✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗（対象" + r.targetCount + "人）", "ok"); $("bcMsg").value = ""; }
+      else set("bcStatus", "⚠️ " + (r.error || "失敗"), "ng");
     });
 
     // 起動：保存済みキーがあればパネル表示
