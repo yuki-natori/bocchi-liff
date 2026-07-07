@@ -167,6 +167,11 @@
       <label style="margin-top:14px">現在時刻として扱う日時（テスト用・空なら今）</label>
       <input type="datetime-local" id="tickNow" />
       <button id="runTickBtn">この枠を進行処理する</button>
+      <button id="runReminderBtn" class="sub-btn">リマインダー処理を実行</button>
+      <div class="sub" style="margin-top:6px">
+        リマインダーは本番では自動送信（前日20時＋開始1時間前）。テストは上の日時を
+        「枠の前日20時以降」や「開始60分前」にして実行。スロットIDを入れておくと、その枠の送信済みフラグをリセットしてから実行します（再テスト用）。
+      </div>
       <div class="status" id="tickStatus"></div>
     </div>
   </div>
@@ -544,6 +549,22 @@
       const r = await api("runEventTick", params);
       if (r.ok) set("tickStatus", "✅ " + r.processedGroups + "グループを処理しました（基準時刻 " + r.at + "）", "ok");
       else set("tickStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    // リマインダー処理（前日20時＋開始1時間前）を手動実行。スロットID入力済みならフラグをリセットして再テスト可。
+    $("runReminderBtn").addEventListener("click", async () => {
+      const nowVal = $("tickNow").value;
+      const slotId = $("tickSlot").value.trim();
+      set("tickStatus", "リマインダー処理中…", "");
+      const params = {};
+      if (nowVal) params.now = nowVal + "+09:00";
+      if (slotId) params.clearFlags = slotId;
+      const r = await api("runReminderTick", params);
+      if (r.ok) {
+        const day = (r.day || []).map((x) => x.time + "(" + x.sent + "人)").join("・") || "なし";
+        const hour = (r.hour || []).map((x) => x.time + "(" + x.sent + "人)").join("・") || "なし";
+        set("tickStatus", "✅ 前日リマインド: " + day + " ／ 直前リマインド: " + hour + "（基準時刻 " + r.at + "）", "ok");
+      } else set("tickStatus", "⚠️ " + (r.error || "失敗"), "ng");
     });
 
     // 起動：保存済みキーがあればパネル表示
