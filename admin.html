@@ -111,6 +111,13 @@
         <div><label>定員</label><input type="number" id="slotCap" value="50" /></div>
         <div><label>予約締切（任意）</label><input type="datetime-local" id="slotDeadline" /></div>
       </div>
+      <label style="margin-top:10px; font-weight:400; cursor:pointer;">
+        <input type="checkbox" id="slotTest" style="width:auto; margin-right:6px; vertical-align:middle;" />
+        ⏩ テストプレイ用の枠にする（<b>30分進行・3人基本グループ</b>）
+      </label>
+      <div class="sub" style="margin:2px 0 0 22px;">
+        進行が短縮されます：締切+5分／お題2 +12分／お題3 +25分／終了+30分。グループは3人＞4人＞5人の優先で分けます。
+      </div>
       <button id="createSlotBtn">この枠を作成</button>
       <button id="cancelEditBtn" class="sub-btn hidden">編集をやめる</button>
       <div class="status" id="slotStatus"></div>
@@ -370,6 +377,7 @@
       $("slotTime").value = s.time;
       $("slotCap").value = s.capacity;
       $("slotDeadline").value = isoToLocalInput(s.deadline);
+      $("slotTest").checked = !!s.isTest;
       $("slotFormTitle").textContent = "① 予約枠を編集中";
       $("createSlotBtn").textContent = "この内容で更新する";
       $("cancelEditBtn").classList.remove("hidden");
@@ -383,6 +391,7 @@
       $("createSlotBtn").textContent = "この枠を作成";
       $("cancelEditBtn").classList.add("hidden");
       $("slotDate").value = ""; $("slotTime").value = ""; $("slotCap").value = "50"; $("slotDeadline").value = "";
+      $("slotTest").checked = false;
       set("slotStatus", "", "");
     }
     $("cancelEditBtn").addEventListener("click", endEdit);
@@ -393,8 +402,9 @@
       if (!date || !time) { set("slotStatus", "日付と時間帯は必須です", "ng"); return; }
 
       if (editingSlotId) {
-        // 編集（更新）
-        const params = { slotId: editingSlotId, date, time, capacity, deadline: dl ? dl + "+09:00" : "none" };
+        // 編集（更新）。isTestはチェック状態をそのまま送る（"1"/"0"）
+        const params = { slotId: editingSlotId, date, time, capacity, deadline: dl ? dl + "+09:00" : "none",
+          isTest: $("slotTest").checked ? "1" : "0" };
         set("slotStatus", "更新中…", "");
         const r = await api("updateSlot", params);
         if (r.ok) { set("slotStatus", "✅ 更新しました（" + date + " " + time + "）", "ok"); endEdit(); loadSlots(); }
@@ -403,6 +413,7 @@
         // 新規作成
         const params = { date, time, capacity };
         if (dl) params.deadline = dl + "+09:00"; // 日本時間として送る
+        if ($("slotTest").checked) params.isTest = "1"; // テストプレイ用（30分進行・3人グループ）
         set("slotStatus", "作成中…", "");
         const r = await api("createSlot", params);
         if (r.ok) { set("slotStatus", "✅ 作成しました（" + date + " " + time + "）", "ok"); $("slotDate").value=""; $("slotTime").value=""; loadSlots(); }
@@ -452,6 +463,7 @@
         div.innerHTML =
           '<div class="title">' + esc(s.time) +
           '<span class="pill">予約 ' + esc(s.reservedCount) + '/' + esc(s.capacity) + '</span>' +
+          (s.isTest ? '<span class="pill" style="background:#fdf3e3;color:#b96b00">⏩テスト30分・3人組</span>' : '') +
           (s.closed ? '<span class="pill">締切</span>' : '') + '</div>' +
           '<div class="meta">slotId: ' + esc(s.slotId) + '</div>';
         const mBtn = document.createElement("button"); mBtn.className = "sub-btn"; mBtn.textContent = "マッチング実行";

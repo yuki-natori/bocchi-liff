@@ -550,6 +550,9 @@
       window.scrollTo(0, 0);
     }
     function setStatus(id, m, c) { const e=$(id); e.textContent=m; e.className="status "+(c||""); }
+    // ユーザー入力（ニックネーム等）やAPI応答をinnerHTMLに入れる前は必ずこれでエスケープする
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+      ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 
     function formatSlot(date, time) {
       const d = new Date(date + "T00:00:00+09:00");
@@ -589,7 +592,7 @@
       }
     }
     function bootError(m) {
-      $("boot").innerHTML = '<p class="ng">エラー</p><p style="font-size:13px;color:#6b6b63;margin-top:8px">'+m+'</p>';
+      $("boot").innerHTML = '<p class="ng">エラー</p><p style="font-size:13px;color:#6b6b63;margin-top:8px">'+esc(m)+'</p>';
     }
 
     // ===== 登録 / 編集画面 =====
@@ -764,8 +767,8 @@
           // 開始前・未チェックイン → 集合場所と合言葉。チェックインは開始10分前から
           const openMs = startMs ? startMs - 10 * 60000 : null;
           const beforeWindow = openMs && now < openMs;
-          html = '<div class="ab-title">⏰ ' + (startMs ? fmtHM(startMs) + 'までに ' : '') + '📍' + (g.spotLabel || "集合場所") + ' へ</div>'
-            + (g.passphrase ? '<div class="ab-sub">合言葉は「' + g.passphrase + '」</div>' : '')
+          html = '<div class="ab-title">⏰ ' + (startMs ? fmtHM(startMs) + 'までに ' : '') + '📍' + esc(g.spotLabel || "集合場所") + ' へ</div>'
+            + (g.passphrase ? '<div class="ab-sub">合言葉は「' + esc(g.passphrase) + '」</div>' : '')
             + (beforeWindow
               ? '<div class="ab-sub">🕐 チェックインは ' + fmtHM(openMs) + ' から（開始10分前）できます</div>'
               : '<button class="ab-btn" id="abCheckinBtn">✋ 到着しました（チェックイン）</button>');
@@ -773,7 +776,7 @@
           // 開始前・チェックイン済み → 待つだけ
           html = '<div class="ab-title">✅ チェックイン済み</div>'
             + '<div class="ab-sub">全員そろうと自動でスタートします'
-            + (startMs ? '（遅くとも ' + fmtHM(startMs + 10 * 60000) + ' に開始）' : '') + '</div>';
+            + (startMs ? '（遅くとも ' + fmtHM(startMs + (g.deadlineMin || 10) * 60000) + ' に開始）' : '') + '</div>';
         }
       } else if (g.status === "started") {
         if (endMs && now >= endMs) {
@@ -786,7 +789,7 @@
           const cur = growthData && (growthData.missions || []).find((m) => m.revealed && !m.done);
           const nextM = growthData && (growthData.missions || []).find((m) => !m.revealed);
           if (cur) {
-            html = '<div class="ab-label">今のお題</div><div class="ab-title">「' + cur.name + '」</div>';
+            html = '<div class="ab-label">今のお題</div><div class="ab-title">「' + esc(cur.name) + '」</div>';
           } else if (nextM && growthData && growthData.startedAt) {
             // 今のお題は達成済み・次は時間になるまで出ない → フリートークタイム
             const nextMs = Date.parse(growthData.startedAt) + (nextM.revealAt || 0) * 60000;
@@ -1029,7 +1032,7 @@
         if (!m.revealed) return; // 未解放は表示しない
         const row = document.createElement("div");
         row.className = "mission-item" + (m.done ? " done" : "");
-        row.innerHTML = '<span class="box">' + (m.done ? "✓" : "") + '</span><span>' + m.name + '</span>';
+        row.innerHTML = '<span class="box">' + (m.done ? "✓" : "") + '</span><span>' + esc(m.name) + '</span>';
         row.addEventListener("click", () => toggleMission(i, !m.done, row));
         list.appendChild(row);
       });
@@ -1126,7 +1129,7 @@
           : '<span class="amt">¥' + Number(c.amount).toLocaleString() + '</span>';
         const label = isFree ? "参加無料クーポン" : "割引クーポン";
         row.innerHTML = amtHtml +
-          '<span class="cinfo">' + label + '<br>' + (c.reason || "") + '</span>';
+          '<span class="cinfo">' + label + '<br>' + esc(c.reason || "") + '</span>';
         list.appendChild(row);
       });
     }
@@ -1163,7 +1166,7 @@
       // 合言葉（アイスブレイク用・任意）
       const passEl = $("groupPass");
       if (g.passphrase) {
-        passEl.innerHTML = '🔑 合言葉：<span class="pw">' + g.passphrase + '</span>'
+        passEl.innerHTML = '🔑 合言葉：<span class="pw">' + esc(g.passphrase) + '</span>'
           + '<span class="pn">会えた人と言い合うと打ち解けやすいよ（本人確認には使いません）</span>';
         passEl.classList.remove("hidden");
       } else {
@@ -1176,8 +1179,8 @@
         const row = document.createElement("div");
         row.className = "gmember" + (isMe ? " me" : "");
         row.innerHTML =
-          '<span class="gm-name">' + (m.nickname || "") + '</span>' +
-          '<span class="gm-topic">' + (m.topic || "") + ' ›</span>';
+          '<span class="gm-name">' + esc(m.nickname || "") + '</span>' +
+          '<span class="gm-topic">' + esc(m.topic || "") + ' ›</span>';
         row.addEventListener("click", () => openMemberProfile(m)); // タップでプロフィール表示
         box.appendChild(row);
       });
@@ -1216,9 +1219,9 @@
         else if (conflict)  meta = '<span class="full">予約と時間が重複</span>';
         else                meta = '<span class="ok-rem">残り' + s.remaining + '席</span>';
         label.innerHTML =
-          '<input type="radio" name="slot" value="' + s.slotId + '"' + (disabled?' disabled':'') + '>' +
+          '<input type="radio" name="slot" value="' + esc(s.slotId) + '"' + (disabled?' disabled':'') + '>' +
           '<div class="slot-date">' + formatSlot(s.date, "").trim() + '</div>' +
-          '<div class="slot-time">' + s.time + '</div>' +
+          '<div class="slot-time">' + esc(s.time) + '</div>' +
           '<div class="slot-meta">' + meta + '</div>';
         if (!disabled) {
           label.addEventListener("click", () => {
