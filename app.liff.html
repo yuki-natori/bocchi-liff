@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>bocchi</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <!-- 手書きフォント（動物の鳴き声だけに使用。使う文字のみ配信される） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" rel="stylesheet">
   <style>
     * { box-sizing:border-box; margin:0; padding:0; }
     :root {
@@ -185,6 +189,24 @@
       25% { transform:translateX(-50%) translateY(-12px) rotate(-4deg); }
       50% { transform:translateX(-50%) translateY(0) rotate(0deg); }
       75% { transform:translateX(-50%) translateY(-6px) rotate(4deg); }
+    }
+    /* 鳴き声（手書き文字がふわっと浮かんで消える） */
+    /* 動物の右上に少し離して出す（頭に重ならないように） */
+    .cry { position:absolute; left:66%; bottom:146px; transform:translateX(-50%);
+      font-family:"Yomogi",-apple-system,"Hiragino Sans",sans-serif;
+      font-size:27px; font-weight:700; color:var(--green); white-space:nowrap; pointer-events:none;
+      opacity:0; text-shadow:0 2px 0 #fff, 0 0 8px rgba(255,255,255,.95); }
+    .cry.show { animation:cryUp 1.8s ease-out forwards; }
+    @keyframes cryUp {
+      0%   { opacity:0; transform:translateX(-50%) translateY(10px) rotate(-8deg) scale(.7); }
+      20%  { opacity:1; transform:translateX(-50%) translateY(0) rotate(-4deg) scale(1.12); }
+      55%  { opacity:1; transform:translateX(-50%) translateY(-10px) rotate(3deg) scale(1); }
+      100% { opacity:0; transform:translateX(-50%) translateY(-28px) rotate(7deg) scale(.95); }
+    }
+    .animal { cursor:pointer; } /* タップで鳴く */
+    @media (prefers-reduced-motion: reduce) {
+      .cry.show { animation-duration:.01s; opacity:1; }
+      .animal, .cloud { animation:none; }
     }
     .ground { position:absolute; bottom:0; left:0; right:0; height:60px;
       background:radial-gradient(ellipse at 50% 0,#cbe9bd,#bfe0ad); }
@@ -392,6 +414,7 @@
     <div class="growth-box hidden" id="growthBox">
       <div class="terrarium">
         <div class="cloud c1">☁️</div><div class="cloud c2">☁️</div>
+        <div class="cry" id="growthCry"></div>
         <div class="animal" id="growthAnimal">🥚</div>
         <div class="ground"></div>
       </div>
@@ -546,7 +569,7 @@
     const SCREENS = ["boot","screen-menu","screen-register","screen-group","screen-reserve","screen-coupon","screen-done"];
     function showScreen(name) {
       SCREENS.forEach(id => { $(id).classList.toggle("hidden", id !== name); });
-      if (name !== "screen-group" && typeof stopTick === "function") { stopTick(); stopGroupPoll(); } // 画面を離れたら自動更新停止
+      if (name !== "screen-group" && typeof stopTick === "function") { stopTick(); stopGroupPoll(); stopCry(); } // 画面を離れたら自動更新・鳴き声を停止
       window.scrollTo(0, 0);
     }
     function setStatus(id, m, c) { const e=$(id); e.textContent=m; e.className="status "+(c||""); }
@@ -717,6 +740,7 @@
     async function renderGroupDetail(slotId) {
       ["actionBanner","groupBox","growthBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
       currentGroup = null;
+      stopCry(); // 育成が無い枠に切り替えたら鳴き声を止める（あればloadGrowthで再開）
       const myGroup = await api("getMyGroup", { lineUserId: profile.userId, slotId: slotId });
       if (myGroup.group && myGroup.group.status === "failed") {
         // 不在で不成立 → お詫び案内
@@ -1002,11 +1026,66 @@
     // ===== ⑩ グループ成長（たまごっち）=====
     let growthData = null;
 
+    // ----- 鳴き声（段階が上がるほど「立派な声」になる）-----
+    //   こども＝ひらがなで幼く／完成＝カタカナで力強く
+    const CRIES = {
+      "ねずみ":   { child:["ちゅ…","ちゅっ","ちゅちゅ"],   adult:["チューッ","チュチュッ"] },
+      "うし":     { child:["もぉ…","もー","もぅ"],         adult:["モーッ","モォーー"] },
+      "とら":     { child:["がぅ","がおっ","うにゃ"],       adult:["ガオー","ガオォッ"] },
+      "うさぎ":   { child:["きゅ…","きゅっ","ふんふん"],     adult:["キューッ","キュッキュッ"] },
+      "たつ":     { child:["ぐぅ","くわっ","ぐるる"],       adult:["グオォー","ゴオォッ"] },
+      "へび":     { child:["しゅる","しゃ…","ちろっ"],      adult:["シャーッ","シュルルッ"] },
+      "うま":     { child:["ひひっ","ぶるる","ひん"],       adult:["ヒヒーン","ブルルッ"] },
+      "ひつじ":   { child:["めぇ…","めー","めぇめぇ"],      adult:["メェーッ","メエェーー"] },
+      "さる":     { child:["うき","きゃっ","うきき"],        adult:["ウキッ","ウキャッ"] },
+      "とり":     { child:["こけ…","ぴよっ","こっ"],        adult:["コケッ","コケコッ"] },
+      "いぬ":     { child:["わふっ","くぅん","わぅ"],        adult:["ワンッ","ワンワンッ"] },
+      "いのしし": { child:["ぶひ","ふごっ","ぶぅ"],          adult:["ブヒッ","ブモォッ"] }
+    };
+    const CRY_EGG  = ["コトッ", "ぴくっ", "ことっ…"];       // たまご（まだ生まれていない）
+    const CRY_BABY = ["ぴぃ", "ぴよっ", "ぴぃぴぃ", "ぴよ…"]; // あかちゃん（干支共通）
+
+    // 今の段階・動物にふさわしい鳴き声を1つ選ぶ
+    function pickCry(g) {
+      if (!g) return "";
+      const stage = g.stage || 1;
+      if (stage <= 1) return pickOne(CRY_EGG);
+      if (stage === 2) return pickOne(CRY_BABY);
+      const c = CRIES[g.animal];
+      if (!c) return pickOne(CRY_BABY);
+      return pickOne(stage >= 4 ? c.adult : c.child);
+    }
+    const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+
+    // 鳴かせる（アニメーションを毎回頭から再生）
+    function playCry() {
+      const el = $("growthCry");
+      if (!el || !growthData) return;
+      if ($("growthBox").classList.contains("hidden")) return;
+      el.textContent = pickCry(growthData);
+      el.classList.remove("show");
+      void el.offsetWidth; // リフローを挟んでアニメを確実に再スタート
+      el.classList.add("show");
+    }
+
+    // 数秒おきに自動で鳴く（多重起動しないようガード）
+    let cryInterval = null;
+    function startCry() {
+      if (cryInterval) return; // 10秒ポーリングで再描画されても増やさない
+      cryInterval = setInterval(() => {
+        if (Math.random() < 0.75) playCry(); // たまに黙る方が生きている感じが出る
+      }, 5000);
+      setTimeout(playCry, 600); // 画面を開いた直後に1回
+    }
+    function stopCry() { if (cryInterval) { clearInterval(cryInterval); cryInterval = null; } }
+    // 動物をタップしても鳴く
+    $("growthAnimal").addEventListener("click", playCry);
+
     async function loadGrowth(slotId) {
       const r = await api("getGroupGrowth", { lineUserId: profile.userId, slotId: slotId });
       growthData = r.growth || null; // 枠切替時に別枠の古いデータを残さない
-      if (r.growth) { renderGrowth(r.growth); $("growthBox").classList.remove("hidden"); }
-      else { $("growthBox").classList.add("hidden"); stopTick(); }
+      if (r.growth) { renderGrowth(r.growth); $("growthBox").classList.remove("hidden"); startCry(); }
+      else { $("growthBox").classList.add("hidden"); stopTick(); stopCry(); }
     }
 
     function renderGrowth(g) {
