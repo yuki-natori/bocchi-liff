@@ -95,7 +95,7 @@
     .action-banner .ab-btn { width:100%; margin-top:10px; padding:12px; font-size:14px; font-weight:800;
       color:#fff; background:var(--green); border:none; border-radius:10px; cursor:pointer; }
     .action-banner .ab-btn:disabled { opacity:.6; }
-    /* 残り時間カウントダウン（たまごっち画面） */
+    /* 残り時間カウントダウン（クエスト画面） */
     .growth-timer { text-align:center; font-size:12.5px; font-weight:700; color:var(--accent); margin-top:6px; }
     .growth-timer .gt-note { font-size:10.5px; font-weight:500; color:var(--sub); }
     .screen-title { font-size:18px; font-weight:800; color:var(--green); margin-bottom:16px; }
@@ -121,12 +121,6 @@
     .group-box .lead { font-size:13px; opacity:.9; }
     .group-box .gname { font-size:30px; font-weight:800; margin:6px 0 2px; }
     .group-box .gsub { font-size:12px; opacity:.9; margin-bottom:14px; }
-    .gspot { background:rgba(255,255,255,.18); border-radius:10px; padding:8px 12px;
-      margin-bottom:12px; font-size:15px; font-weight:700; }
-    .gpass { background:rgba(255,255,255,.18); border-radius:10px; padding:8px 12px;
-      margin-bottom:12px; font-size:14px; line-height:1.5; }
-    .gpass .pw { font-size:18px; font-weight:800; }
-    .gpass .pn { display:block; font-size:11px; font-weight:400; opacity:.85; margin-top:2px; }
     .group-members { background:#fff; border-radius:12px; padding:10px; }
     .checkin-status { margin-top:14px; font-size:14px; font-weight:700; }
     .checkin-status .allset { font-size:16px; }
@@ -208,6 +202,14 @@
     /* ミッション一覧 */
     .missions { margin-top:16px; }
     .missions-title { font-size:13px; font-weight:700; text-align:center; color:var(--sub); margin-bottom:10px; }
+    /* チカラで絞り込むタブ（既定は「すべて」。タブを理解しなくても遊べる） */
+    .m-tabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:10px;
+      -webkit-overflow-scrolling:touch; }
+    .m-tab { flex:0 0 auto; padding:7px 13px; border-radius:99px; border:1.5px solid #d9d4c6;
+      background:#fff; font-size:13px; font-weight:700; color:var(--sub); cursor:pointer; white-space:nowrap; }
+    .m-tab.active { background:var(--green); color:#fff; border-color:var(--green); }
+    .m-tab .mt-n { font-weight:500; opacity:.75; margin-left:3px; font-size:11px; }
+    .m-empty { text-align:center; color:var(--sub); font-size:13px; padding:18px 8px; }
     .mission-item { display:flex; align-items:center; gap:10px; padding:11px 12px;
       border:1.5px solid #e3ddcd; border-radius:10px; margin-bottom:8px; cursor:pointer; font-size:14px; }
     .mission-item.mine { border-color:#bcd9c6; background:#fbfefc; }
@@ -428,8 +430,6 @@
       <div class="lead">🎉 あなたのグループが決まりました</div>
       <div class="gname" id="groupName">—</div>
       <div class="gsub" id="groupSlot"></div>
-      <div class="gspot hidden" id="groupSpot"></div>
-      <div class="gpass hidden" id="groupPass"></div>
       <div class="group-members" id="groupMembers"></div>
       <div class="checkin-status" id="checkinStatus"></div>
     </div>
@@ -457,6 +457,7 @@
 
       <div class="missions">
         <div class="missions-title">ミッション（パーティ全員のチェックでクリア）</div>
+        <div class="m-tabs" id="missionTabs"></div>
         <div id="missionList"></div>
       </div>
       <button class="share-btn hidden" id="shareBtn">🎉 結果カードを見る</button>
@@ -828,8 +829,7 @@
           // 開始前・未チェックイン → 集合場所と合言葉。チェックインは開始10分前から
           const openMs = startMs ? startMs - 10 * 60000 : null;
           const beforeWindow = openMs && now < openMs;
-          html = '<div class="ab-title">⏰ ' + (startMs ? fmtHM(startMs) + 'までに ' : '') + '📍' + esc(g.spotLabel || "集合場所") + ' へ</div>'
-            + (g.passphrase ? '<div class="ab-sub">合言葉は「' + esc(g.passphrase) + '」</div>' : '')
+          html = '<div class="ab-title">⏰ ' + (startMs ? fmtHM(startMs) + 'までに ' : '') + '会場で受付をしよう</div>' 
             + (beforeWindow
               ? '<div class="ab-sub">🕐 チェックインは ' + fmtHM(openMs) + ' から（開始10分前）できます</div>'
               : '<button class="ab-btn" id="abCheckinBtn">✋ 到着しました（チェックイン）</button>');
@@ -1078,7 +1078,8 @@
 
     function renderQuest(q) {
       // パーティ名と人数
-      $("qParty").innerHTML = esc(q.partyName) + "パーティ" +
+      // パーティ名はサーバー側で決まる（既定は「パーティ1」、第3段階で自分たちが命名）
+      $("qParty").innerHTML = esc(q.partyName || "あなたのパーティ") +
         '<small>' + q.memberTotal + '人で挑戦中</small>';
 
       // メインゲージ：次の姫までを満たす割合（全員救出後は満タン）
@@ -1123,10 +1124,44 @@
         return '<span class="' + (v ? "" : "zero") + '">' + POWER_META[k].emoji + v + '</span>';
       }).join("");
 
-      // ミッション一覧
+      // ミッション（タブで絞り込み）
+      renderMissionTabs(q);
+      renderMissionList(q);
+
+      $("shareBtn").classList.toggle("hidden", !q.completed);
+      startTick(); // 残り時間カウントダウン（未開始なら中で自動停止）
+      queueRescues(q); // 新しく救出された姫がいれば演出
+    }
+
+    // ----- ミッションのタブ（すべて／チカラ5種）-----
+    let missionTab = "all"; // 既定は「すべて」＝タブを理解しなくても遊べる
+    function renderMissionTabs(q) {
+      const tabs = $("missionTabs");
+      const ms = q.missions || [];
+      const defs = [{ key:"all", label:"すべて" }].concat(
+        POWER_ORDER.map((k) => ({ key:k, label:POWER_META[k].emoji + POWER_META[k].label })));
+      tabs.innerHTML = "";
+      defs.forEach((d) => {
+        const items = d.key === "all" ? ms : ms.filter((m) => m.power === d.key);
+        if (d.key !== "all" && !items.length) return; // その種類のミッションが無ければタブも出さない
+        const left = items.filter((m) => !m.cleared).length; // 残り数（選ぶ判断材料）
+        const b = document.createElement("button");
+        b.className = "m-tab" + (missionTab === d.key ? " active" : "");
+        b.innerHTML = d.label + '<span class="mt-n">' + left + '</span>';
+        b.onclick = () => { missionTab = d.key; renderMissionTabs(q); renderMissionList(q); };
+        tabs.appendChild(b);
+      });
+    }
+
+    function renderMissionList(q) {
       const list = $("missionList");
       list.innerHTML = "";
-      (q.missions || []).forEach((m, i) => {
+      const all = q.missions || [];
+      // 絞り込んでも元のindexを保つ必要がある（toggleに渡す番号がずれないように）
+      const shown = all.map((m, i) => ({ m, i }))
+        .filter((x) => missionTab === "all" || x.m.power === missionTab);
+      if (!shown.length) { list.innerHTML = '<div class="m-empty">このチカラのミッションはありません</div>'; return; }
+      shown.forEach(({ m, i }) => {
         const row = document.createElement("div");
         row.className = "mission-item" + (m.cleared ? " done" : (m.mine ? " mine" : ""));
         const pm = POWER_META[m.power] || { emoji:"", label:"" };
@@ -1139,10 +1174,6 @@
         row.addEventListener("click", () => toggleQuestMission(i, !m.mine, row));
         list.appendChild(row);
       });
-
-      $("shareBtn").classList.toggle("hidden", !q.completed);
-      startTick(); // 残り時間カウントダウン（未開始なら中で自動停止）
-      queueRescues(q); // 新しく救出された姫がいれば演出
     }
 
     async function toggleQuestMission(index, mine, rowEl) {
@@ -1238,7 +1269,7 @@
     function openShareCard() {
       const q = questData; if (!q) return;
       const n = (q.rescued || []).length;
-      $("scHead").textContent = esc(q.partyName) + "パーティ";
+      $("scHead").textContent = q.partyName || "あなたのパーティ";
       $("scAnimal").textContent = rescuedEmojis(q);
       $("scGrown").textContent = n >= 4 ? "4人の姫を全員救出した！" : n + "人の姫を救出した！";
       $("scPers").textContent = "";
@@ -1274,7 +1305,7 @@
       ctx.fillStyle = "#2f6d4f"; ctx.lineWidth = 8; ctx.strokeStyle = "#2f6d4f";
       ctx.strokeRect(16, 16, W - 32, H - 32);
       ctx.textAlign = "center";
-      ctx.font = "bold 34px sans-serif"; ctx.fillText(q.partyName + "パーティ", W / 2, 110);
+      ctx.font = "bold 34px sans-serif"; ctx.fillText(q.partyName || "あなたのパーティ", W / 2, 110);
       ctx.font = "90px sans-serif"; ctx.fillText(rescuedEmojis(q), W / 2, 300);
       ctx.fillStyle = "#2b2b28"; ctx.font = "bold 26px sans-serif";
       ctx.fillText(n >= 4 ? "4人の姫を全員救出した！" : n + "人の姫を救出した！", W / 2, 390);
@@ -1338,23 +1369,6 @@
     function renderGroup(g) {
       $("groupName").textContent = g.name + " グループ";
       $("groupSlot").textContent = formatSlot(g.date, g.time);
-      // 集合場所
-      const spotEl = $("groupSpot");
-      if (g.spotLabel) {
-        spotEl.textContent = "📍 集合場所：" + g.spotLabel;
-        spotEl.classList.remove("hidden");
-      } else {
-        spotEl.classList.add("hidden");
-      }
-      // 合言葉（アイスブレイク用・任意）
-      const passEl = $("groupPass");
-      if (g.passphrase) {
-        passEl.innerHTML = '🔑 合言葉：<span class="pw">' + esc(g.passphrase) + '</span>'
-          + '<span class="pn">会えた人と言い合うと打ち解けやすいよ（本人確認には使いません）</span>';
-        passEl.classList.remove("hidden");
-      } else {
-        passEl.classList.add("hidden");
-      }
       const box = $("groupMembers");
       box.innerHTML = "";
       (g.members || []).forEach((m) => {

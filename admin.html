@@ -112,12 +112,16 @@
         <div class="status" id="questStatus"></div>
       </div>
       <div class="card">
-        <h2>ミッション一覧（現在の設定）</h2>
+        <h2>⑪ ミッションの編集</h2>
         <div class="sub" style="margin-bottom:10px">
-          ミッションはパーティ<b>全員がチェックするとクリア</b>し、⭐の数だけチカラを獲得します。<br>
-          ※内容の編集は第2段階で対応予定です（現在はコード側に定義）。
+          パーティ<b>全員がチェックするとクリア</b>し、⭐の数だけそのチカラを獲得します。<br>
+          変更は<b>次にマッチングした枠から反映</b>されます（進行中のパーティには影響しません）。
         </div>
         <div id="questMissionList"></div>
+        <button class="sub-btn" id="addMissionBtn">＋ ミッションを追加</button>
+        <button id="saveMissionBtn">ミッションを保存する</button>
+        <button class="sub-btn danger" id="resetMissionBtn">既定に戻す</button>
+        <div class="status" id="missionStatus"></div>
       </div>
     </div>
 
@@ -163,7 +167,11 @@
 
     <!-- 集合場所 -->
     <div class="card">
-      <h2 id="spotFormTitle">③ 集合場所を登録</h2>
+      <h2 id="spotFormTitle">③ 地点を登録</h2>
+      <div class="sub" style="margin-bottom:10px">
+        ※クエストではパーティごとの集合場所は使いません。この地点リストは
+        <b>第3段階のチュートリアル「移動先の割り当て」に転用</b>する予定のため残しています。
+      </div>
       <div class="row">
         <div><label>種類</label>
           <select id="spotType">
@@ -535,8 +543,8 @@
         return "<div class='gcard'>" +
           "<div class='gh'>" + esc(g.name) + "パーティ" +
           (hasQuest ? "<span class='gbadge'>チカラ " + esc(g.totalPower) + "</span>" : "") + "</div>" +
-          "<div class='gmeta'>📍 " + esc(g.spot || "場所なし") +
-          (arrivedSet ? "　／　到着 " + g.arrived + "/" + g.total + "人" : "") +
+          "<div class='gmeta'>" +
+          (arrivedSet ? "到着 " + g.arrived + "/" + g.total + "人　／　" : "") +
           "　／　" + (g.members || []).length + "人</div>" +
           pwLine +
           "<div>" + chips + "</div></div>";
@@ -550,7 +558,6 @@
       if (r.ok) {
         let head = "✅ マッチング完了：参加者 " + r.participantCount + "人 / " + r.groupCount + "グループ<br>";
         if (r.unmatchedCount) head += "😢 不成立 " + r.unmatchedCount + "人（お詫びクーポン" + r.couponsIssued + "枚発行）<br>";
-        if (r.spotsUnassigned) head += "⚠️ 集合場所が" + r.spotsUnassigned + "グループ分不足しています<br>";
         showResult(head + groupsHtml(r.groups));
         loadSlots();
       } else showResult("⚠️ " + esc(r.error || "失敗"));
@@ -835,7 +842,7 @@
         const resvHtml = (u.reservations || []).map((v) =>
           '<div class="meta">📅 ' + fmtDate(v.date) + " " + esc(v.time) +
           (v.groupName
-            ? "　🐣 " + esc(v.groupName) + "グループ" + (v.spotLabel ? "・" + esc(v.spotLabel) : "")
+            ? "　🐣 " + esc(v.groupName)
             : (v.unmatched ? "　😢 不成立" : "　（グループ未発表）")) +
           (v.checkedIn ? "　✅チェックイン済" : "") +
           (v.noShow ? "　🚫ノーショー" : "") +
@@ -878,17 +885,83 @@
           '5種類すべてのチカラを1つ以上（終盤の戦略性を出す条件）</label>';
         box.appendChild(div);
       });
-      // ミッション一覧（参考表示）
+      questPowers = r.powers || [];
+      questMissions = r.missions || [];
+      renderMissionEditor();
+      set("questStatus", "現在の設定を読み込みました" +
+        (r.isCustomMissions ? "（ミッションは編集済み）" : "（ミッションは既定値）"), "ok");
+    }
+
+    // ----- ⑪ ミッションの編集 -----
+    let questMissions = [];
+    let questPowers = [];
+    function renderMissionEditor() {
       const ml = $("questMissionList"); ml.innerHTML = "";
-      (r.missions || []).forEach((m) => {
+      if (!questMissions.length) { ml.innerHTML = '<div class="meta">ミッションがありません。「＋ ミッションを追加」で作成してください</div>'; return; }
+      questMissions.forEach((m, i) => {
         const d = document.createElement("div");
         d.className = "slot-row";
-        d.innerHTML = '<div class="title">' + esc(m.emoji) + " " + esc(m.name) +
-          '<span class="pill">' + "⭐".repeat(m.stars) + " +" + esc(m.stars) + '</span></div>';
+        d.innerHTML =
+          '<label>ミッション名</label>' +
+          '<input type="text" maxlength="60" id="qm_name_' + i + '" value="' + esc(m.name) + '" />' +
+          '<div class="row" style="margin-top:6px">' +
+            '<div><label>チカラ</label><select id="qm_power_' + i + '">' +
+              questPowers.map((p) => '<option value="' + esc(p.key) + '"' +
+                (p.key === m.power ? ' selected' : '') + '>' + esc(p.emoji) + " " + esc(p.label) + '</option>').join("") +
+            '</select></div>' +
+            '<div><label>難易度</label><select id="qm_stars_' + i + '">' +
+              [1,2,3].map((n) => '<option value="' + n + '"' + (n === m.stars ? ' selected' : '') + '>' +
+                "⭐".repeat(n) + "（+" + n + "）</option>").join("") +
+            '</select></div>' +
+          '</div>';
+        const del = document.createElement("button");
+        del.className = "sub-btn danger"; del.textContent = "この行を削除";
+        del.onclick = () => { syncMissionInputs(); questMissions.splice(i, 1); renderMissionEditor(); };
+        d.appendChild(del);
         ml.appendChild(d);
       });
-      set("questStatus", "現在の設定を読み込みました", "ok");
     }
+    // 画面の入力値を配列へ取り込む（追加・削除・保存の前に必ず呼ぶ）
+    function syncMissionInputs() {
+      questMissions = questMissions.map((m, i) => ({
+        id: m.id,
+        name: ($("qm_name_" + i) ? $("qm_name_" + i).value.trim() : m.name),
+        power: ($("qm_power_" + i) ? $("qm_power_" + i).value : m.power),
+        stars: ($("qm_stars_" + i) ? parseInt($("qm_stars_" + i).value, 10) : m.stars)
+      }));
+    }
+    $("addMissionBtn").addEventListener("click", () => {
+      syncMissionInputs();
+      questMissions.push({ id: "", name: "", power: (questPowers[0] || {}).key || "earn", stars: 1 });
+      renderMissionEditor();
+      set("missionStatus", "行を追加しました。内容を入力して保存してください", "");
+    });
+    $("saveMissionBtn").addEventListener("click", async () => {
+      syncMissionInputs();
+      if (!questMissions.length) { set("missionStatus", "ミッションは1つ以上必要です", "ng"); return; }
+      const empty = questMissions.findIndex((m) => !m.name);
+      if (empty >= 0) { set("missionStatus", (empty + 1) + "行目のミッション名を入力してください", "ng"); return; }
+      set("missionStatus", "保存中…", "");
+      const r = await api("updateQuestSettings", { missions: JSON.stringify(questMissions) });
+      if (r.ok) { set("missionStatus", "✅ 保存しました（次のマッチングから反映されます）", "ok"); loadQuestSettings(); }
+      else set("missionStatus", "⚠️ " + esc(r.error || "失敗"), "ng");
+    });
+    $("resetMissionBtn").addEventListener("click", async () => {
+      const ok = await dangerConfirm({
+        title: "ミッションを既定に戻す",
+        body: "編集した内容が失われ、コードに定義された既定のミッション一覧に戻ります。",
+        target: "ミッション " + questMissions.length + "件",
+        confirmText: "既定に戻す"
+      });
+      if (!ok) return;
+      set("missionStatus", "戻しています…", "");
+      // 空配列は拒否されるので、既定値を明示的に取り直して保存する
+      const r0 = await api("getQuestSettings");
+      const r = await api("updateQuestSettings", { missions: JSON.stringify(
+        (r0.missions || []).map((m) => ({ id: m.id, name: m.name, power: m.power, stars: m.stars })) ) });
+      if (r.ok) { set("missionStatus", "✅ 既定に戻しました", "ok"); loadQuestSettings(); }
+      else set("missionStatus", "⚠️ " + esc(r.error || "失敗"), "ng");
+    });
     $("reloadQuestBtn").addEventListener("click", loadQuestSettings);
 
     $("saveQuestBtn").addEventListener("click", async () => {
