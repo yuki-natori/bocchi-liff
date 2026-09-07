@@ -372,6 +372,8 @@
       document.querySelectorAll(".tab-page").forEach((p) => p.classList.toggle("hidden", p.id !== id));
       document.querySelectorAll(".atab").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
       localStorage.setItem(TAB_STORE, id);
+      // クエストタブは開いたときに初回だけ読み込む（読み込まないと姫・ミッション・チカラが空になる）
+      if (id === "tab-quest" && !questLoaded) loadQuestSettings();
     }
     document.querySelectorAll(".atab").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
@@ -866,10 +868,12 @@
 
     // ----- ⑩ クエスト設定（姫の救出条件）-----
     let questPrincesses = [];
+    let questLoaded = false; // タブを開いたときの初回読み込み済みフラグ
     async function loadQuestSettings() {
       set("questStatus", "読み込み中…", "");
       const r = await api("getQuestSettings");
-      if (!r.ok) { set("questStatus", "⚠️ " + esc(r.error || "失敗"), "ng"); return; }
+      if (!r.ok) { set("questStatus", "⚠️ " + esc(r.error || "失敗") + "（「読み込み直す」を押してください）", "ng"); return; }
+      questLoaded = true;
       questPrincesses = r.princesses || [];
       const box = $("questPrincessList"); box.innerHTML = "";
       questPrincesses.forEach((p, i) => {
@@ -895,6 +899,15 @@
     // ----- ⑪ ミッションの編集 -----
     let questMissions = [];
     let questPowers = [];
+    // サーバーから取得できなかった場合の保険（5つのチカラはコード側の定義と同じ順・同じキー）
+    const POWER_FALLBACK = [
+      { key: "save",    emoji: "💰", label: "貯める" },
+      { key: "earn",    emoji: "💪", label: "稼ぐ" },
+      { key: "grow",    emoji: "📈", label: "増やす" },
+      { key: "protect", emoji: "🛡", label: "守る" },
+      { key: "use",     emoji: "🎁", label: "使う" }
+    ];
+    const powerList = () => (questPowers.length ? questPowers : POWER_FALLBACK);
     function renderMissionEditor() {
       const ml = $("questMissionList"); ml.innerHTML = "";
       if (!questMissions.length) { ml.innerHTML = '<div class="meta">ミッションがありません。「＋ ミッションを追加」で作成してください</div>'; return; }
@@ -906,7 +919,7 @@
           '<input type="text" maxlength="60" id="qm_name_' + i + '" value="' + esc(m.name) + '" />' +
           '<div class="row" style="margin-top:6px">' +
             '<div><label>チカラ</label><select id="qm_power_' + i + '">' +
-              questPowers.map((p) => '<option value="' + esc(p.key) + '"' +
+              powerList().map((p) => '<option value="' + esc(p.key) + '"' +
                 (p.key === m.power ? ' selected' : '') + '>' + esc(p.emoji) + " " + esc(p.label) + '</option>').join("") +
             '</select></div>' +
             '<div><label>難易度</label><select id="qm_stars_' + i + '">' +
@@ -932,7 +945,7 @@
     }
     $("addMissionBtn").addEventListener("click", () => {
       syncMissionInputs();
-      questMissions.push({ id: "", name: "", power: (questPowers[0] || {}).key || "earn", stars: 1 });
+      questMissions.push({ id: "", name: "", power: powerList()[0].key, stars: 1 });
       renderMissionEditor();
       set("missionStatus", "行を追加しました。内容を入力して保存してください", "");
     });
@@ -955,16 +968,15 @@
       });
       if (!ok) return;
       set("missionStatus", "戻しています…", "");
-      // 空配列は拒否されるので、既定値を明示的に取り直して保存する
-      const r0 = await api("getQuestSettings");
-      const r = await api("updateQuestSettings", { missions: JSON.stringify(
-        (r0.missions || []).map((m) => ({ id: m.id, name: m.name, power: m.power, stars: m.stars })) ) });
+      // "default" を送ると保存済みの編集内容が消え、コードの既定ミッションに戻る
+      const r = await api("updateQuestSettings", { missions: "default" });
       if (r.ok) { set("missionStatus", "✅ 既定に戻しました", "ok"); loadQuestSettings(); }
       else set("missionStatus", "⚠️ " + esc(r.error || "失敗"), "ng");
     });
     $("reloadQuestBtn").addEventListener("click", loadQuestSettings);
 
     $("saveQuestBtn").addEventListener("click", async () => {
+      if (!questPrincesses.length) { set("questStatus", "先に「読み込み直す」で設定を読み込んでください", "ng"); return; }
       const payload = questPrincesses.map((p, i) => ({
         id: p.id,
         need: parseInt($("qp_need_" + i).value, 10),
