@@ -95,6 +95,30 @@
       <button class="atab" data-tab="tab-coupons">🎟 クーポン</button>
       <button class="atab" data-tab="tab-spots">📍 集合場所</button>
       <button class="atab" data-tab="tab-users">👤 ユーザー</button>
+      <button class="atab" data-tab="tab-quest">🏰 クエスト</button>
+    </div>
+
+    <!-- ===== タブ: クエスト設定 ===== -->
+    <div id="tab-quest" class="tab-page hidden">
+      <div class="card">
+        <h2>⑩ 姫の救出条件</h2>
+        <div class="sub" style="margin-bottom:10px">
+          チカラ（ポイント）の合計がこの数に達すると姫を救出します。<br>
+          <b>5/10/15/20が適切かはテストで確認</b>して、ここから調整してください。変更は即座に反映されます（マッチングし直し不要）。
+        </div>
+        <div id="questPrincessList"></div>
+        <button id="saveQuestBtn">この条件で保存する</button>
+        <button class="sub-btn" id="reloadQuestBtn">読み込み直す</button>
+        <div class="status" id="questStatus"></div>
+      </div>
+      <div class="card">
+        <h2>ミッション一覧（現在の設定）</h2>
+        <div class="sub" style="margin-bottom:10px">
+          ミッションはパーティ<b>全員がチェックするとクリア</b>し、⭐の数だけチカラを獲得します。<br>
+          ※内容の編集は第2段階で対応予定です（現在はコード側に定義）。
+        </div>
+        <div id="questMissionList"></div>
+      </div>
     </div>
 
     <!-- ===== タブ: 予約枠 ===== -->
@@ -499,12 +523,22 @@
         const chips = mlist.map((m) =>
           '<span class="chip' + (m.checkedIn ? ' in' : '') + '">' + (m.checkedIn ? "✓ " : "") + esc(m.nickname) + '</span>'
         ).join("");
+        // クエストの進捗（チカラ合計・救出した姫）
+        const hasQuest = (typeof g.totalPower === "number");
+        const pw = g.powers || {};
+        const pwLine = hasQuest
+          ? "<div class='gmeta'>⚡ チカラ " + esc(g.totalPower) +
+            "　／　救出 " + esc((g.rescued || []).length) + "人 " + esc(g.rescuedEmojis || "") +
+            "　／　💰" + esc(pw.save || 0) + " 💪" + esc(pw.earn || 0) + " 📈" + esc(pw.grow || 0) +
+            " 🛡" + esc(pw.protect || 0) + " 🎁" + esc(pw.use || 0) + "</div>"
+          : "";
         return "<div class='gcard'>" +
-          "<div class='gh'>" + esc(g.animalEmoji || "") + " " + esc(g.name) + "グループ" +
-          (g.stageLabel ? "<span class='gbadge'>" + esc(g.stageLabel) + "</span>" : "") + "</div>" +
+          "<div class='gh'>" + esc(g.name) + "パーティ" +
+          (hasQuest ? "<span class='gbadge'>チカラ " + esc(g.totalPower) + "</span>" : "") + "</div>" +
           "<div class='gmeta'>📍 " + esc(g.spot || "場所なし") +
           (arrivedSet ? "　／　到着 " + g.arrived + "/" + g.total + "人" : "") +
           "　／　" + (g.members || []).length + "人</div>" +
+          pwLine +
           "<div>" + chips + "</div></div>";
       }).join("");
     }
@@ -822,6 +856,55 @@
     }
     $("usBtn").addEventListener("click", searchUsers);
     $("usQuery").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchUsers(); } });
+
+    // ----- ⑩ クエスト設定（姫の救出条件）-----
+    let questPrincesses = [];
+    async function loadQuestSettings() {
+      set("questStatus", "読み込み中…", "");
+      const r = await api("getQuestSettings");
+      if (!r.ok) { set("questStatus", "⚠️ " + esc(r.error || "失敗"), "ng"); return; }
+      questPrincesses = r.princesses || [];
+      const box = $("questPrincessList"); box.innerHTML = "";
+      questPrincesses.forEach((p, i) => {
+        const div = document.createElement("div");
+        div.className = "slot-row";
+        div.innerHTML =
+          '<div class="title">' + esc(p.emoji) + " " + esc(p.name) + '</div>' +
+          '<label style="margin-top:6px">必要なチカラの合計</label>' +
+          '<input type="number" min="1" id="qp_need_' + i + '" value="' + esc(p.need) + '" />' +
+          '<label style="margin-top:8px; font-weight:400; cursor:pointer;">' +
+          '<input type="checkbox" id="qp_all_' + i + '" style="width:auto;margin-right:6px;vertical-align:middle;"' +
+          (p.requireAllPowers ? ' checked' : '') + ' />' +
+          '5種類すべてのチカラを1つ以上（終盤の戦略性を出す条件）</label>';
+        box.appendChild(div);
+      });
+      // ミッション一覧（参考表示）
+      const ml = $("questMissionList"); ml.innerHTML = "";
+      (r.missions || []).forEach((m) => {
+        const d = document.createElement("div");
+        d.className = "slot-row";
+        d.innerHTML = '<div class="title">' + esc(m.emoji) + " " + esc(m.name) +
+          '<span class="pill">' + "⭐".repeat(m.stars) + " +" + esc(m.stars) + '</span></div>';
+        ml.appendChild(d);
+      });
+      set("questStatus", "現在の設定を読み込みました", "ok");
+    }
+    $("reloadQuestBtn").addEventListener("click", loadQuestSettings);
+
+    $("saveQuestBtn").addEventListener("click", async () => {
+      const payload = questPrincesses.map((p, i) => ({
+        id: p.id,
+        need: parseInt($("qp_need_" + i).value, 10),
+        requireAllPowers: $("qp_all_" + i).checked
+      }));
+      if (payload.some((p) => !Number.isFinite(p.need) || p.need < 1)) {
+        set("questStatus", "必要なチカラは1以上の数値で入力してください", "ng"); return;
+      }
+      set("questStatus", "保存中…", "");
+      const r = await api("updateQuestSettings", { princesses: JSON.stringify(payload) });
+      if (r.ok) { set("questStatus", "✅ 保存しました（すぐ反映されます）", "ok"); loadQuestSettings(); }
+      else set("questStatus", "⚠️ " + esc(r.error || "失敗"), "ng");
+    });
 
     // 起動：保存済みキーがあればパネル表示
     if (getKey()) showPanel(); else $("loginWrap").classList.remove("hidden");

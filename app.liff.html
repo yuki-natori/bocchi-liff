@@ -173,63 +173,87 @@
     .unmatched-box .um-title { font-weight:800; color:var(--err); font-size:15px; margin-bottom:6px; }
     .unmatched-box .um-text { font-size:13px; color:var(--sub); }
 
-    /* ⑩ グループ成長（たまごっち） */
-    .growth-box { background:#fff; border:1px solid #ece8dc; border-radius:var(--radius);
-      padding:0 0 18px; margin-bottom:20px; overflow:hidden; }
-    .terrarium { position:relative; height:200px; background:linear-gradient(#bfe3ff,#e8f6ff 70%,#d8f0d0 70%);
-      overflow:hidden; }
-    .cloud { position:absolute; font-size:26px; opacity:.85; animation:drift 14s linear infinite; }
-    .cloud.c1 { top:24px; left:-40px; }
-    .cloud.c2 { top:54px; left:-40px; animation-duration:20s; animation-delay:-7s; font-size:20px; }
-    @keyframes drift { from { transform:translateX(0); } to { transform:translateX(420px); } }
-    .animal { position:absolute; left:50%; bottom:46px; transform:translateX(-50%);
-      font-size:76px; animation:bounce 1.6s ease-in-out infinite; transform-origin:bottom center; }
-    @keyframes bounce {
-      0%,100% { transform:translateX(-50%) translateY(0) rotate(0deg); }
-      25% { transform:translateX(-50%) translateY(-12px) rotate(-4deg); }
-      50% { transform:translateX(-50%) translateY(0) rotate(0deg); }
-      75% { transform:translateX(-50%) translateY(-6px) rotate(4deg); }
-    }
-    /* 鳴き声（手書き文字がふわっと浮かんで消える） */
-    /* 動物の右上に少し離して出す（頭に重ならないように） */
-    .cry { position:absolute; left:66%; bottom:146px; transform:translateX(-50%);
-      font-family:"Yomogi",-apple-system,"Hiragino Sans",sans-serif;
-      font-size:27px; font-weight:700; color:var(--green); white-space:nowrap; pointer-events:none;
-      opacity:0; text-shadow:0 2px 0 #fff, 0 0 8px rgba(255,255,255,.95); }
-    .cry.show { animation:cryUp 1.8s ease-out forwards; }
-    @keyframes cryUp {
-      0%   { opacity:0; transform:translateX(-50%) translateY(10px) rotate(-8deg) scale(.7); }
-      20%  { opacity:1; transform:translateX(-50%) translateY(0) rotate(-4deg) scale(1.12); }
-      55%  { opacity:1; transform:translateX(-50%) translateY(-10px) rotate(3deg) scale(1); }
-      100% { opacity:0; transform:translateX(-50%) translateY(-28px) rotate(7deg) scale(.95); }
-    }
-    .animal { cursor:pointer; } /* タップで鳴く */
-    @media (prefers-reduced-motion: reduce) {
-      .cry.show { animation-duration:.01s; opacity:1; }
-      .animal, .cloud { animation:none; }
-    }
-    .ground { position:absolute; bottom:0; left:0; right:0; height:60px;
-      background:radial-gradient(ellipse at 50% 0,#cbe9bd,#bfe0ad); }
-    .growth-info { padding:14px 18px 0; text-align:center; }
-    .stage-label { font-size:18px; font-weight:800; color:var(--green); }
-    .gauge { height:12px; background:#eee7d6; border-radius:99px; overflow:hidden; margin:10px 0 4px; }
+    /* ⑩ クエスト（チカラ＋姫の救出） */
+    .quest-box { background:#fff; border:1px solid #ece8dc; border-radius:var(--radius);
+      padding:16px 16px 18px; margin-bottom:20px; }
+    .q-party { text-align:center; font-size:15px; font-weight:800; color:var(--green); margin-bottom:14px; }
+    .q-party small { display:block; font-size:11px; font-weight:500; color:var(--sub); margin-top:2px; }
+    /* メインゲージ（1本だけ。5本並べない） */
+    .q-gauge-label { font-size:12px; font-weight:700; color:var(--sub); }
+    .gauge { height:16px; background:#eee7d6; border-radius:99px; overflow:hidden; margin:6px 0 4px; }
     .gauge-fill { height:100%; width:0; background:linear-gradient(90deg,#7bc47f,var(--green));
       border-radius:99px; transition:width .6s ease; }
-    .gauge-pct { font-size:12px; color:var(--sub); }
-    .personality { margin-top:10px; background:#f3faf5; border-radius:10px; padding:8px 12px; }
-    .personality .p-name { font-weight:800; color:var(--green); font-size:14px; }
-    .personality .p-desc { display:block; font-size:12px; color:var(--sub); margin-top:2px; }
-    .missions { padding:14px 18px 0; }
-    .missions-title { font-size:13px; font-weight:700; text-align:center; color:var(--sub);
-      margin-bottom:10px; position:relative; }
+    .q-gauge-num { text-align:right; font-size:12px; color:var(--sub); }
+    /* 「あと◯で△姫を救出！」＝最も目立たせる */
+    .q-next { background:linear-gradient(135deg,#fff6df,#ffefc2); border:1.5px solid rgba(230,168,23,.5);
+      border-radius:12px; padding:12px; text-align:center; margin:12px 0; }
+    .q-next .qn-main { font-size:17px; font-weight:800; color:#8a5e00; line-height:1.5; }
+    .q-next .qn-main .qn-num { font-size:24px; color:var(--accent); }
+    .q-next .qn-sub { font-size:11.5px; color:#6e4d00; margin-top:4px; }
+    .q-next.done { background:#f3faf5; border-color:var(--green); }
+    .q-next.done .qn-main { color:var(--green); }
+    /* 救出した姫 */
+    .q-princess-title { font-size:12px; font-weight:700; color:var(--sub); margin:14px 0 6px; text-align:center; }
+    .q-princesses { display:flex; justify-content:center; gap:10px; }
+    .q-p { text-align:center; flex:0 0 auto; width:60px; }
+    .q-p .qp-face { font-size:34px; line-height:1.2; filter:grayscale(1) opacity(.35); transition:filter .4s ease; }
+    .q-p.got .qp-face { filter:none; }
+    .q-p .qp-name { font-size:10px; color:var(--sub); margin-top:2px; }
+    .q-p.got .qp-name { color:var(--green); font-weight:700; }
+    /* 内訳は小さく1行だけ */
+    .q-breakdown { text-align:center; font-size:12px; color:var(--sub); margin-top:12px;
+      padding-top:10px; border-top:1px solid #f0ece1; }
+    .q-breakdown span { display:inline-block; margin:0 5px; white-space:nowrap; }
+    .q-breakdown span.zero { opacity:.35; }
+    /* ミッション一覧 */
+    .missions { margin-top:16px; }
+    .missions-title { font-size:13px; font-weight:700; text-align:center; color:var(--sub); margin-bottom:10px; }
     .mission-item { display:flex; align-items:center; gap:10px; padding:11px 12px;
       border:1.5px solid #e3ddcd; border-radius:10px; margin-bottom:8px; cursor:pointer; font-size:14px; }
+    .mission-item.mine { border-color:#bcd9c6; background:#fbfefc; }
     .mission-item.done { background:#f3faf5; border-color:var(--green); color:var(--green); font-weight:700; }
     .mission-item .box { width:22px; height:22px; border:2px solid #c9c2ad; border-radius:6px;
       display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; }
+    .mission-item.mine .box { border-color:var(--green); color:var(--green); }
     .mission-item.done .box { background:var(--green); border-color:var(--green); color:#fff; }
-    .share-btn { display:block; width:calc(100% - 36px); margin:14px 18px 0; padding:14px;
+    .mission-item .m-body { flex:1; min-width:0; }
+    .mission-item .m-name { line-height:1.4; }
+    .mission-item .m-meta { font-size:11px; color:var(--sub); margin-top:3px; font-weight:500; }
+    .mission-item.done .m-meta { color:var(--green); }
+    .share-btn { display:block; width:100%; margin:16px 0 0; padding:14px;
       font-size:15px; font-weight:800; color:#fff; background:var(--accent); border:none; border-radius:12px; cursor:pointer; }
+
+    /* 姫の救出演出（全画面・スキップ可） */
+    #rescueOverlay { position:fixed; inset:0; background:rgba(18,11,0,.975); z-index:150;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+    .rescue-burst { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+    .confetti { position:absolute; top:-12px; width:9px; height:14px; opacity:0; border-radius:2px;
+      animation:confFall linear forwards; }
+    @keyframes confFall {
+      0%   { opacity:1; transform:translateY(0) rotate(0deg); }
+      100% { opacity:0; transform:translateY(105vh) rotate(720deg); }
+    }
+    .rescue-face { font-size:110px; line-height:1; animation:rescuePop .9s cubic-bezier(.2,1.4,.4,1) both; }
+    @keyframes rescuePop {
+      0%   { transform:scale(.2) rotate(-14deg); opacity:0; }
+      60%  { transform:scale(1.18) rotate(4deg); opacity:1; }
+      100% { transform:scale(1) rotate(0deg); opacity:1; }
+    }
+    .rescue-title { color:#ffd77a; font-weight:800; font-size:20px; margin-top:10px; text-align:center;
+      animation:rescueUp .6s .35s ease both; }
+    .rescue-say { color:#fff; font-size:15px; line-height:1.8; margin-top:14px; text-align:center;
+      max-width:340px; white-space:pre-line; font-family:"Yomogi",-apple-system,"Hiragino Sans",sans-serif;
+      animation:rescueUp .6s .6s ease both; }
+    @keyframes rescueUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .rescue-btn { margin-top:26px; padding:13px 34px; font-size:15px; font-weight:800; color:#3b2a00;
+      background:#ffd77a; border:none; border-radius:99px; cursor:pointer;
+      animation:rescueUp .6s .9s ease both; }
+    .rescue-skip { position:absolute; top:18px; right:18px; background:none; border:none;
+      color:rgba(255,255,255,.7); font-size:13px; cursor:pointer; padding:8px; }
+    @media (prefers-reduced-motion: reduce) {
+      .rescue-face, .rescue-title, .rescue-say, .rescue-btn { animation-duration:.01s; }
+      .confetti { display:none; }
+    }
 
     /* シェアカード オーバーレイ */
     #shareOverlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100;
@@ -410,28 +434,32 @@
       <div class="checkin-status" id="checkinStatus"></div>
     </div>
 
-    <!-- ⑩ グループ成長（たまごっち） -->
-    <div class="growth-box hidden" id="growthBox">
-      <div class="terrarium">
-        <div class="cloud c1">☁️</div><div class="cloud c2">☁️</div>
-        <div class="cry" id="growthCry"></div>
-        <div class="animal" id="growthAnimal">🥚</div>
-        <div class="ground"></div>
-      </div>
-      <div class="growth-info">
-        <div class="stage-label" id="growthStage">たまご</div>
-        <div class="gauge"><div class="gauge-fill" id="growthGauge"></div></div>
-        <div class="gauge-pct" id="growthPct">0%</div>
-        <div class="growth-timer hidden" id="growthTimer"></div>
-        <div class="personality hidden" id="growthPersonality">
-          <span class="p-name" id="pName"></span><span class="p-desc" id="pDesc"></span>
-        </div>
-      </div>
+    <!-- ⑩ クエスト（チカラ＋姫の救出） -->
+    <div class="quest-box hidden" id="questBox">
+      <div class="q-party" id="qParty">—<small id="qPartySub"></small></div>
+
+      <!-- メインゲージ（1本だけ） -->
+      <div class="q-gauge-label">集めたチカラ</div>
+      <div class="gauge"><div class="gauge-fill" id="qGauge"></div></div>
+      <div class="q-gauge-num" id="qGaugeNum">0</div>
+
+      <!-- 「あと◯で△姫を救出！」＝最も目立たせる -->
+      <div class="q-next" id="qNext"></div>
+
+      <!-- 救出した姫 -->
+      <div class="q-princess-title">救出した姫</div>
+      <div class="q-princesses" id="qPrincesses"></div>
+
+      <!-- 内訳は小さく1行 -->
+      <div class="q-breakdown" id="qBreakdown"></div>
+
+      <div class="growth-timer hidden" id="growthTimer"></div>
+
       <div class="missions">
-        <div class="missions-title">今日のミッション</div>
+        <div class="missions-title">ミッション（パーティ全員のチェックでクリア）</div>
         <div id="missionList"></div>
       </div>
-      <button class="share-btn hidden" id="shareBtn">🎉 完成カードを見る</button>
+      <button class="share-btn hidden" id="shareBtn">🎉 結果カードを見る</button>
     </div>
 
     <!-- マッチング不成立の案内 -->
@@ -529,17 +557,27 @@
     </div>
   </div>
 
-  <!-- ⑩ シェアカード オーバーレイ -->
+  <!-- ⑩ 姫の救出演出（全画面・スキップ可） -->
+  <div id="rescueOverlay" class="hidden">
+    <div class="rescue-burst" id="rescueBurst"></div>
+    <button class="rescue-skip" id="rescueSkip">スキップ ▶</button>
+    <div class="rescue-face" id="rescueFace">🐧</div>
+    <div class="rescue-title" id="rescueTitle">ペンペン姫を救出した！</div>
+    <div class="rescue-say" id="rescueSay"></div>
+    <button class="rescue-btn" id="rescueNext">つづける</button>
+  </div>
+
+  <!-- ⑩ 結果カード オーバーレイ -->
   <div id="shareOverlay" class="hidden">
     <div class="share-card" id="shareCard">
-      <div class="sc-head" id="scHead">🐰 うさぎグループ 完成！</div>
-      <div class="sc-animal" id="scAnimal">🐰</div>
-      <div class="sc-grown" id="scGrown">立派なうさぎに育った！</div>
+      <div class="sc-head" id="scHead">クエスト達成！</div>
+      <div class="sc-animal" id="scAnimal">🐧🐬🐼🐯</div>
+      <div class="sc-grown" id="scGrown">4人の姫を救出した！</div>
       <div class="sc-pers" id="scPers"></div>
       <div class="sc-line">━ 一緒に旅した仲間 ━</div>
       <div class="sc-members" id="scMembers"></div>
-      <div class="sc-mission" id="scMission">達成ミッション 5/5 ⭐️</div>
-      <div class="sc-tag">#ぼっちthe交流会</div>
+      <div class="sc-mission" id="scMission">集めたチカラ 20 ⭐️</div>
+      <div class="sc-tag">#100分クエスト</div>
       <div class="sc-date" id="scDate"></div>
     </div>
     <div class="share-actions">
@@ -569,7 +607,7 @@
     const SCREENS = ["boot","screen-menu","screen-register","screen-group","screen-reserve","screen-coupon","screen-done"];
     function showScreen(name) {
       SCREENS.forEach(id => { $(id).classList.toggle("hidden", id !== name); });
-      if (name !== "screen-group" && typeof stopTick === "function") { stopTick(); stopGroupPoll(); stopCry(); } // 画面を離れたら自動更新・鳴き声を停止
+      if (name !== "screen-group" && typeof stopTick === "function") { stopTick(); stopGroupPoll(); } // 画面を離れたら自動更新を停止
       window.scrollTo(0, 0);
     }
     function setStatus(id, m, c) { const e=$(id); e.textContent=m; e.className="status "+(c||""); }
@@ -709,7 +747,7 @@
       showScreen("screen-group");
       if (!myReservationsCache.length) {
         // 予約なし
-        ["groupBox","growthBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
+        ["groupBox","questBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
         $("bandTabs").classList.add("hidden");
         $("noReserveBox").classList.remove("hidden");
         return;
@@ -738,9 +776,8 @@
     }
 
     async function renderGroupDetail(slotId) {
-      ["actionBanner","groupBox","growthBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
+      ["actionBanner","groupBox","questBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
       currentGroup = null;
-      stopCry(); // 育成が無い枠に切り替えたら鳴き声を止める（あればloadGrowthで再開）
       const myGroup = await api("getMyGroup", { lineUserId: profile.userId, slotId: slotId });
       if (myGroup.group && myGroup.group.status === "failed") {
         // 不在で不成立 → お詫び案内
@@ -749,7 +786,7 @@
         currentGroup = myGroup.group;
         renderGroup(myGroup.group);
         $("groupBox").classList.remove("hidden");
-        await loadGrowth(slotId);
+        await loadQuest(slotId);
       } else if (myGroup.unmatched) {
         $("unmatchedBox").classList.remove("hidden");
       } else {
@@ -804,24 +841,28 @@
         }
       } else if (g.status === "started") {
         if (endMs && now >= endMs) {
-          // 終了後 → シェアカード＆ノベルティ案内
-          html = '<div class="ab-title">🎉 交流タイム終了！おつかれさまでした</div>'
+          // 終了後 → 結果カード＆ノベルティ案内
+          html = '<div class="ab-title">🎉 クエスト終了！おつかれさまでした</div>'
             + '<div class="ab-sub">ノベルティは運営ブースで受け取ってね</div>'
-            + (growthData && growthData.completed ? '<button class="ab-btn" id="abShareBtn">🎁 シェアカードを見る</button>' : '');
-        } else {
-          // 交流中 → 今のお題（解放済みで未達成の最初のもの）
-          const cur = growthData && (growthData.missions || []).find((m) => m.revealed && !m.done);
-          const nextM = growthData && (growthData.missions || []).find((m) => !m.revealed);
-          if (cur) {
-            html = '<div class="ab-label">今のお題</div><div class="ab-title">「' + esc(cur.name) + '」</div>';
-          } else if (nextM && growthData && growthData.startedAt) {
-            // 今のお題は達成済み・次は時間になるまで出ない → フリートークタイム
-            const nextMs = Date.parse(growthData.startedAt) + (nextM.revealAt || 0) * 60000;
-            html = '<div class="ab-title">✅ お題クリア！</div>'
-              + '<div class="ab-sub">次のお題は ' + fmtHM(nextMs) + ' ごろ届くよ。それまでフリートークを楽しんでね</div>';
+            + (questData ? '<button class="ab-btn" id="abShareBtn">🎁 結果カードを見る</button>' : '');
+        } else if (questData && questData.next) {
+          // クエスト中 → 次の姫まであと何チカラか（最も行動を促す表示）
+          const n = questData.next;
+          if (n.remaining > 0) {
+            html = '<div class="ab-label">次の目標</div>'
+              + '<div class="ab-title">あと ' + n.remaining + ' で ' + n.emoji + esc(n.name) + 'を救出！</div>'
+              + '<div class="ab-sub">ミッションはパーティ全員のチェックでクリア</div>';
+          } else if (n.requireAllPowers && n.missingPowers.length) {
+            const need = n.missingPowers.map((k) => POWER_META[k].emoji + POWER_META[k].label).join("・");
+            html = '<div class="ab-label">次の目標</div>'
+              + '<div class="ab-title">' + n.emoji + esc(n.name) + 'まであと少し！</div>'
+              + '<div class="ab-sub">' + need + ' のミッションをクリアしよう</div>';
           } else {
-            html = '<div class="ab-title">🌟 全部のお題をクリア！</div><div class="ab-sub">残りの時間も自由に楽しんでね</div>';
+            html = '<div class="ab-title">' + n.emoji + esc(n.name) + 'を救出できる！</div>';
           }
+        } else if (questData) {
+          html = '<div class="ab-title">🎉 4人の姫を全員救出！</div>'
+            + '<div class="ab-sub">集めたチカラ ' + questData.totalPower + '</div>';
         }
       }
 
@@ -874,7 +915,7 @@
         currentGroup = myGroup.group;
         renderGroup(myGroup.group);
         $("groupBox").classList.remove("hidden");
-        await loadGrowth(slotId);
+        await loadQuest(slotId);
         renderActionBanner();
       } catch (e) { /* 一時的な通信エラーは次の周期に任せる */ }
       finally { groupPollBusy = false; }
@@ -885,31 +926,19 @@
     function stopTick() { if (tickInterval) { clearInterval(tickInterval); tickInterval = null; } }
     function tick() {
       const el = $("growthTimer");
-      const gd = growthData;
+      const gd = questData;
       if (!gd || gd.status !== "started" || !gd.startedAt) { el.classList.add("hidden"); stopTick(); return; }
       const now = Date.now();
       const startMs = Date.parse(gd.startedAt);
       const endMs = gd.endsAt ? Date.parse(gd.endsAt) : startMs + 90 * 60000;
       if (now >= endMs) {
-        el.textContent = "⏱ 交流タイムは終了しました";
+        el.textContent = "⏱ クエストは終了しました";
         el.classList.remove("hidden");
-        renderActionBanner(); // 交流中→終了後にバナーを切り替え
+        renderActionBanner(); // クエスト中→終了後にバナーを切り替え
         stopTick();
         return;
       }
-      let html = "⏱ 終了まで " + fmtMMSS(endMs - now);
-      const next = (gd.missions || []).find((m) => !m.revealed);
-      if (next) {
-        const nextMs = startMs + (next.revealAt || 0) * 60000;
-        if (now < nextMs) {
-          html += "　／　次のお題まで " + fmtMMSS(nextMs - now);
-        } else if (now - autoRefreshedAt > 15000) {
-          // 解放時刻を越えたのにまだ出ていない → サーバーから取り直す（15秒に1回まで）
-          autoRefreshedAt = now;
-          loadGrowth(currentGroupSlotId).then(renderActionBanner);
-        }
-      }
-      el.innerHTML = html;
+      el.textContent = "⏱ 残り " + fmtMMSS(endMs - now);
       el.classList.remove("hidden");
     }
 
@@ -1023,108 +1052,177 @@
       showScreen("screen-coupon");
     }
 
-    // ===== ⑩ グループ成長（たまごっち）=====
-    let growthData = null;
+    // ===== ⑩ クエスト（チカラ＋姫の救出）=====
+    let questData = null;
+    // すでに演出を見せた姫（同じ姫で何度も演出しないため。端末ごとに覚える）
+    let shownRescues = new Set();
+    let rescueQueue = [];   // 演出の待ち行列（複数同時救出に対応）
+    let rescuePlaying = false;
 
-    // ----- 鳴き声（段階が上がるほど「立派な声」になる）-----
-    //   こども＝ひらがなで幼く／完成＝カタカナで力強く
-    const CRIES = {
-      "ねずみ":   { child:["ちゅ…","ちゅっ","ちゅちゅ"],   adult:["チューッ","チュチュッ"] },
-      "うし":     { child:["もぉ…","もー","もぅ"],         adult:["モーッ","モォーー"] },
-      "とら":     { child:["がぅ","がおっ","うにゃ"],       adult:["ガオー","ガオォッ"] },
-      "うさぎ":   { child:["きゅ…","きゅっ","ふんふん"],     adult:["キューッ","キュッキュッ"] },
-      "たつ":     { child:["ぐぅ","くわっ","ぐるる"],       adult:["グオォー","ゴオォッ"] },
-      "へび":     { child:["しゅる","しゃ…","ちろっ"],      adult:["シャーッ","シュルルッ"] },
-      "うま":     { child:["ひひっ","ぶるる","ひん"],       adult:["ヒヒーン","ブルルッ"] },
-      "ひつじ":   { child:["めぇ…","めー","めぇめぇ"],      adult:["メェーッ","メエェーー"] },
-      "さる":     { child:["うき","きゃっ","うきき"],        adult:["ウキッ","ウキャッ"] },
-      "とり":     { child:["こけ…","ぴよっ","こっ"],        adult:["コケッ","コケコッ"] },
-      "いぬ":     { child:["わふっ","くぅん","わぅ"],        adult:["ワンッ","ワンワンッ"] },
-      "いのしし": { child:["ぶひ","ふごっ","ぶぅ"],          adult:["ブヒッ","ブモォッ"] }
+    const POWER_META = {
+      save:    { emoji:"💰", label:"貯める" },
+      earn:    { emoji:"💪", label:"稼ぐ" },
+      grow:    { emoji:"📈", label:"増やす" },
+      protect: { emoji:"🛡", label:"守る" },
+      use:     { emoji:"🎁", label:"使う" }
     };
-    const CRY_EGG  = ["コトッ", "ぴくっ", "ことっ…"];       // たまご（まだ生まれていない）
-    const CRY_BABY = ["ぴぃ", "ぴよっ", "ぴぃぴぃ", "ぴよ…"]; // あかちゃん（干支共通）
+    const POWER_ORDER = ["save","earn","grow","protect","use"];
+    const stars = (n) => "⭐".repeat(Math.max(1, Math.min(3, n || 1)));
 
-    // 今の段階・動物にふさわしい鳴き声を1つ選ぶ
-    function pickCry(g) {
-      if (!g) return "";
-      const stage = g.stage || 1;
-      if (stage <= 1) return pickOne(CRY_EGG);
-      if (stage === 2) return pickOne(CRY_BABY);
-      const c = CRIES[g.animal];
-      if (!c) return pickOne(CRY_BABY);
-      return pickOne(stage >= 4 ? c.adult : c.child);
-    }
-    const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
-
-    // 鳴かせる（アニメーションを毎回頭から再生）
-    function playCry() {
-      const el = $("growthCry");
-      if (!el || !growthData) return;
-      if ($("growthBox").classList.contains("hidden")) return;
-      el.textContent = pickCry(growthData);
-      el.classList.remove("show");
-      void el.offsetWidth; // リフローを挟んでアニメを確実に再スタート
-      el.classList.add("show");
+    async function loadQuest(slotId) {
+      const r = await api("getQuestState", { lineUserId: profile.userId, slotId: slotId });
+      questData = r.quest || null; // 枠切替時に別枠の古いデータを残さない
+      if (r.quest) { renderQuest(r.quest); $("questBox").classList.remove("hidden"); }
+      else { $("questBox").classList.add("hidden"); stopTick(); }
     }
 
-    // 数秒おきに自動で鳴く（多重起動しないようガード）
-    let cryInterval = null;
-    function startCry() {
-      if (cryInterval) return; // 10秒ポーリングで再描画されても増やさない
-      cryInterval = setInterval(() => {
-        if (Math.random() < 0.75) playCry(); // たまに黙る方が生きている感じが出る
-      }, 5000);
-      setTimeout(playCry, 600); // 画面を開いた直後に1回
-    }
-    function stopCry() { if (cryInterval) { clearInterval(cryInterval); cryInterval = null; } }
-    // 動物をタップしても鳴く
-    $("growthAnimal").addEventListener("click", playCry);
+    function renderQuest(q) {
+      // パーティ名と人数
+      $("qParty").innerHTML = esc(q.partyName) + "パーティ" +
+        '<small>' + q.memberTotal + '人で挑戦中</small>';
 
-    async function loadGrowth(slotId) {
-      const r = await api("getGroupGrowth", { lineUserId: profile.userId, slotId: slotId });
-      growthData = r.growth || null; // 枠切替時に別枠の古いデータを残さない
-      if (r.growth) { renderGrowth(r.growth); $("growthBox").classList.remove("hidden"); startCry(); }
-      else { $("growthBox").classList.add("hidden"); stopTick(); stopCry(); }
-    }
+      // メインゲージ：次の姫までを満たす割合（全員救出後は満タン）
+      const goal = q.next ? q.next.need : q.totalPower;
+      const pct = goal > 0 ? Math.min(100, Math.round(q.totalPower / goal * 100)) : 100;
+      $("qGauge").style.width = pct + "%";
+      $("qGaugeNum").textContent = q.totalPower + (q.next ? " / " + q.next.need : "");
 
-    function renderGrowth(g) {
-      $("growthAnimal").textContent = g.stage >= 2 ? g.animalEmoji : "🥚";
-      $("growthStage").textContent = "レベル：" + g.stageLabel;
-      $("growthGauge").style.width = g.gauge + "%";
-      $("growthPct").textContent = g.gauge + "%";
-      // 性格
-      const pBox = $("growthPersonality");
-      if (g.personality) {
-        $("pName").textContent = "性格：" + g.personality.name;
-        $("pDesc").textContent = g.personality.desc;
-        pBox.classList.remove("hidden");
-      } else pBox.classList.add("hidden");
-      // ミッション（解放済みのものだけ表示。時間経過 or 前ミッション達成で1つずつ増える）
+      // 「あと◯で△姫を救出！」＝一番目立たせる
+      const nx = $("qNext");
+      if (!q.next) {
+        nx.className = "q-next done";
+        nx.innerHTML = '<div class="qn-main">🎉 4人の姫を全員救出！</div>'
+          + '<div class="qn-sub">集めたチカラ ' + q.totalPower + '</div>';
+      } else if (q.next.remaining > 0) {
+        nx.className = "q-next";
+        nx.innerHTML = '<div class="qn-main">あと <span class="qn-num">' + q.next.remaining + '</span> で '
+          + q.next.emoji + esc(q.next.name) + 'を救出！</div>'
+          + (q.next.requireAllPowers
+              ? '<div class="qn-sub">※5種類すべてのチカラが1つ以上必要です</div>' : '');
+      } else if (q.next.requireAllPowers && q.next.missingPowers.length) {
+        // チカラは足りているが種類が足りない（終盤の戦略ポイント）
+        nx.className = "q-next";
+        const need = q.next.missingPowers.map((k) => POWER_META[k].emoji + POWER_META[k].label).join("・");
+        nx.innerHTML = '<div class="qn-main">' + q.next.emoji + esc(q.next.name) + 'まであと少し！</div>'
+          + '<div class="qn-sub">' + need + ' のミッションをクリアしよう</div>';
+      } else {
+        nx.className = "q-next done";
+        nx.innerHTML = '<div class="qn-main">' + q.next.emoji + esc(q.next.name) + 'を救出できる！</div>';
+      }
+
+      // 救出した姫（進むほど賑やかになる）
+      $("qPrincesses").innerHTML = (q.princesses || []).map((p) =>
+        '<div class="q-p' + (p.rescued ? ' got' : '') + '">'
+        + '<div class="qp-face">' + p.emoji + '</div>'
+        + '<div class="qp-name">' + (p.rescued ? esc(p.name) : "？？？") + '</div></div>'
+      ).join("");
+
+      // 内訳は小さく1行
+      $("qBreakdown").innerHTML = "内訳 " + POWER_ORDER.map((k) => {
+        const v = (q.powers || {})[k] || 0;
+        return '<span class="' + (v ? "" : "zero") + '">' + POWER_META[k].emoji + v + '</span>';
+      }).join("");
+
+      // ミッション一覧
       const list = $("missionList");
       list.innerHTML = "";
-      const revealed = g.missions.filter((m) => m.revealed);
-      if (!revealed.length) {
-        list.innerHTML = '<div class="placeholder">グループが始まると、最初のミッションが現れます 🐣</div>';
-      }
-      g.missions.forEach((m, i) => {
-        if (!m.revealed) return; // 未解放は表示しない
+      (q.missions || []).forEach((m, i) => {
         const row = document.createElement("div");
-        row.className = "mission-item" + (m.done ? " done" : "");
-        row.innerHTML = '<span class="box">' + (m.done ? "✓" : "") + '</span><span>' + esc(m.name) + '</span>';
-        row.addEventListener("click", () => toggleMission(i, !m.done, row));
+        row.className = "mission-item" + (m.cleared ? " done" : (m.mine ? " mine" : ""));
+        const pm = POWER_META[m.power] || { emoji:"", label:"" };
+        row.innerHTML =
+          '<span class="box">' + (m.cleared ? "✓" : (m.mine ? "・" : "")) + '</span>'
+          + '<span class="m-body"><span class="m-name">' + pm.emoji + " " + esc(m.name) + '</span>'
+          + '<span class="m-meta">' + stars(m.stars) + " " + pm.label + "＋" + m.stars
+          + (m.cleared ? "　✅クリア！" : "　" + m.checkedCount + "/" + m.memberCount + "人がチェック")
+          + '</span></span>';
+        row.addEventListener("click", () => toggleQuestMission(i, !m.mine, row));
         list.appendChild(row);
       });
-      // 完成 → シェアボタン
-      $("shareBtn").classList.toggle("hidden", !g.completed);
-      startTick(); // 残り時間・次のお題カウントダウン（未開始なら中で自動停止）
+
+      $("shareBtn").classList.toggle("hidden", !q.completed);
+      startTick(); // 残り時間カウントダウン（未開始なら中で自動停止）
+      queueRescues(q); // 新しく救出された姫がいれば演出
     }
 
-    async function toggleMission(index, done, rowEl) {
+    async function toggleQuestMission(index, mine, rowEl) {
       if (rowEl) rowEl.style.pointerEvents = "none";
-      const r = await api("toggleMission", { lineUserId: profile.userId, slotId: currentGroupSlotId, index: index, done: done });
-      if (r.ok && r.growth) { growthData = r.growth; renderGrowth(r.growth); renderActionBanner(); }
+      const r = await api("toggleQuestMission", {
+        lineUserId: profile.userId, slotId: currentGroupSlotId, index: index, done: mine });
+      if (r.ok && r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
       else if (rowEl) rowEl.style.pointerEvents = "";
+    }
+
+    // ----- 姫の救出演出 -----
+    // 端末ごとに「見せた姫」を覚えるので、パーティの誰もが1回ずつ演出を見られる
+    function rescueMemoryKey() { return "bocchi_rescued_" + (currentGroupSlotId || ""); }
+    function loadShownRescues() {
+      shownRescues = new Set();
+      try {
+        const raw = sessionStorage.getItem(rescueMemoryKey());
+        if (raw) JSON.parse(raw).forEach((id) => shownRescues.add(id));
+      } catch (e) {}
+    }
+    function saveShownRescues() {
+      try { sessionStorage.setItem(rescueMemoryKey(), JSON.stringify([...shownRescues])); } catch (e) {}
+    }
+    // 初回表示時は「すでに救出済み」を演出せず記録だけする（途中参加や再読込で連発しないように）
+    let rescueInitialized = false;
+    function queueRescues(q) {
+      const ids = q.rescued || [];
+      if (!rescueInitialized) {
+        rescueInitialized = true;
+        loadShownRescues();
+        // セッションに記録が無い＝この端末で初めて開いた → 既存分は演出せず既読にする
+        if (!shownRescues.size) { ids.forEach((id) => shownRescues.add(id)); saveShownRescues(); return; }
+      }
+      const fresh = ids.filter((id) => !shownRescues.has(id));
+      if (!fresh.length) return;
+      fresh.forEach((id) => {
+        const p = (q.princesses || []).find((x) => x.id === id);
+        if (p) rescueQueue.push(p);
+        shownRescues.add(id);
+      });
+      saveShownRescues();
+      playNextRescue();
+    }
+
+    function playNextRescue() {
+      if (rescuePlaying) return;
+      const p = rescueQueue.shift();
+      if (!p) return;
+      rescuePlaying = true;
+      $("rescueFace").textContent = p.emoji;
+      $("rescueTitle").textContent = p.name + "を救出した！";
+      $("rescueSay").textContent = p.rescue || "";
+      $("rescueOverlay").classList.remove("hidden");
+      spawnConfetti();
+    }
+    function closeRescue() {
+      $("rescueOverlay").classList.add("hidden");
+      $("rescueBurst").innerHTML = "";
+      rescuePlaying = false;
+      if (rescueQueue.length) setTimeout(playNextRescue, 300);
+    }
+    $("rescueNext").addEventListener("click", closeRescue);
+    // スキップは待ち行列ごと閉じる（4回とも長いと飽きるため）
+    $("rescueSkip").addEventListener("click", () => { rescueQueue = []; closeRescue(); });
+
+    // 紙吹雪（外部ライブラリを使わない軽量版。会場の電波が弱くても確実に動く）
+    function spawnConfetti() {
+      const box = $("rescueBurst");
+      box.innerHTML = "";
+      if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const colors = ["#ffd77a","#ff9db0","#8fd6a6","#8fc7ff","#fff2b8"];
+      for (let i = 0; i < 40; i++) {
+        const c = document.createElement("i");
+        c.className = "confetti";
+        c.style.left = Math.random() * 100 + "%";
+        c.style.background = colors[i % colors.length];
+        c.style.animationDuration = (1.6 + Math.random() * 1.4) + "s";
+        c.style.animationDelay = (Math.random() * 0.5) + "s";
+        box.appendChild(c);
+      }
     }
 
     // シェアカード
@@ -1133,23 +1231,29 @@
       const [y, m, day] = (d || "").split("-");
       return y + "." + Number(m) + "." + Number(day);
     }
+    // 救出した姫の絵文字を並べる（1人も救出できなくても表示は崩さない）
+    function rescuedEmojis(q) {
+      return (q.princesses || []).filter((p) => p.rescued).map((p) => p.emoji).join("") || "🏰";
+    }
     function openShareCard() {
-      const g = growthData; if (!g) return;
-      $("scHead").textContent = g.animalEmoji + " " + g.animal + "グループ 完成！";
-      $("scAnimal").textContent = g.animalEmoji;
-      $("scGrown").textContent = "立派な" + g.animal + "に育った！";
-      $("scPers").textContent = g.personality ? "性格：" + g.personality.name : "";
-      $("scMembers").textContent = (g.memberNicknames || []).join(" / ");
-      $("scMission").textContent = "達成ミッション " + g.missionDone + "/" + g.missionTotal + " ⭐️";
-      $("scDate").textContent = fmtCardDate(g.date);
+      const q = questData; if (!q) return;
+      const n = (q.rescued || []).length;
+      $("scHead").textContent = esc(q.partyName) + "パーティ";
+      $("scAnimal").textContent = rescuedEmojis(q);
+      $("scGrown").textContent = n >= 4 ? "4人の姫を全員救出した！" : n + "人の姫を救出した！";
+      $("scPers").textContent = "";
+      $("scMembers").textContent = (q.memberNicknames || []).join(" / ");
+      $("scMission").textContent = "集めたチカラ " + q.totalPower + " ⭐️";
+      $("scDate").textContent = fmtCardDate(q.date);
       $("shareOverlay").classList.remove("hidden");
     }
     $("closeShareBtn").addEventListener("click", () => $("shareOverlay").classList.add("hidden"));
 
     // リベシティのつぶやきへ（文章はクリップボードにコピーして貼り付けやすく）
     $("xShareBtn").addEventListener("click", async () => {
-      const g = growthData; if (!g) return;
-      const text = g.animalEmoji + g.animal + "グループを完成させた！みんなで育てたよ🌱 #ぼっちthe交流会";
+      const q = questData; if (!q) return;
+      const text = rescuedEmojis(q) + " 100分クエストで" + (q.rescued || []).length +
+        "人の姫を救出！ チカラ" + q.totalPower + "を集めたよ✨ #100分クエスト";
       let copied = false;
       try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
       if (copied) alert("つぶやき文をコピーしました📋\nリベシティで貼り付けてつぶやいてね！");
@@ -1160,7 +1264,8 @@
 
     // 記念画像ダウンロード（canvasでPNG生成）
     $("dlBtn").addEventListener("click", () => {
-      const g = growthData; if (!g) return;
+      const q = questData; if (!q) return;
+      const n = (q.rescued || []).length;
       const cv = $("dlCanvas"), ctx = cv.getContext("2d");
       const W = cv.width, H = cv.height;
       const grd = ctx.createLinearGradient(0, 0, 0, H);
@@ -1169,18 +1274,17 @@
       ctx.fillStyle = "#2f6d4f"; ctx.lineWidth = 8; ctx.strokeStyle = "#2f6d4f";
       ctx.strokeRect(16, 16, W - 32, H - 32);
       ctx.textAlign = "center";
-      ctx.font = "bold 34px sans-serif"; ctx.fillText(g.animal + "グループ 完成！", W / 2, 110);
-      ctx.font = "180px sans-serif"; ctx.fillText(g.animalEmoji, W / 2, 320);
+      ctx.font = "bold 34px sans-serif"; ctx.fillText(q.partyName + "パーティ", W / 2, 110);
+      ctx.font = "90px sans-serif"; ctx.fillText(rescuedEmojis(q), W / 2, 300);
       ctx.fillStyle = "#2b2b28"; ctx.font = "bold 26px sans-serif";
-      ctx.fillText("立派な" + g.animal + "に育った！", W / 2, 390);
-      if (g.personality) { ctx.fillStyle = "#2f6d4f"; ctx.font = "bold 24px sans-serif"; ctx.fillText("性格：" + g.personality.name, W / 2, 440); }
+      ctx.fillText(n >= 4 ? "4人の姫を全員救出した！" : n + "人の姫を救出した！", W / 2, 390);
       ctx.fillStyle = "#6b6b63"; ctx.font = "20px sans-serif"; ctx.fillText("━ 一緒に旅した仲間 ━", W / 2, 510);
       ctx.fillStyle = "#2b2b28"; ctx.font = "bold 24px sans-serif";
-      wrapText(ctx, (g.memberNicknames || []).join(" / "), W / 2, 550, W - 80, 32);
+      wrapText(ctx, (q.memberNicknames || []).join(" / "), W / 2, 550, W - 80, 32);
       ctx.fillStyle = "#e6a817"; ctx.font = "bold 24px sans-serif";
-      ctx.fillText("達成ミッション " + g.missionDone + "/" + g.missionTotal + " ⭐️", W / 2, 660);
-      ctx.fillStyle = "#2f6d4f"; ctx.font = "bold 26px sans-serif"; ctx.fillText("#ぼっちthe交流会", W / 2, 710);
-      ctx.fillStyle = "#6b6b63"; ctx.font = "20px sans-serif"; ctx.fillText(fmtCardDate(g.date), W / 2, 745);
+      ctx.fillText("集めたチカラ " + q.totalPower + " ⭐️", W / 2, 660);
+      ctx.fillStyle = "#2f6d4f"; ctx.font = "bold 26px sans-serif"; ctx.fillText("#100分クエスト", W / 2, 710);
+      ctx.fillStyle = "#6b6b63"; ctx.font = "20px sans-serif"; ctx.fillText(fmtCardDate(q.date), W / 2, 745);
       const a = document.createElement("a");
       a.href = cv.toDataURL("image/png");
       a.download = "bocchi_" + g.animal + ".png";
