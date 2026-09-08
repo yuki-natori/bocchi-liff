@@ -233,6 +233,12 @@
       60%  { background:#eef7f1; border-color:#bcd9c6; transform:scale(1); }
       100% { background:#f4f2ea; border-color:#e3ddcd; }
     }
+    /* ===== ミッション／パーティ の表示切替（チュートリアル後）===== */
+    .view-tabs { display:flex; gap:8px; margin:0 0 12px; }
+    .vtab { flex:1; padding:11px 8px; border-radius:10px; border:1.5px solid #d9d4c6; background:#fff;
+      font-size:14px; font-weight:800; color:var(--sub); cursor:pointer; line-height:1.35; }
+    .vtab.active { background:var(--green); color:#fff; border-color:var(--green); }
+    .vtab small { display:block; font-size:11px; font-weight:500; opacity:.8; margin-top:1px; }
     /* ===== チュートリアル ===== */
     .tut-box { background:#f3f0e6; border:1.5px solid #e3ddcd; border-radius:12px;
       padding:13px 14px; margin:0 0 14px; }
@@ -465,9 +471,12 @@
       まだ予約がありません。<br>メニューの「📅 予約」から参加日時を選んでね。
     </div>
 
+    <!-- チュートリアル後の表示切替（ミッション／パーティ）。それまでは両方まとめて表示 -->
+    <div class="view-tabs hidden" id="viewTabs"></div>
+
     <!-- マッチング後：グループ発表 -->
     <div class="group-box hidden" id="groupBox">
-      <div class="lead">🎉 あなたのグループが決まりました</div>
+      <div class="lead" id="groupLead">🎉 あなたのパーティが決まりました</div>
       <div class="gname" id="groupName">—</div>
       <div class="gsub" id="groupSlot"></div>
       <div class="group-members" id="groupMembers"></div>
@@ -823,6 +832,7 @@
         b.onclick = async () => {
           currentGroupSlotId = r.slotId;
           clearedSeen = null; // 別のパーティに切り替えたら「今クリアした」判定をやり直す
+          groupView = "quest";
           renderBandTabs(); await renderGroupDetail(r.slotId);
         };
         tabs.appendChild(b);
@@ -830,7 +840,8 @@
     }
 
     async function renderGroupDetail(slotId) {
-      ["actionBanner","groupBox","questBox","unmatchedBox","groupPlaceholder"].forEach((id) => $(id).classList.add("hidden"));
+      ["actionBanner","viewTabs","groupBox","questBox","unmatchedBox","groupPlaceholder"]
+        .forEach((id) => $(id).classList.add("hidden"));
       currentGroup = null;
       const myGroup = await api("getMyGroup", { lineUserId: profile.userId, slotId: slotId });
       if (myGroup.group && myGroup.group.status === "failed") {
@@ -974,10 +985,9 @@
         if (slotId !== currentGroupSlotId) return; // 更新中にタブが切り替わったら破棄
         if (!myGroup.group) return;
         if (myGroup.group.status === "failed") { await renderGroupDetail(slotId); return; } // 不成立に変化→全体を出し直す
-        // 画面を隠さず差し替え（チラつき防止）
+        // 画面を隠さず差し替え（チラつき防止）。表示/非表示は最後に applyGroupView がまとめて決める
         currentGroup = myGroup.group;
         renderGroup(myGroup.group);
-        $("groupBox").classList.remove("hidden");
         await loadQuest(slotId);
         renderActionBanner();
       } catch (e) { /* 一時的な通信エラーは次の周期に任せる */ }
@@ -1137,7 +1147,40 @@
       questData = r.quest || null; // 枠切替時に別枠の古いデータを残さない
       if (r.quest) { renderQuest(r.quest); $("questBox").classList.remove("hidden"); }
       else { $("questBox").classList.add("hidden"); stopTick(); }
+      applyGroupView();
     }
+
+    // ----- ミッション／パーティ の表示切替 -----
+    // チュートリアルが終わるまでは両方まとめて表示（誰が来ているかを見たい時間帯なので）。
+    // 本編に入ったらタブで分ける＝メンバー一覧が常に画面を占領しないように。
+    let groupView = "quest";
+    function applyGroupView() {
+      const split = !!(currentGroup && questData && questData.phase === "main");
+      $("viewTabs").classList.toggle("hidden", !split);
+      if (split) {
+        $("questBox").classList.toggle("hidden", groupView !== "quest");
+        $("groupBox").classList.toggle("hidden", groupView !== "party");
+        renderViewTabs();
+      } else {
+        $("groupBox").classList.toggle("hidden", !currentGroup);
+        $("questBox").classList.toggle("hidden", !questData);
+      }
+    }
+    function renderViewTabs() {
+      const left = (questData.missions || []).filter((m) => !m.cleared).length;
+      const tabs = $("viewTabs");
+      tabs.innerHTML =
+        '<button class="vtab' + (groupView === "quest" ? " active" : "") + '" data-view="quest">' +
+          '🏰 ミッション<small>' + (left ? "残り " + left + "件" : "すべてクリア！") + '</small></button>' +
+        '<button class="vtab' + (groupView === "party" ? " active" : "") + '" data-view="party">' +
+          '👥 パーティ<small>' + esc(questData.partyName || "") + '・' + questData.memberTotal + '人</small></button>';
+    }
+    $("viewTabs").addEventListener("click", (e) => {
+      const b = e.target.closest(".vtab"); if (!b) return;
+      groupView = b.dataset.view;
+      applyGroupView();
+      $("viewTabs").scrollIntoView({ block: "start" });
+    });
 
     function renderQuest(q) {
       // パーティ名と人数
@@ -1522,7 +1565,10 @@
     $("mcClose").addEventListener("click", () => $("memberOverlay").classList.add("hidden"));
 
     function renderGroup(g) {
-      $("groupName").textContent = g.name + " グループ";
+      // 自分たちで名前を付けたらそれを表示（未命名は連番の「パーティ1」）
+      $("groupName").textContent = g.name;
+      // 命名後は名前がすぐ下に大きく出るので、発表用の見出しは消す
+      $("groupLead").classList.toggle("hidden", !!g.named);
       $("groupSlot").textContent = formatSlot(g.date, g.time);
       const box = $("groupMembers");
       box.innerHTML = "";
