@@ -213,15 +213,31 @@
     .mission-item { display:flex; align-items:center; gap:10px; padding:11px 12px;
       border:1.5px solid #e3ddcd; border-radius:10px; margin-bottom:8px; cursor:pointer; font-size:14px; }
     .mission-item.mine { border-color:#bcd9c6; background:#fbfefc; }
-    .mission-item.done { background:#f3faf5; border-color:var(--green); color:var(--green); font-weight:700; }
+    /* クリア済みは灰色にして押せなくする（下へまとめて移動する）*/
+    .mission-item.done { background:#f4f2ea; border-color:#e3ddcd; color:var(--sub);
+      cursor:default; pointer-events:none; }
     .mission-item .box { width:22px; height:22px; border:2px solid #c9c2ad; border-radius:6px;
       display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; }
     .mission-item.mine .box { border-color:var(--green); color:var(--green); }
+    /* チェック印だけは緑のまま＝「達成済み」であって「使えない」ではないと伝える */
     .mission-item.done .box { background:var(--green); border-color:var(--green); color:#fff; }
     .mission-item .m-body { flex:1; min-width:0; }
     .mission-item .m-name { line-height:1.4; }
+    .mission-item.done .m-name { opacity:.75; }
     .mission-item .m-meta { font-size:11px; color:var(--sub); margin-top:3px; font-weight:500; }
-    .mission-item.done .m-meta { color:var(--green); }
+    .mission-item.done .m-meta { color:var(--green); font-weight:700; }
+    /* クリアした直後の1件だけ光らせる（下へ移動しても見失わないように）*/
+    .mission-item.just-done { animation:mJustDone 1.1s ease-out both; }
+    @keyframes mJustDone {
+      0%   { background:#dff0e5; border-color:var(--green); transform:scale(1.02); }
+      60%  { background:#eef7f1; border-color:#bcd9c6; transform:scale(1); }
+      100% { background:#f4f2ea; border-color:#e3ddcd; }
+    }
+    /* 「クリア済み」の区切り線 */
+    .m-divider { display:flex; align-items:center; gap:8px; margin:16px 0 9px;
+      font-size:11.5px; font-weight:700; color:var(--sub); }
+    .m-divider::before, .m-divider::after { content:""; flex:1; height:1px; background:#ece8dc; }
+    @media (prefers-reduced-motion:reduce) { .mission-item.just-done { animation:none; } }
     .share-btn { display:block; width:100%; margin:16px 0 0; padding:14px;
       font-size:15px; font-weight:800; color:#fff; background:var(--accent); border:none; border-radius:12px; cursor:pointer; }
 
@@ -771,7 +787,11 @@
         const b = document.createElement("button");
         b.className = "band-tab" + (r.slotId === currentGroupSlotId ? " active" : "");
         b.textContent = formatSlot(r.date, r.time);
-        b.onclick = async () => { currentGroupSlotId = r.slotId; renderBandTabs(); await renderGroupDetail(r.slotId); };
+        b.onclick = async () => {
+          currentGroupSlotId = r.slotId;
+          clearedSeen = null; // 別のパーティに切り替えたら「今クリアした」判定をやり直す
+          renderBandTabs(); await renderGroupDetail(r.slotId);
+        };
         tabs.appendChild(b);
       });
     }
@@ -1153,17 +1173,44 @@
       });
     }
 
+    // クリア済みと分かったミッションのID。次の描画で「今クリアした1件」を光らせるために使う
+    let clearedSeen = null;
     function renderMissionList(q) {
       const list = $("missionList");
       list.innerHTML = "";
       const all = q.missions || [];
+      // 初回だけは既存のクリア済みを「今クリアした」扱いにしない
+      const first = (clearedSeen === null);
+      if (first) clearedSeen = new Set();
+      const justDone = new Set();
+      all.forEach((m) => {
+        if (m.cleared && !clearedSeen.has(m.id)) { clearedSeen.add(m.id); if (!first) justDone.add(m.id); }
+        if (!m.cleared) clearedSeen.delete(m.id);
+      });
+
       // 絞り込んでも元のindexを保つ必要がある（toggleに渡す番号がずれないように）
+      // クリア済みは下へまとめる（未クリアの並びは元のまま＝sortは安定ソート）
       const shown = all.map((m, i) => ({ m, i }))
-        .filter((x) => missionTab === "all" || x.m.power === missionTab);
+        .filter((x) => missionTab === "all" || x.m.power === missionTab)
+        .sort((a, b) => (a.m.cleared ? 1 : 0) - (b.m.cleared ? 1 : 0));
       if (!shown.length) { list.innerHTML = '<div class="m-empty">このチカラのミッションはありません</div>'; return; }
+
+      const doneCount = shown.filter((x) => x.m.cleared).length;
+      let dividerDone = false;
       shown.forEach(({ m, i }) => {
+        // 未クリアとクリア済みの境目に区切りを入れる（両方あるときだけ）
+        if (m.cleared && !dividerDone) {
+          dividerDone = true;
+          if (doneCount < shown.length) {
+            const dv = document.createElement("div");
+            dv.className = "m-divider";
+            dv.textContent = "クリア済み " + doneCount + "件";
+            list.appendChild(dv);
+          }
+        }
         const row = document.createElement("div");
-        row.className = "mission-item" + (m.cleared ? " done" : (m.mine ? " mine" : ""));
+        row.className = "mission-item" + (m.cleared ? " done" : (m.mine ? " mine" : ""))
+          + (justDone.has(m.id) ? " just-done" : "");
         const pm = POWER_META[m.power] || { emoji:"", label:"" };
         row.innerHTML =
           '<span class="box">' + (m.cleared ? "✓" : (m.mine ? "・" : "")) + '</span>'
@@ -1171,7 +1218,8 @@
           + '<span class="m-meta">' + stars(m.stars) + " " + pm.label + "＋" + m.stars
           + (m.cleared ? "　✅クリア！" : "　" + m.checkedCount + "/" + m.memberCount + "人がチェック")
           + '</span></span>';
-        row.addEventListener("click", () => toggleQuestMission(i, !m.mine, row));
+        // クリア済みは押せない（取り消すとチカラが減り、救出済みの姫が戻ってしまうため）
+        if (!m.cleared) row.addEventListener("click", () => toggleQuestMission(i, !m.mine, row));
         list.appendChild(row);
       });
     }
