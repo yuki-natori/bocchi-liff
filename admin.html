@@ -621,6 +621,7 @@
           (arrivedSet ? "到着 " + g.arrived + "/" + g.total + "人　／　" : "") +
           (g.members || []).length + "人" +
           (g.destination ? "　／　🚶 移動先 " + esc(g.destination) : "") +
+          (g.partyMix ? "　／　👑 " + esc(g.partyMix) : "") +
           (g.tutorialDone === true ? "　／　🐧 チュートリアル完了" : "") + "</div>" +
           pwLine +
           "<div>" + chips + "</div></div>";
@@ -644,6 +645,12 @@
               : '<span class="ng">⚠️ 📍集合場所が0件です。全パーティが「スタート地点」と表示され、混雑します</span><br>') +
             '<div class="meta" style="font-size:12px;margin:2px 0 8px">' +
             esc((r.missionNames || []).join(" / ")) + "</div>";
+        }
+        // 事前登録パーティの内訳
+        if (typeof r.declaredParties === "number") {
+          head += "👑 事前登録パーティ " + r.declaredParties + "組" +
+            "（3人以上でそのまま成立 " + r.declaredKept + "組" +
+            (r.mergedPeople ? "／合流して編成 " + r.mergedPeople + "人" : "") + "）<br>";
         }
         showResult(head + groupsHtml(r.groups));
         loadSlots();

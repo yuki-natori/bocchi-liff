@@ -233,6 +233,34 @@
       60%  { background:#eef7f1; border-color:#bcd9c6; transform:scale(1); }
       100% { background:#f4f2ea; border-color:#e3ddcd; }
     }
+    /* ===== ⑬ パーティ登録（予約画面）===== */
+    .pmode { display:flex; flex-direction:column; gap:8px; }
+    .pm-opt { display:block; width:100%; text-align:left; padding:12px 14px; border-radius:12px;
+      border:1.5px solid #e3ddcd; background:#fff; cursor:pointer; font-family:inherit; }
+    .pm-opt.active { border-color:var(--green); background:#f3faf5; }
+    .pm-t { display:block; font-size:14.5px; font-weight:800; color:var(--ink); }
+    .pm-opt.active .pm-t { color:var(--green); }
+    .pm-d { display:block; font-size:12px; color:var(--sub); margin-top:3px; line-height:1.5; }
+    #joinCodeBox { margin-top:10px; }
+    #joinCode { width:100%; padding:14px; font-size:26px; font-weight:800; text-align:center;
+      letter-spacing:.32em; text-indent:.32em; text-transform:uppercase;
+      border:1.5px solid #d9d4c6; border-radius:12px; font-family:inherit; background:#fff; }
+    .pm-note { font-size:12px; color:var(--sub); line-height:1.6; margin-top:9px;
+      background:#f6f4ec; border-radius:8px; padding:9px 11px; }
+    /* コード発行のご案内 */
+    .pd-card { background:#fff; border:1.5px solid var(--green); border-radius:14px;
+      padding:22px 18px; text-align:center; }
+    .pd-lead { font-size:15px; font-weight:800; color:var(--green); }
+    .pd-code { font-size:42px; font-weight:900; letter-spacing:.18em; text-indent:.18em;
+      color:var(--ink); margin:12px 0 4px; }
+    .pd-sub { font-size:13px; color:var(--sub); }
+    .pd-text { font-size:13px; line-height:1.7; margin-top:14px; text-align:left;
+      background:#f6f4ec; border-radius:8px; padding:11px 13px; }
+    /* 予約一覧のパーティ表示（時刻の下に折り返す） */
+    .resv-item { flex-wrap:wrap; }
+    .resv-party { flex:1 0 100%; order:2; font-size:12px; color:var(--green);
+      font-weight:700; line-height:1.6; margin-top:5px; }
+    .resv-party .rp-code { background:#eaf6ef; border-radius:6px; padding:1px 7px; letter-spacing:.1em; }
     /* ===== ミッション／パーティ の表示切替（チュートリアル後）===== */
     .view-tabs { display:flex; gap:8px; margin:0 0 12px; }
     .vtab { flex:1; padding:11px 8px; border-radius:10px; border:1.5px solid #d9d4c6; background:#fff;
@@ -550,8 +578,50 @@
     <div class="hidden" id="chooseBox">
       <div class="section-title">参加できる日時を選ぶ</div>
       <div id="slotList"></div>
+
+      <!-- ⑬ だれと参加するか -->
+      <div class="section-title" style="margin-top:20px">だれと参加する？</div>
+      <div class="pmode" id="partyMode">
+        <button class="pm-opt active" data-mode="solo">
+          <span class="pm-t">🎲 新しい仲間と</span>
+          <span class="pm-d">当日その場で3〜5人のパーティを組みます</span>
+        </button>
+        <button class="pm-opt" data-mode="create">
+          <span class="pm-t">👑 いつもの仲間と（パーティを作る）</span>
+          <span class="pm-d">コードが出るので、仲間に伝えてね</span>
+        </button>
+        <button class="pm-opt" data-mode="join">
+          <span class="pm-t">🤝 いつもの仲間と（コードで参加）</span>
+          <span class="pm-d">仲間からもらったコードを入れてね</span>
+        </button>
+      </div>
+      <div class="hidden" id="joinCodeBox">
+        <input type="text" id="joinCode" maxlength="4" placeholder="A7K2"
+          autocapitalize="characters" autocomplete="off" />
+        <div class="pm-note">仲間と<b>同じ日時</b>を選んでね。日時が違うと同じパーティになりません。</div>
+      </div>
+      <div class="pm-note hidden" id="partyNote">
+        2人以下のときは、当日ほかの参加者と合流して3〜5人のパーティになります。<br>
+        3人以上そろえば、そのままのメンバーで進みます（最大5人）。
+      </div>
+
       <button class="submit" id="reserveBtn" disabled>この日時で予約する</button>
       <button class="back-link" id="chooseBackBtn" style="display:block;margin:10px auto 0">予約一覧に戻る</button>
+    </div>
+
+    <!-- パーティを作ったあとのコード案内 -->
+    <div class="hidden" id="partyDoneBox">
+      <div class="pd-card">
+        <div class="pd-lead">👑 パーティを作りました</div>
+        <div class="pd-code" id="pdCode">----</div>
+        <div class="pd-sub" id="pdSlot"></div>
+        <div class="pd-text">
+          このコードを仲間に伝えてね。<br>
+          仲間は<b>同じ日時</b>を選んで「コードで参加」から入力すると、同じパーティになります。
+        </div>
+        <button class="submit" id="pdCopyBtn">コードをコピー</button>
+        <button class="back-link" id="pdDoneBtn" style="display:block;margin:10px auto 0">予約一覧に戻る</button>
+      </div>
     </div>
 
     <div class="status" id="homeStatus"></div>
@@ -1045,6 +1115,7 @@
     // 予約一覧を表示（選択UIは隠す）
     async function renderReserve() {
       $("chooseBox").classList.add("hidden");
+      $("partyDoneBox").classList.add("hidden");
       $("myReserveBox").classList.remove("hidden");
       const mine = await api("getMyReservation", { lineUserId: profile.userId });
       const resvs = mine.reservations || [];
@@ -1058,7 +1129,15 @@
       resvs.forEach((r) => {
         const div = document.createElement("div");
         div.className = "resv-item";
-        div.innerHTML = '<span class="rtime">' + formatSlot(r.date, r.time) + '</span>';
+        // パーティ登録していれば、コードと今そろっているメンバーを出す
+        let pHtml = "";
+        if (r.party) {
+          const names = (r.party.members || []).map((m) => esc(m.nickname) + (m.me ? "（あなた）" : "")).join("・");
+          pHtml = '<div class="resv-party">👑 パーティ <span class="rp-code">' + esc(r.party.code) + '</span>　'
+            + r.party.size + '/' + r.party.max + '人<br>' + names
+            + (r.party.size < 3 ? '<br>※当日ほかの参加者と合流します' : '') + '</div>';
+        }
+        div.innerHTML = '<span class="rtime">' + formatSlot(r.date, r.time) + '</span>' + pHtml;
         const c = document.createElement("button");
         c.className = "rcancel"; c.textContent = "キャンセル";
         c.onclick = () => cancelResv(r.slotId, formatSlot(r.date, r.time));
@@ -1111,6 +1190,12 @@
     $("addReserveBtn").addEventListener("click", async () => {
       $("myReserveBox").classList.add("hidden");
       $("chooseBox").classList.remove("hidden");
+      // 「だれと参加する？」は毎回ソロに戻す（前回の選択が残っていると事故のもと）
+      partyMode = "solo"; $("joinCode").value = "";
+      document.querySelectorAll("#partyMode .pm-opt").forEach((x) =>
+        x.classList.toggle("active", x.dataset.mode === "solo"));
+      $("joinCodeBox").classList.add("hidden");
+      $("partyNote").classList.add("hidden");
       setStatus("homeStatus", "", "");
       const slotsRes = await api("getSlots");
       renderSlots(slotsRes.slots || []);
@@ -1635,18 +1720,63 @@
     }
 
     // 日時を選んで予約（追加）
+    // ----- ⑬ だれと参加するか（ソロ／パーティを作る／コードで参加）-----
+    let partyMode = "solo";
+    $("partyMode").addEventListener("click", (e) => {
+      const b = e.target.closest(".pm-opt"); if (!b) return;
+      partyMode = b.dataset.mode;
+      document.querySelectorAll("#partyMode .pm-opt").forEach((x) =>
+        x.classList.toggle("active", x.dataset.mode === partyMode));
+      $("joinCodeBox").classList.toggle("hidden", partyMode !== "join");
+      $("partyNote").classList.toggle("hidden", partyMode === "solo");
+      if (partyMode === "join") $("joinCode").focus();
+    });
+    // 入力は大文字4文字に寄せる（小文字・全角で打っても通るようサーバー側でも吸収している）
+    $("joinCode").addEventListener("input", (e) => {
+      e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+    });
+
     $("reserveBtn").addEventListener("click", async () => {
       if (!selectedSlotId) return;
+      const code = $("joinCode").value.trim();
+      if (partyMode === "join" && code.length !== 4) {
+        setStatus("homeStatus", "パーティコード（4文字）を入力してね", "ng"); return;
+      }
       $("reserveBtn").disabled = true;
       setStatus("homeStatus", "予約中…", "");
-      const r = await api("reserveSlot", { lineUserId: profile.userId, slotId: selectedSlotId });
-      if (r.ok) {
-        setStatus("homeStatus", "✅ 予約しました（" + formatSlot(r.date, r.time) + "）", "ok");
+      const r = await api("reserveSlot", {
+        lineUserId: profile.userId, slotId: selectedSlotId,
+        partyMode: partyMode, partyCode: code });
+      if (r.ok && partyMode === "create" && r.partyCode) {
+        // コードを大きく見せる画面へ（仲間に伝えてもらう必要があるので予約一覧には戻さない）
+        $("chooseBox").classList.add("hidden");
+        $("myReserveBox").classList.add("hidden");
+        $("pdCode").textContent = r.partyCode;
+        $("pdSlot").textContent = formatSlot(r.date, r.time);
+        $("partyDoneBox").classList.remove("hidden");
+        setStatus("homeStatus", "", "");
+      } else if (r.ok) {
+        setStatus("homeStatus", "✅ 予約しました（" + formatSlot(r.date, r.time) + "）"
+          + (r.partyCode ? "／パーティ " + r.partyCode + "（" + r.partySize + "人）" : ""), "ok");
         await renderReserve(); // 予約一覧に戻る（追加された状態）
       } else {
         setStatus("homeStatus", "予約できませんでした：" + (r.error || ""), "ng");
         $("reserveBtn").disabled = false;
       }
+    });
+    $("pdCopyBtn").addEventListener("click", async () => {
+      const code = $("pdCode").textContent;
+      try {
+        await navigator.clipboard.writeText(code);
+        setStatus("homeStatus", "✅ コード " + code + " をコピーしました", "ok");
+      } catch (e) {
+        setStatus("homeStatus", "コードは " + code + " です（長押しでコピーできます）", "");
+      }
+    });
+    $("pdDoneBtn").addEventListener("click", async () => {
+      $("partyDoneBox").classList.add("hidden");
+      setStatus("homeStatus", "", "");
+      await renderReserve();
     });
 
     $("doneBackBtn").addEventListener("click", openMenu);
