@@ -160,6 +160,16 @@
         </div>
 
         <div class="q-sec">
+          <div class="q-sec-h">🐧 チュートリアル<span class="q-note">ブース前3つ＋移動1つ／合計＝ペンペン姫の条件になるように</span></div>
+          <div class="sub" style="font-size:12px; margin:-4px 0 10px">
+            行の追加・削除はできません（名前の入力欄や目的地の仕掛けが各行に紐づいているため）。
+            移動の行には <b>{destination}</b> を必ず残してください（📍集合場所タブの地点名が入ります）。
+          </div>
+          <div id="questTutorialList"></div>
+          <button class="sub-btn danger" id="resetTutorialBtn">チュートリアルを既定に戻す</button>
+        </div>
+
+        <div class="q-sec">
           <div class="q-sec-h">🗒 ミッション<span class="q-note">反映は次にマッチングした枠から（進行中には影響なし）</span></div>
           <div class="q-filter" id="missionFilter"></div>
           <div id="questMissionList"></div>
@@ -221,8 +231,11 @@
     <div class="card">
       <h2 id="spotFormTitle">③ 地点を登録</h2>
       <div class="sub" style="margin-bottom:10px">
-        ※クエストではパーティごとの集合場所は使いません。この地点リストは
-        <b>第3段階のチュートリアル「移動先の割り当て」に転用</b>する予定のため残しています。
+        ここに登録した地点が<b>チュートリアルの移動先</b>になります。マッチング時に登録順で
+        パーティへ順繰りに割り当て（<b>専有ではないので重複しても大丈夫</b>）、
+        ブース前の3つを終えるとペンペン姫が行き先として告げます。<br>
+        目安は<b>8〜12地点</b>（同時スタートが4〜8組のため）。条件はブースから徒歩3〜5分・目印になり迷わない・
+        動線を塞がない・人が滞留しても平気な広さ。<b>0件のときは全パーティ「スタート地点」と表示</b>されます。
       </div>
       <div class="row">
         <div><label>種類</label>
@@ -599,12 +612,16 @@
             "　／　💰" + esc(pw.save || 0) + " 💪" + esc(pw.earn || 0) + " 📈" + esc(pw.grow || 0) +
             " 🛡" + esc(pw.protect || 0) + " 🎁" + esc(pw.use || 0) + "</div>"
           : "";
+        // プレイヤーが名前を付けたら「〇〇（パーティ1）」と両方出す（管理側の識別用に連番を残す）
+        const title = g.partyName ? esc(g.partyName) + "（" + esc(g.name) + "）" : esc(g.name);
         return "<div class='gcard'>" +
-          "<div class='gh'>" + esc(g.name) + "パーティ" +
+          "<div class='gh'>" + title +
           (hasQuest ? "<span class='gbadge'>チカラ " + esc(g.totalPower) + "</span>" : "") + "</div>" +
           "<div class='gmeta'>" +
           (arrivedSet ? "到着 " + g.arrived + "/" + g.total + "人　／　" : "") +
-          "　／　" + (g.members || []).length + "人</div>" +
+          (g.members || []).length + "人" +
+          (g.destination ? "　／　🚶 移動先 " + esc(g.destination) : "") +
+          (g.tutorialDone === true ? "　／　🐧 チュートリアル完了" : "") + "</div>" +
           pwLine +
           "<div>" + chips + "</div></div>";
       }).join("");
@@ -620,7 +637,11 @@
         // 🏰クエストタブで編集したミッションが本当に使われたかをその場で確認できるようにする
         if (typeof r.missionCount === "number") {
           head += "🏰 ミッション " + r.missionCount + "件を適用" +
-            (r.missionsCustom ? "（管理画面で編集したもの）" : "（コードの既定）") + "<br>" +
+            (r.missionsCustom ? "（管理画面で編集したもの）" : "（コードの既定）") +
+            "　／　🐧 チュートリアル " + (r.tutorialCount || 0) + "件<br>" +
+            (r.destinationCount
+              ? "🚶 移動先 " + r.destinationCount + "地点を順繰りに割り当て<br>"
+              : '<span class="ng">⚠️ 📍集合場所が0件です。全パーティが「スタート地点」と表示され、混雑します</span><br>') +
             '<div class="meta" style="font-size:12px;margin:2px 0 8px">' +
             esc((r.missionNames || []).join(" / ")) + "</div>";
         }
@@ -960,7 +981,9 @@
       questPrincesses = r.princesses || [];
       questPowers     = r.powers || [];
       questMissions   = (r.missions || []).map((m) => ({ id: m.id, name: m.name, power: m.power, stars: m.stars }));
+      questTutorial   = (r.tutorial || []).map((m) => ({ id: m.id, name: m.name, power: m.power, stars: m.stars, kind: m.kind }));
       renderPrincessEditor();
+      renderTutorialEditor();
       renderMissionEditor();
       set("questStatus", "現在の設定を読み込みました" +
         (r.isCustomMissions ? "（ミッションは編集済みのものが保存されています）" : "（ミッションは既定値のままです）"), "ok");
@@ -978,20 +1001,30 @@
     // 現在のバランス。チカラごとの合計⭐と、最後の姫に届くかを表示する
     function renderQuestSummary() {
       const per = {}; powerList().forEach((p) => { per[p.key] = 0; });
-      questMissions.forEach((m) => {
+      questTutorial.concat(questMissions).forEach((m) => {
         if (per[m.power] !== undefined) per[m.power] += (Number(m.stars) || 0);
       });
       const total = powerList().reduce((s, p) => s + per[p.key], 0);
+      const tutTotal = questTutorial.reduce((s, m) => s + (Number(m.stars) || 0), 0);
       const maxNeed = questPrincesses.length
         ? Math.max(...questPrincesses.map((p) => Number(p.need) || 0)) : 0;
+      // 最初の姫＝チュートリアル完了で救出される想定。ズレていると本編開始と救出がちぐはぐになる
+      const firstNeed = questPrincesses.length
+        ? Math.min(...questPrincesses.map((p) => Number(p.need) || 0)) : 0;
       let line = "";
       if (maxNeed) {
         line = total >= maxNeed
           ? '<span class="qs-line ok">✅ 全部クリアすれば最後の姫の条件（' + maxNeed + '）に届きます</span>'
           : '<span class="qs-line ng">⚠️ 全部クリアしても⭐' + total + '。最後の姫の条件（' + maxNeed + '）に届きません</span>';
       }
+      if (firstNeed && tutTotal !== firstNeed) {
+        line += '<span class="qs-line ng">⚠️ チュートリアルの合計⭐' + tutTotal +
+          ' が最初の姫の条件（' + firstNeed + '）と違います。' +
+          (tutTotal > firstNeed ? '移動する前に救出されてしまいます' : 'チュートリアルを終えても救出されません') + '</span>';
+      }
       $("questSummary").innerHTML =
-        '<span class="qs-main">ミッション ' + questMissions.length + '件 ／ 満点 ⭐' + total + '</span>' +
+        '<span class="qs-main">チュートリアル ' + questTutorial.length + '件（⭐' + tutTotal + '）／ ' +
+        'ミッション ' + questMissions.length + '件 ／ 満点 ⭐' + total + '</span>' +
         powerList().map((p) =>
           '<span class="qs-p' + (per[p.key] ? '' : ' zero') + '">' +
           esc(p.emoji) + esc(p.label) + ' ' + per[p.key] + '</span>').join("") +
@@ -1014,6 +1047,52 @@
       });
       renderQuestSummary();
     }
+
+    // ----- チュートリアル（4行固定・追加削除なし）-----
+    let questTutorial = [];
+    function renderTutorialEditor() {
+      const box = $("questTutorialList"); box.innerHTML = "";
+      questTutorial.forEach((m, i) => {
+        const d = document.createElement("div");
+        d.className = "q-mrow";
+        d.innerHTML =
+          '<input type="text" class="qm-name" maxlength="60" id="qt_name_' + i + '" value="' + esc(m.name) + '" />' +
+          '<select class="qm-power" id="qt_power_' + i + '">' +
+            powerList().map((p) => '<option value="' + esc(p.key) + '"' +
+              (p.key === m.power ? ' selected' : '') + '>' + esc(p.emoji) + " " + esc(p.label) + '</option>').join("") +
+          '</select>' +
+          '<select class="qm-stars" id="qt_stars_' + i + '">' +
+            [1, 2, 3].map((n) => '<option value="' + n + '"' + (n === m.stars ? ' selected' : '') + '>' +
+              "⭐".repeat(n) + '</option>').join("") +
+          '</select>';
+        box.appendChild(d);
+      });
+      renderQuestSummary();
+    }
+    function syncTutorialInputs() {
+      questTutorial = questTutorial.map((m, i) => ({
+        id:    m.id,
+        kind:  m.kind,
+        name:  ($("qt_name_"  + i) ? $("qt_name_"  + i).value.trim() : m.name),
+        power: ($("qt_power_" + i) ? $("qt_power_" + i).value : m.power),
+        stars: ($("qt_stars_" + i) ? parseInt($("qt_stars_" + i).value, 10) : m.stars)
+      }));
+    }
+    $("questTutorialList").addEventListener("input", markQuestDirty);
+    $("questTutorialList").addEventListener("change", () => { syncTutorialInputs(); markQuestDirty(); renderQuestSummary(); });
+    $("resetTutorialBtn").addEventListener("click", async () => {
+      const ok = await dangerConfirm({
+        title: "チュートリアルを既定に戻す",
+        body: "編集した内容が失われ、コードに定義された既定のチュートリアルに戻ります。ミッションと姫の条件は変わりません。",
+        target: "チュートリアル " + questTutorial.length + "件",
+        confirmText: "既定に戻す"
+      });
+      if (!ok) return;
+      set("questStatus", "戻しています…", "");
+      const r = await api("updateQuestSettings", { tutorial: "default" });
+      if (r.ok) { await loadQuestSettings(); set("questStatus", "✅ チュートリアルを既定に戻しました", "ok"); }
+      else set("questStatus", "⚠️ " + esc(r.error || "失敗"), "ng");
+    });
 
     // ----- ミッション（チカラで絞り込み・1件1行）-----
     function renderMissionEditor() {
@@ -1107,6 +1186,11 @@
     $("saveAllQuestBtn").addEventListener("click", async () => {
       if (!questLoaded) { set("questStatus", "先に「読み込み直す」で設定を読み込んでください", "ng"); return; }
       syncMissionInputs();
+      syncTutorialInputs();
+      const badTut = questTutorial.findIndex((m) => !m.name);
+      if (badTut >= 0) { set("questStatus", "チュートリアル" + (badTut + 1) + "件目の名前が空です", "ng"); return; }
+      const noDest = questTutorial.find((m) => m.kind === "move" && !m.name.includes("{destination}"));
+      if (noDest) { set("questStatus", "移動のミッション名には {destination} を残してください", "ng"); return; }
       const princesses = questPrincesses.map((p, i) => ({
         id: p.id,
         need: ($("qp_need_" + i) ? parseInt($("qp_need_" + i).value, 10) : p.need),
@@ -1125,7 +1209,8 @@
       set("questStatus", "保存中…", "");
       const r = await api("updateQuestSettings", {
         princesses: JSON.stringify(princesses),
-        missions:   JSON.stringify(questMissions)
+        missions:   JSON.stringify(questMissions),
+        tutorial:   JSON.stringify(questTutorial)
       });
       if (r.ok) {
         await loadQuestSettings();

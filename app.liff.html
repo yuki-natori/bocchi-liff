@@ -233,6 +233,30 @@
       60%  { background:#eef7f1; border-color:#bcd9c6; transform:scale(1); }
       100% { background:#f4f2ea; border-color:#e3ddcd; }
     }
+    /* ===== チュートリアル ===== */
+    .tut-box { background:#f3f0e6; border:1.5px solid #e3ddcd; border-radius:12px;
+      padding:13px 14px; margin:0 0 14px; }
+    .tut-head { display:flex; align-items:center; gap:11px; }
+    /* 救出まで姿を見せない＝真っ黒なシルエット。救出の瞬間に初めて姿が出る */
+    .tut-face { flex:0 0 auto; font-size:36px; line-height:1; filter:brightness(0) opacity(.6);
+      animation:tutFloat 2.6s ease-in-out infinite; }
+    .tut-voice { flex:1; font-size:13.5px; line-height:1.6; color:var(--ink); font-weight:700; }
+    .tut-step { font-size:12px; color:var(--sub); margin-top:9px; padding-top:9px;
+      border-top:1px dashed #ddd6c4; }
+    @keyframes tutFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+    @media (prefers-reduced-motion:reduce) { .tut-face { animation:none; } }
+    /* パーティ名をつける行 */
+    .m-name-edit { flex:1 0 100%; display:flex; gap:6px; margin-top:8px; }
+    .m-name-edit input { flex:1; min-width:0; padding:8px 10px; font-size:14px;
+      border:1.5px solid #d9d4c6; border-radius:8px; font-family:inherit; }
+    .m-name-edit button { flex:0 0 auto; margin:0; padding:8px 14px; font-size:13px; font-weight:700;
+      color:#fff; background:var(--green); border:none; border-radius:8px; cursor:pointer; }
+    .m-declare { flex:1 0 100%; margin-top:7px; padding:8px 10px; background:#fffaf0; border:1px dashed #e6cf94;
+      border-radius:8px; font-size:14px; font-weight:800; text-align:center; }
+    /* 目的地が明かされるまでロックされる行 */
+    .mission-item.locked { background:#f4f2ea; border-style:dashed; color:var(--sub);
+      cursor:default; pointer-events:none; }
+    .mission-item.locked .box { border-color:#d9d4c6; color:var(--sub); }
     /* 「クリア済み」の区切り線 */
     .m-divider { display:flex; align-items:center; gap:8px; margin:16px 0 9px;
       font-size:11.5px; font-weight:700; color:var(--sub); }
@@ -454,6 +478,15 @@
     <div class="quest-box hidden" id="questBox">
       <div class="q-party" id="qParty">—<small id="qPartySub"></small></div>
 
+      <!-- ⑫チュートリアル：救出前のペンペン姫はシルエットで声だけ -->
+      <div class="tut-box hidden" id="tutBox">
+        <div class="tut-head">
+          <div class="tut-face" id="tutFace">🐧</div>
+          <div class="tut-voice" id="tutVoice"></div>
+        </div>
+        <div class="tut-step" id="tutStep"></div>
+      </div>
+
       <!-- メインゲージ（1本だけ） -->
       <div class="q-gauge-label">集めたチカラ</div>
       <div class="gauge"><div class="gauge-fill" id="qGauge"></div></div>
@@ -472,7 +505,7 @@
       <div class="growth-timer hidden" id="growthTimer"></div>
 
       <div class="missions">
-        <div class="missions-title">ミッション（パーティ全員のチェックでクリア）</div>
+        <div class="missions-title" id="missionsTitle">ミッション（パーティ全員のチェックでクリア）</div>
         <div class="m-tabs" id="missionTabs"></div>
         <div id="missionList"></div>
       </div>
@@ -846,7 +879,7 @@
 
       if (g.status === "waiting") {
         if (!g.checkedIn) {
-          // 開始前・未チェックイン → 集合場所と合言葉。チェックインは開始10分前から
+          // 開始前・未チェックイン → 会場での受付。チェックインは開始10分前から
           const openMs = startMs ? startMs - 10 * 60000 : null;
           const beforeWindow = openMs && now < openMs;
           html = '<div class="ab-title">⏰ ' + (startMs ? fmtHM(startMs) + 'までに ' : '') + '会場で受付をしよう</div>' 
@@ -865,6 +898,16 @@
           html = '<div class="ab-title">🎉 クエスト終了！おつかれさまでした</div>'
             + '<div class="ab-sub">ノベルティは運営ブースで受け取ってね</div>'
             + (questData ? '<button class="ab-btn" id="abShareBtn">🎁 結果カードを見る</button>' : '');
+        } else if (questData && questData.phase === "tutorial") {
+          // チュートリアル中 → 「今やること」は姫の救出ではなく目の前の4つ
+          const t = questData.tutorial || {};
+          const left = (questData.missions || []).filter((m) => !m.cleared).length;
+          html = '<div class="ab-label">まずはチュートリアル</div>'
+            + (t.destination
+              ? '<div class="ab-title">🚶 ' + esc(t.destination) + ' へ全員で移動しよう</div>'
+                + '<div class="ab-sub">ペンペン姫はそこにいる。着いたらチェックしてね</div>'
+              : '<div class="ab-title">ブース前で ' + left + ' つのミッション</div>'
+                + '<div class="ab-sub">3つ終えると、ペンペン姫が行き先を教えてくれるよ</div>');
         } else if (questData && questData.next) {
           // クエスト中 → 次の姫まであと何チカラか（最も行動を促す表示）
           const n = questData.next;
@@ -1144,13 +1187,38 @@
         return '<span class="' + (v ? "" : "zero") + '">' + POWER_META[k].emoji + v + '</span>';
       }).join("");
 
-      // ミッション（タブで絞り込み）
-      renderMissionTabs(q);
+      // チュートリアル中は姫の声と進み具合を出す
+      renderTutorial(q);
+
+      // ミッション（タブで絞り込み。チュートリアル中は種類が少ないのでタブは出さない）
+      const tut = (q.phase === "tutorial");
+      $("missionTabs").classList.toggle("hidden", tut);
+      $("missionsTitle").textContent = tut
+        ? "チュートリアル（パーティ全員のチェックでクリア）"
+        : "ミッション（パーティ全員のチェックでクリア）";
+      if (tut) missionTab = "all";
+      else renderMissionTabs(q);
       renderMissionList(q);
 
       $("shareBtn").classList.toggle("hidden", !q.completed);
       startTick(); // 残り時間カウントダウン（未開始なら中で自動停止）
       queueRescues(q); // 新しく救出された姫がいれば演出
+    }
+
+    // ----- チュートリアル（ペンペン姫の声＋進み具合）-----
+    function renderTutorial(q) {
+      const box = $("tutBox");
+      const t = q.tutorial || {};
+      if (q.phase !== "tutorial") { box.classList.add("hidden"); return; }
+      box.classList.remove("hidden");
+      $("tutVoice").textContent = t.voice || "";
+      const ms = q.missions || [];
+      // 行き先が出るまではロック中の移動を数に入れない（「3つ」と「0/4」が食い違わないように）
+      const target = t.destination ? ms : ms.filter((m) => !m.locked);
+      const done = target.filter((m) => m.cleared).length;
+      $("tutStep").textContent = t.destination
+        ? "🚶 " + t.destination + "へ向かおう（" + done + "/" + target.length + "）"
+        : "まずはこの" + target.length + "つから（" + done + "/" + target.length + "）";
     }
 
     // ----- ミッションのタブ（すべて／チカラ5種）-----
@@ -1188,16 +1256,15 @@
         if (!m.cleared) clearedSeen.delete(m.id);
       });
 
-      // 絞り込んでも元のindexを保つ必要がある（toggleに渡す番号がずれないように）
       // クリア済みは下へまとめる（未クリアの並びは元のまま＝sortは安定ソート）
-      const shown = all.map((m, i) => ({ m, i }))
+      const shown = all.map((m) => ({ m }))
         .filter((x) => missionTab === "all" || x.m.power === missionTab)
         .sort((a, b) => (a.m.cleared ? 1 : 0) - (b.m.cleared ? 1 : 0));
       if (!shown.length) { list.innerHTML = '<div class="m-empty">このチカラのミッションはありません</div>'; return; }
 
       const doneCount = shown.filter((x) => x.m.cleared).length;
       let dividerDone = false;
-      shown.forEach(({ m, i }) => {
+      shown.forEach(({ m }) => {
         // 未クリアとクリア済みの境目に区切りを入れる（両方あるときだけ）
         if (m.cleared && !dividerDone) {
           dividerDone = true;
@@ -1209,25 +1276,65 @@
           }
         }
         const row = document.createElement("div");
-        row.className = "mission-item" + (m.cleared ? " done" : (m.mine ? " mine" : ""))
+        row.className = "mission-item"
+          + (m.locked ? " locked" : (m.cleared ? " done" : (m.mine ? " mine" : "")))
           + (justDone.has(m.id) ? " just-done" : "");
         const pm = POWER_META[m.power] || { emoji:"", label:"" };
         row.innerHTML =
-          '<span class="box">' + (m.cleared ? "✓" : (m.mine ? "・" : "")) + '</span>'
+          '<span class="box">' + (m.cleared ? "✓" : (m.mine ? "・" : (m.locked ? "🔒" : ""))) + '</span>'
           + '<span class="m-body"><span class="m-name">' + pm.emoji + " " + esc(m.name) + '</span>'
           + '<span class="m-meta">' + stars(m.stars) + " " + pm.label + "＋" + m.stars
-          + (m.cleared ? "　✅クリア！" : "　" + m.checkedCount + "/" + m.memberCount + "人がチェック")
+          + (m.locked ? "　🐧 3つ終えると行き先が分かる"
+             : (m.cleared ? "　✅クリア！" : "　" + m.checkedCount + "/" + m.memberCount + "人がチェック"))
           + '</span></span>';
-        // クリア済みは押せない（取り消すとチカラが減り、救出済みの姫が戻ってしまうため）
-        if (!m.cleared) row.addEventListener("click", () => toggleQuestMission(i, !m.mine, row));
+
+        // 「パーティの名前を決めよう」には名前の入力欄、「スタート宣言」には文例を添える
+        if (m.kind === "partyName" && !m.cleared) row.appendChild(buildPartyNameEditor(q));
+        if (m.kind === "declare" && !m.cleared) {
+          const d = document.createElement("div");
+          d.className = "m-declare"; d.textContent = (q.tutorial || {}).declare || "";
+          row.appendChild(d);
+        }
+        if (m.kind === "partyName" || m.kind === "declare") row.style.flexWrap = "wrap";
+
+        // クリア済み・ロック中は押せない（取り消すとチカラが減り、救出済みの姫が戻ってしまうため）
+        if (!m.cleared && !m.locked) {
+          row.addEventListener("click", (e) => {
+            if (e.target.closest(".m-name-edit")) return; // 名前の入力欄はチェックに反応させない
+            toggleQuestMission(m.id, !m.mine, row);
+          });
+        }
         list.appendChild(row);
       });
     }
 
-    async function toggleQuestMission(index, mine, rowEl) {
+    // パーティ名の入力欄（チュートリアル1つ目の行の中に出る）
+    function buildPartyNameEditor(q) {
+      const wrap = document.createElement("div");
+      wrap.className = "m-name-edit";
+      const max = (q.tutorial || {}).nameMax || 20;
+      wrap.innerHTML = '<input type="text" maxlength="' + max + '" placeholder="パーティ名（' + max + '文字まで）" '
+        + 'value="' + (q.named ? esc(q.partyName) : "") + '" />'
+        + '<button type="button">決定</button>';
+      const input = wrap.querySelector("input");
+      const btn = wrap.querySelector("button");
+      btn.addEventListener("click", async () => {
+        const name = input.value.trim();
+        if (!name) { input.focus(); return; }
+        btn.disabled = true; btn.textContent = "…";
+        const r = await api("setPartyName", {
+          lineUserId: profile.userId, slotId: currentGroupSlotId, name: name });
+        if (r.ok && r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
+        else { btn.disabled = false; btn.textContent = "決定"; }
+      });
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); btn.click(); } });
+      return wrap;
+    }
+
+    async function toggleQuestMission(missionId, mine, rowEl) {
       if (rowEl) rowEl.style.pointerEvents = "none";
       const r = await api("toggleQuestMission", {
-        lineUserId: profile.userId, slotId: currentGroupSlotId, index: index, done: mine });
+        lineUserId: profile.userId, slotId: currentGroupSlotId, missionId: missionId, done: mine });
       if (r.ok && r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
       else if (rowEl) rowEl.style.pointerEvents = "";
     }
