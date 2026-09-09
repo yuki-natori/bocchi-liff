@@ -329,6 +329,12 @@
       <input type="datetime-local" id="tickNow" />
       <button id="runTickBtn">この枠を進行処理する</button>
       <button id="runReminderBtn" class="sub-btn">リマインダー処理を実行</button>
+      <button id="runMatchTickBtn" class="sub-btn">自動マッチングを今すぐ回す</button>
+      <div class="sub" style="margin-top:6px">
+        「自動マッチングを今すぐ回す」＝本番では5分ごとに動いている処理を手動で1回実行します。
+        <b>締切を過ぎた・まだマッチングしていない枠すべて</b>が対象です（上の日時を入れるとその時刻基準）。
+        LINE通知は送られません。
+      </div>
       <div class="sub" style="margin-top:6px">
         リマインダーは本番では自動送信（前日20時＋開始1時間前）。テストは上の日時を
         「枠の前日20時以降」や「開始60分前」にして実行。スロットIDを入れておくと、その枠の送信済みフラグをリセットしてから実行します（再テスト用）。
@@ -943,6 +949,24 @@
       const r = await api("runEventTick", params);
       if (r.ok) set("tickStatus", "✅ " + r.processedGroups + "グループを処理しました（基準時刻 " + r.at + "）", "ok");
       else set("tickStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    });
+
+    // 自動マッチング（本番は5分ごと）を手動で1回。締切を過ぎた未マッチングの枠がまとめて処理される。
+    $("runMatchTickBtn").addEventListener("click", async () => {
+      const nowVal = $("tickNow").value;
+      set("tickStatus", "自動マッチングを実行中…", "");
+      const params = {};
+      if (nowVal) params.now = nowVal + "+09:00";
+      const r = await api("runMatchingTick", params);
+      if (!r.ok) { set("tickStatus", "⚠️ " + esc(r.error || "失敗"), "ng"); return; }
+      if (!r.matched.length) {
+        set("tickStatus", "対象の枠はありませんでした（締切を過ぎていて、まだマッチングしていない枠が対象です）", "");
+      } else {
+        set("tickStatus", "✅ " + r.matched.length + "枠をマッチングしました\n" +
+          r.matched.map((m) => "・" + m.date + " " + m.time + " → " + m.groups + "パーティ" +
+            (m.deferred ? "（⚠️ " + m.deferred + "人は保留）" : "")).join("\n"), "ok");
+      }
+      loadSlots();
     });
 
     // リマインダー処理（前日20時＋開始1時間前）を手動実行。スロットID入力済みならフラグをリセットして再テスト可。
