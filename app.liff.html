@@ -108,6 +108,7 @@
     .resv-item { display:flex; justify-content:space-between; align-items:center; background:#fff;
       border:1px solid #ece8dc; border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; }
     .resv-item .rtime { font-weight:800; font-size:15px; }
+    .resv-item .rcancel:disabled { color:var(--sub); border-color:#e3ddcd; cursor:default; }
     .resv-item .rcancel { font-size:12px; font-weight:700; color:var(--err); background:none;
       border:1px solid var(--err); border-radius:8px; padding:6px 12px; cursor:pointer; }
     .add-resv-btn { width:100%; padding:14px; font-size:15px; font-weight:800; color:var(--green);
@@ -605,6 +606,10 @@
         3人以上そろえば、そのままのメンバーで進みます（最大5人）。
       </div>
 
+      <div class="pm-note">
+        <b>予約締切を過ぎるとキャンセルできません。</b>締切の時点でパーティが決まるためです。<br>
+        締切後にご都合が悪くなった場合は、公式LINEからご連絡ください。
+      </div>
       <button class="submit" id="reserveBtn" disabled>この日時で予約する</button>
       <button class="back-link" id="chooseBackBtn" style="display:block;margin:10px auto 0">予約一覧に戻る</button>
     </div>
@@ -1092,6 +1097,7 @@
       showScreen("screen-reserve");
     }
     let myResvList = []; // 自分の予約（新規予約時の時間重複チェックに使う）
+    let slotsCache = []; // 枠の一覧（締切を過ぎたか＝キャンセル可否の判定に使う）
 
     // スロット時間帯 "13:00〜15:00" を分に変換（バックエンドと同じルール。終端不明は開始+90分）
     function timeRangeOf(timeStr) {
@@ -1117,7 +1123,11 @@
       $("chooseBox").classList.add("hidden");
       $("partyDoneBox").classList.add("hidden");
       $("myReserveBox").classList.remove("hidden");
-      const mine = await api("getMyReservation", { lineUserId: profile.userId });
+      const [mine, slotsRes] = await Promise.all([
+        api("getMyReservation", { lineUserId: profile.userId }),
+        api("getSlots")
+      ]);
+      slotsCache = slotsRes.slots || [];  // 締切を過ぎたかの判定に使う
       const resvs = mine.reservations || [];
       myResvList = resvs;
       const list = $("reserveList");
@@ -1138,9 +1148,19 @@
             + (r.party.size < 3 ? '<br>※当日ほかの参加者と合流します' : '') + '</div>';
         }
         div.innerHTML = '<span class="rtime">' + formatSlot(r.date, r.time) + '</span>' + pHtml;
+        // 締切を過ぎるとキャンセルできない（締切時点でパーティが組まれるため）
+        const slot = (slotsCache || []).find((x) => x.slotId === r.slotId);
+        const closed = slot ? slot.closed : false;
         const c = document.createElement("button");
-        c.className = "rcancel"; c.textContent = "キャンセル";
-        c.onclick = () => cancelResv(r.slotId, formatSlot(r.date, r.time));
+        c.className = "rcancel";
+        if (closed) {
+          c.textContent = "締切後";
+          c.disabled = true;
+          c.title = "予約締切を過ぎたためキャンセルできません";
+        } else {
+          c.textContent = "キャンセル";
+          c.onclick = () => cancelResv(r.slotId, formatSlot(r.date, r.time));
+        }
         div.appendChild(c);
         list.appendChild(div);
       });

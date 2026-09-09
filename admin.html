@@ -29,6 +29,11 @@
     .slot-row .meta { font-size:13px; color:var(--sub); }
     .slot-row .title { font-weight:700; }
     .pill { display:inline-block; font-size:11px; background:#eef5f0; color:var(--green); border-radius:6px; padding:1px 8px; margin-left:6px; }
+    .pill.okp   { background:#eef5f0; color:var(--green); }
+    .pill.warnp { background:#fdf3e3; color:#b96b00; }
+    .pill.errp  { background:#fdf1f0; color:var(--err); font-weight:700; }
+    .dl-presets { display:flex; gap:5px; flex-wrap:wrap; margin-top:5px; }
+    .dl-presets .sub-btn { margin:0; padding:5px 9px; font-size:12px; }
     #login { max-width:360px; margin:80px auto; }
     .hidden { display:none !important; }
     .logout { float:right; background:none; color:var(--sub); border:1px solid #d9d4c6; font-weight:400; margin:0; padding:6px 12px; }
@@ -198,8 +203,20 @@
         <div><label>時間帯</label><input type="text" id="slotTime" placeholder="13:00〜15:00" /></div>
       </div>
       <div class="row">
-        <div><label>定員</label><input type="number" id="slotCap" value="50" /></div>
-        <div><label>予約締切（任意）</label><input type="datetime-local" id="slotDeadline" /></div>
+        <div><label>定員</label><input type="number" id="slotCap" value="50" />
+          <div class="meta" id="capHint" style="margin-top:4px"></div></div>
+        <div><label>予約締切（必須）</label><input type="datetime-local" id="slotDeadline" />
+          <div class="dl-presets" id="dlPresets">
+            <button type="button" class="sub-btn" data-dl="prev20">前日20:00</button>
+            <button type="button" class="sub-btn" data-dl="60">開始60分前</button>
+            <button type="button" class="sub-btn" data-dl="10">開始10分前</button>
+          </div>
+        </div>
+      </div>
+      <div class="sub" style="margin-top:6px">
+        <b>締切時刻に自動でマッチングされます</b>（LINE通知は送られません。内容を確認してから
+        「結果を一斉通知」を押してください）。締切後は参加者がキャンセルできなくなります。<br>
+        当日の飛び込み参加を受けたい枠は「開始10分前」にしてください（チェックインも10分前からです）。
       </div>
       <label style="margin-top:10px; font-weight:400; cursor:pointer;">
         <input type="checkbox" id="slotTest" style="width:auto; margin-right:6px; vertical-align:middle;" />
@@ -218,6 +235,12 @@
       <h2>② 予約枠の一覧・マッチング・通知</h2>
       <button class="sub-btn" id="reloadSlots">一覧を更新</button>
       <div class="tabs" id="dateTabs"></div>
+      <!-- 締切必須化の移行用。締切が入っていない枠が残っていると自動マッチングが走らない -->
+      <div class="hidden" id="noDeadlineBox" style="background:#fdf1f0;border:1px solid #f0c9c5;border-radius:8px;padding:11px 13px;margin-bottom:12px">
+        <div style="font-weight:700;color:var(--err)" id="noDeadlineMsg"></div>
+        <div class="meta" style="margin-top:4px">締切が入っていない枠は<b>自動マッチングの対象になりません</b>。まとめて「開始60分前」を入れられます。</div>
+        <button class="sub-btn" id="fillDeadlineBtn">締切がない枠に「開始60分前」をまとめて設定</button>
+      </div>
       <div id="slotList"></div>
       <div class="result hidden" id="matchResult"></div>
     </div>
@@ -469,6 +492,14 @@
     let editingSlotId = null; // 編集中の枠（nullなら新規作成）
 
     // ISO(UTC) → datetime-local用の文字列（ブラウザのローカル=JST）
+    // ISO文字列 → 「7/2(金) 12:00」（日本時間・一覧表示用）
+    function fmtDateTime(iso) {
+      if (!iso) return "未設定";
+      const d = new Date(iso);
+      const w = ["日","月","火","水","木","金","土"][d.getDay()];
+      return (d.getMonth() + 1) + "/" + d.getDate() + "(" + w + ") " +
+        d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
     function isoToLocalInput(iso) {
       if (!iso) return "";
       const d = new Date(iso); const p = (n) => String(n).padStart(2, "0");
@@ -500,14 +531,63 @@
     }
     $("cancelEditBtn").addEventListener("click", endEdit);
 
+    // ----- 締切のプリセット・定員の目安 -----
+    // グループ分けの規則はサーバー側(index.js の makeGroupSizes/makeGroupSizesTest)と同じ。
+    // ここは入力しながら「最大何組か」を見せるための目安表示なので、ズレても実害はない。
+    function estParties(n, isTest) {
+      n = parseInt(n, 10);
+      if (!Number.isFinite(n) || n <= 0) return 0;
+      if (isTest) {
+        if (n <= 5) return 1;
+        const k = Math.floor(n / 3), r = n % 3;
+        return r === 0 ? k : (r === 1 ? k : k - 1);
+      }
+      if (n <= 6) return 1;
+      let k = Math.floor(n / 5);
+      return (n - 5 * k <= k) ? k : k + 1;
+    }
+    function updateCapHint() {
+      const n = $("slotCap").value, t = $("slotTest").checked;
+      const p = estParties(n, t);
+      $("capHint").textContent = p ? "満席なら 最大" + p + "組（" + (t ? "3人基本" : "5人基本") + "）" : "";
+    }
+    $("slotCap").addEventListener("input", updateCapHint);
+    $("slotTest").addEventListener("change", updateCapHint);
+    updateCapHint();
+
+    // 「時間帯」の先頭 HH:MM を開始時刻とみなす
+    function slotStartLocal() {
+      const date = $("slotDate").value, time = $("slotTime").value.trim();
+      const m = time.match(/(\d{1,2}):(\d{2})/);
+      if (!date || !m) return null;
+      const d = new Date(date + "T" + String(m[1]).padStart(2, "0") + ":" + m[2] + ":00");
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const toInputValue = (d) => {
+      const p = (x) => String(x).padStart(2, "0");
+      return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) +
+        "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+    };
+    $("dlPresets").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-dl]"); if (!b) return;
+      const start = slotStartLocal();
+      if (!start) { set("slotStatus", "先に日付と時間帯を入力してください", "ng"); return; }
+      let d;
+      if (b.dataset.dl === "prev20") { d = new Date(start); d.setDate(d.getDate() - 1); d.setHours(20, 0, 0, 0); }
+      else d = new Date(start.getTime() - parseInt(b.dataset.dl, 10) * 60000);
+      $("slotDeadline").value = toInputValue(d);
+      set("slotStatus", "締切を " + fmtDateTime(d.toISOString()) + " にしました", "");
+    });
+
     $("createSlotBtn").addEventListener("click", async () => {
       const date = $("slotDate").value, time = $("slotTime").value.trim();
       const capacity = $("slotCap").value, dl = $("slotDeadline").value;
       if (!date || !time) { set("slotStatus", "日付と時間帯は必須です", "ng"); return; }
+      if (!dl) { set("slotStatus", "予約締切は必須です（この時刻に自動マッチングが走ります）", "ng"); return; }
 
       if (editingSlotId) {
         // 編集（更新）。isTestはチェック状態をそのまま送る（"1"/"0"）
-        const params = { slotId: editingSlotId, date, time, capacity, deadline: dl ? dl + "+09:00" : "none",
+        const params = { slotId: editingSlotId, date, time, capacity, deadline: dl + "+09:00",
           isTest: $("slotTest").checked ? "1" : "0" };
         set("slotStatus", "更新中…", "");
         const r = await api("updateSlot", params);
@@ -515,8 +595,7 @@
         else set("slotStatus", "⚠️ " + (r.error || "失敗"), "ng");
       } else {
         // 新規作成
-        const params = { date, time, capacity };
-        if (dl) params.deadline = dl + "+09:00"; // 日本時間として送る
+        const params = { date, time, capacity, deadline: dl + "+09:00" }; // 日本時間として送る
         if ($("slotTest").checked) params.isTest = "1"; // テストプレイ用（30分進行・3人グループ）
         set("slotStatus", "作成中…", "");
         const r = await api("createSlot", params);
@@ -542,8 +621,27 @@
       if (!selectedDate || !dates.includes(selectedDate)) selectedDate = dates[0] || "";
       renderDateTabs(dates);
       renderSlotsForDate();
+      // 締切が入っていない枠の案内（自動マッチングが走らないので目立たせる）
+      const noDl = allSlots.filter((s) => !s.deadline);
+      $("noDeadlineBox").classList.toggle("hidden", !noDl.length);
+      if (noDl.length) $("noDeadlineMsg").textContent = "⚠️ 締切が未設定の枠が " + noDl.length + " 件あります";
     }
     $("reloadSlots").addEventListener("click", loadSlots);
+    $("fillDeadlineBtn").addEventListener("click", async () => {
+      const prev = await api("fillMissingDeadlines", { beforeMin: 60, dryRun: 1 });
+      if (!prev.ok) { set("slotStatus", "⚠️ " + esc(prev.error || "失敗"), "ng"); return; }
+      const ok = await dangerConfirm({
+        title: "締切をまとめて設定",
+        body: "締切が未設定の枠に「開始60分前」を締切として入れます。\n個別に変えたい枠は、あとで「編集」から直せます。",
+        target: prev.count + "件の枠",
+        confirmText: "まとめて設定する"
+      });
+      if (!ok) return;
+      set("slotStatus", "設定中…", "");
+      const r = await api("fillMissingDeadlines", { beforeMin: 60 });
+      if (r.ok) { set("slotStatus", "✅ " + r.count + "件に締切を設定しました", "ok"); loadSlots(); }
+      else set("slotStatus", "⚠️ " + esc(r.error || "失敗"), "ng");
+    });
 
     function renderDateTabs(dates) {
       const tabs = $("dateTabs"); tabs.innerHTML = "";
@@ -564,12 +662,23 @@
       slots.forEach((s) => {
         const div = document.createElement("div");
         div.className = "slot-row";
-        div.innerHTML =
-          '<div class="title">' + esc(s.time) +
+        // 運用状態のバッジ（締切→マッチング→通知 の進み具合が一目でわかるように）
+        const badges =
           '<span class="pill">予約 ' + esc(s.reservedCount) + '/' + esc(s.capacity) + '</span>' +
-          (s.isTest ? '<span class="pill" style="background:#fdf3e3;color:#b96b00">⏩テスト30分・3人組</span>' : '') +
-          (s.closed ? '<span class="pill">締切</span>' : '') + '</div>' +
-          '<div class="meta">slotId: ' + esc(s.slotId) + '</div>';
+          (s.isTest ? '<span class="pill warnp">⏩テスト30分・3人組</span>' : '') +
+          (s.closed ? '<span class="pill">締切済</span>' : '') +
+          (!s.deadline ? '<span class="pill errp">⚠️締切未設定</span>' : '') +
+          (s.matchedAt ? '<span class="pill okp">✅マッチング済' + (s.matchedAuto ? '（自動）' : '') + '</span>' : '') +
+          (s.matchedAt && !s.notifiedAt ? '<span class="pill warnp">📣未通知</span>' : '') +
+          (s.notifiedAt ? '<span class="pill okp">📨通知済</span>' : '') +
+          (s.reNotifyNeeded ? '<span class="pill errp">⚠️再通知が必要</span>' : '');
+        div.innerHTML =
+          '<div class="title">' + esc(s.time) + badges + '</div>' +
+          (s.needsReview
+            ? '<div class="meta ng" style="font-weight:700">⚠️ ' + esc(s.needsReviewNote || "要確認") + '</div>' : '') +
+          '<div class="meta">締切 ' + (s.deadline ? esc(fmtDateTime(s.deadline)) : "未設定") +
+            '　／　満席時 最大' + esc(s.maxParties || "?") + '組' +
+            '　／　slotId: ' + esc(s.slotId) + '</div>';
         const mBtn = document.createElement("button"); mBtn.className = "sub-btn"; mBtn.textContent = "マッチング実行";
         mBtn.onclick = () => runMatch(s.slotId);
         const vBtn = document.createElement("button"); vBtn.className = "sub-btn"; vBtn.textContent = "結果を確認";
@@ -583,6 +692,14 @@
         const dBtn = document.createElement("button"); dBtn.className = "sub-btn danger"; dBtn.textContent = "枠を削除";
         dBtn.onclick = () => deleteSlot(s);
         div.appendChild(mBtn); div.appendChild(vBtn); div.appendChild(pBtn); div.appendChild(nBtn); div.appendChild(eBtn); div.appendChild(dBtn);
+        if (s.needsReview) {
+          const rBtn = document.createElement("button"); rBtn.className = "sub-btn"; rBtn.textContent = "⚠️を消す";
+          rBtn.onclick = async () => {
+            const r = await api("resolveSlotReview", { slotId: s.slotId });
+            if (r.ok) loadSlots(); else set("slotStatus", "⚠️ " + esc(r.error || "失敗"), "ng");
+          };
+          div.appendChild(rBtn);
+        }
         list.appendChild(div);
       });
     }
@@ -651,6 +768,17 @@
           head += "👑 事前登録パーティ " + r.declaredParties + "組" +
             "（3人以上でそのまま成立 " + r.declaredKept + "組" +
             (r.mergedPeople ? "／合流して編成 " + r.mergedPeople + "人" : "") + "）<br>";
+          if (r.absorbedPeople) {
+            head += '<span class="ok">↳ 余った ' + r.absorbedPeople +
+              '人は、空きのある事前登録パーティに合流させました（不成立を避けるための例外）</span><br>';
+          }
+        }
+        if (r.deferredCount) {
+          head += '<span class="ng">⚠️ ' + r.deferredCount + '人（' + esc((r.deferredNames || []).join("・")) +
+            '）はパーティに入れられませんでした。不成立にはしていないので、組み直すか個別に対応してください</span><br>';
+        }
+        if (r.reNotifyNeeded) {
+          head += '<span class="ng">⚠️ 通知済みの枠を組み直しました。<b>もう一度「結果を一斉通知」してください</b></span><br>';
         }
         showResult(head + groupsHtml(r.groups));
         loadSlots();
@@ -684,13 +812,30 @@
       } else showResult("⚠️ " + esc(r.error || "失敗"));
     }
 
-    async function notify(slotId, dry) {
-      if (!dry && !confirm("このグループ全員にLINEで結果を送信します。送信してよいですか？")) return;
+    async function notify(slotId, dry, force) {
+      if (!dry && !force && !confirm("このパーティ全員にLINEで結果を送信します。送信してよいですか？")) return;
       showResult(dry ? "プレビュー取得中…" : "送信中…");
-      const r = await api("notifyMatchingResults", dry ? { slotId, dryRun: "1" } : { slotId });
-      if (r.ok && dry) showResult("【プレビュー】対象 " + r.targetCount + "人<br>――――<br>" + esc(r.sampleMessage || "").replace(/\n/g, "<br>"));
-      else if (r.ok) showResult("✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗");
-      else showResult("⚠️ " + esc(r.error || "失敗"));
+      const params = dry ? { slotId, dryRun: "1" } : (force ? { slotId, force: "1" } : { slotId });
+      const r = await api("notifyMatchingResults", params);
+      if (r.ok && dry) {
+        showResult("【プレビュー】対象 " + r.targetCount + "人<br>――――<br>" + esc(r.sampleMessage || "").replace(/\n/g, "<br>"));
+      } else if (r.ok) {
+        showResult("✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗"
+          + (r.resent ? "<br>（2回目の送信でした）" : ""));
+        loadSlots();
+      } else if (r.alreadyNotified) {
+        // 二重送信は既定で止める。送り直すなら2段階確認で明示的に。
+        showResult("⚠️ " + esc(r.error));
+        const ok = await dangerConfirm({
+          title: "もう一度送信しますか",
+          body: "この枠はすでに通知済みです。もう一度送ると、参加者に同じ内容の2通目が届きます。\n組み直したあとで送り直す場合だけ実行してください。",
+          target: "この枠の参加者全員",
+          confirmText: "それでも送信する"
+        });
+        if (ok) await notify(slotId, false, true);
+      } else {
+        showResult("⚠️ " + esc(r.error || "失敗"));
+      }
     }
 
     // ----- ③ 集合場所（登録・編集・削除）-----
