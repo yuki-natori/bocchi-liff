@@ -3,284 +3,334 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>特定商取引法に基づく表記 | ぼっち the 交流会</title>
+  <title>特定商取引法に基づく表記 | 100分クエスト</title>
+  <meta name="description" content="100分クエスト（ぼっち the 交流会）の特定商取引法に基づく表記です。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --green: #06C755;
-      --green-dark: #05a847;
-      --green-light: #e8faf0;
-      --dark: #1a1a2e;
-      --gray: #6b7280;
-      --light: #f8fafc;
-    }
-    body { font-family: 'Noto Sans JP', sans-serif; color: var(--dark); background: var(--light); line-height: 1.8; }
 
+    :root {
+      --ink:        #1E3A2A;
+      --ink-soft:   #5C6E62;
+      --paper:      #FBF9F3;
+      --paper-deep: #F3EFE3;
+      --line:       #06C755;
+      --line-dark:  #059A43;
+      --white:      #ffffff;
+    }
+
+    body {
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.9;
+      font-size: 15px;
+    }
+
+    h1, h2 {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 900;
+      line-height: 1.5;
+    }
+
+    a { color: var(--line-dark); }
+
+    /* header */
     header {
-      background: white;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 0 24px;
+      background: rgba(251,249,243,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(30,58,42,0.08);
       height: 64px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      padding: 0 clamp(16px, 4vw, 32px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    .logo { font-weight: 900; font-size: 18px; color: var(--dark); text-decoration: none; }
-    .logo span { color: var(--green); }
 
-    .page-hero {
-      background: linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%);
-      padding: 60px 24px 40px;
-      text-align: center;
+    .logo {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-weight: 900;
+      font-size: 17px;
+      text-decoration: none;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .page-hero h1 { font-size: 32px; font-weight: 900; margin-bottom: 8px; }
-    .page-hero p { color: var(--gray); font-size: 14px; }
 
-    .content-wrap {
-      max-width: 800px;
+    .logo-mark {
+      width: 30px; height: 30px;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    /* main */
+    main {
+      max-width: 760px;
       margin: 0 auto;
-      padding: 48px 24px 80px;
+      padding: clamp(40px, 7vw, 64px) clamp(16px, 4vw, 32px) 80px;
     }
 
-    .updated {
-      font-size: 13px;
-      color: var(--gray);
-      text-align: right;
-      margin-bottom: 32px;
+    h1 {
+      font-size: clamp(23px, 4vw, 30px);
+      margin-bottom: 12px;
     }
 
-    .info-box {
-      background: white;
-      border: 1px solid #e5e7eb;
+    .lead {
+      color: var(--ink-soft);
+      font-size: 14px;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--paper-deep);
+    }
+
+    /* table */
+    .info-table {
+      background: var(--white);
       border-radius: 16px;
       overflow: hidden;
-      margin-bottom: 40px;
+      box-shadow: 0 2px 12px rgba(30,58,42,0.06);
     }
 
-    .info-row {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid #f3f4f6;
-      font-size: 15px;
+    .row {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      border-bottom: 1px solid var(--paper-deep);
     }
-    .info-row:last-child { border-bottom: none; }
+    .row:last-child { border-bottom: none; }
 
-    .info-label {
-      min-width: 200px;
-      background: #f8fafc;
-      color: var(--gray);
+    .row dt {
+      background: #F8F6EE;
+      padding: 18px 20px;
       font-weight: 700;
       font-size: 14px;
-      padding: 20px 24px;
-      border-right: 1px solid #f3f4f6;
+      color: var(--ink);
       display: flex;
       align-items: flex-start;
     }
 
-    .info-val {
-      color: var(--dark);
-      padding: 20px 24px;
-      flex: 1;
-      font-size: 15px;
+    .row dd {
+      padding: 18px 20px;
+      font-size: 14.5px;
+      color: var(--ink);
     }
 
-    .info-val.placeholder {
-      color: #d1d5db;
-      font-style: italic;
+    .row dd .note {
+      display: block;
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-top: 6px;
+      line-height: 1.75;
     }
 
-    .info-val ul {
+    .row dd ul {
       list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      margin-top: 4px;
     }
-
-    .info-val ul li {
-      padding-left: 18px;
+    .row dd li {
+      padding-left: 14px;
       position: relative;
+      margin-bottom: 3px;
     }
-
-    .info-val ul li::before {
+    .row dd li::before {
       content: '・';
       position: absolute;
       left: 0;
-      color: var(--green);
     }
 
-    .note-box {
-      background: var(--green-light);
-      border: 1px solid #bbf7d0;
-      border-radius: 12px;
-      padding: 20px 24px;
-      font-size: 14px;
-      color: #166534;
-      margin-bottom: 40px;
-      line-height: 1.8;
-    }
-
-    .note-box strong {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 15px;
-    }
-
-    .doc-section {
-      margin-bottom: 40px;
-    }
-
-    .doc-section h2 {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid var(--green-light);
-      color: var(--dark);
-    }
-
-    .doc-section p {
-      font-size: 15px;
-      color: #374151;
-      margin-bottom: 12px;
-    }
-
+    /* footer */
     footer {
-      background: #1a1a2e;
-      color: #9ca3af;
-      padding: 32px 24px;
-      text-align: center;
+      background: var(--ink);
+      color: rgba(251,249,243,0.6);
+      padding: 40px clamp(16px, 4vw, 32px) 28px;
       font-size: 13px;
     }
-    footer a { color: #9ca3af; text-decoration: none; margin: 0 12px; }
-    footer a:hover { color: white; }
+    .footer-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    footer a {
+      color: rgba(251,249,243,0.6);
+      text-decoration: none;
+      font-size: 13px;
+    }
+    footer a:hover { color: var(--paper); }
+    .footer-links { display: flex; gap: 18px; flex-wrap: wrap; }
 
-    @media (max-width: 600px) {
-      .info-row { flex-direction: column; }
-      .info-label {
-        min-width: unset;
-        border-right: none;
-        border-bottom: 1px solid #f3f4f6;
-        padding: 14px 20px 10px;
+    @media (max-width: 640px) {
+      .row { grid-template-columns: 1fr; }
+      .row dt {
+        padding: 14px 18px 6px;
+        background: var(--white);
+        font-size: 13px;
+        color: var(--ink-soft);
       }
-      .info-val { padding: 10px 20px 16px; }
+      .row dd { padding: 0 18px 16px; }
+    }
+
+    :focus-visible {
+      outline: 3px solid #FFB525;
+      outline-offset: 3px;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
 
 <header>
-  <a href="index.html" class="logo">ぼっち <span>the</span> 交流会</a>
-  <a href="index.html" style="font-size:14px; color:var(--gray); text-decoration:none;">← トップに戻る</a>
+  <a href="index.html" class="logo">
+    <span class="logo-mark">ぼ</span>
+    ぼっち the 交流会
+  </a>
 </header>
 
-<div class="page-hero">
+<main>
   <h1>特定商取引法に基づく表記</h1>
-  <p>特定商取引法第11条に基づく販売業者情報</p>
-</div>
+  <p class="lead">
+    「特定商取引に関する法律」第11条に基づき、以下のとおり表示します。
+  </p>
 
-<div class="content-wrap">
-  <p class="updated">最終更新日：2025年6月1日</p>
+  <dl class="info-table">
 
-  <div class="info-box">
-
-    <div class="info-row">
-      <span class="info-label">販売者名</span>
-      <span class="info-val">洞口侑規</span>
+    <div class="row">
+      <dt>販売事業者</dt>
+      <dd>洞口 侑規</dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">所在地</span>
-      <span class="info-val placeholder">※ 取得次第掲載予定</span>
+    <div class="row">
+      <dt>運営責任者</dt>
+      <dd>洞口 侑規</dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">電話番号</span>
-      <span class="info-val placeholder">※ 取得次第掲載予定<br>
-        <span style="font-size:13px; color:var(--gray); font-style:normal;">お急ぎの場合は下記メールアドレスよりお問い合わせください</span>
-      </span>
+    <div class="row">
+      <dt>所在地</dt>
+      <dd>
+        宮城県名取市
+        <span class="note">詳細な住所は、ご請求いただいた場合に遅滞なく開示いたします。下記のお問い合わせ先までご連絡ください。</span>
+      </dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">メールアドレス</span>
-      <span class="info-val"><a href="mailto:hy.natori.0625@gmail.com" style="color:var(--green)">hy.natori.0625@gmail.com</a></span>
+    <div class="row">
+      <dt>電話番号</dt>
+      <dd>
+        ご請求いただいた場合に遅滞なく開示いたします
+        <span class="note">下記のお問い合わせ先までご連絡ください。</span>
+      </dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">サービス名</span>
-      <span class="info-val">ぼっち the 交流会</span>
+    <div class="row">
+      <dt>お問い合わせ先</dt>
+      <dd>
+        <a href="mailto:hy.natori.0625@gmail.com">hy.natori.0625@gmail.com</a>
+        <span class="note">お問い合わせは原則メールにて承ります。3営業日以内に返信いたします。</span>
+      </dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">販売価格（税込）</span>
-      <span class="info-val">
+    <div class="row">
+      <dt>販売価格</dt>
+      <dd>
         <ul>
-          <li>2,000円（仮）</li>
-          <li>3,000円（仮）</li>
+          <li>事前予約：1,500円（税込）</li>
+          <li>当日予約：2,000円（税込）</li>
         </ul>
-        <p style="font-size:13px; color:var(--gray); margin-top:8px; padding-left:0;">※ 料金プランの詳細は申込時にご案内します</p>
-      </span>
+        <span class="note">18歳未満の方は無料でご参加いただけます（保護者または大人の同行者が必要です）。価格は予告なく変更する場合がありますが、ご予約時に表示された金額を適用します。</span>
+      </dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">支払い方法</span>
-      <span class="info-val">
+    <div class="row">
+      <dt>商品代金以外の必要料金</dt>
+      <dd>
+        なし
+        <span class="note">インターネット接続に必要な通信料金は、お客様のご負担となります。</span>
+      </dd>
+    </div>
+
+    <div class="row">
+      <dt>お支払い方法</dt>
+      <dd>
         <ul>
           <li>PayPay</li>
-          <li>クレジットカード（VISA / Mastercard / JCB 他）</li>
+          <li>クレジットカード</li>
         </ul>
-      </span>
+      </dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">支払い時期</span>
-      <span class="info-val">お申し込み時にお支払いいただきます</span>
+    <div class="row">
+      <dt>お支払い時期</dt>
+      <dd>
+        ご予約手続きの完了時
+        <span class="note">お支払いが完了した時点でご予約が確定します。</span>
+      </dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">サービス提供時期</span>
-      <span class="info-val">2026年7月予定（詳細は申込時にご案内します）</span>
+    <div class="row">
+      <dt>サービスの提供時期</dt>
+      <dd>
+        ご予約いただいた日時に、指定の会場にてサービスを提供します
+        <span class="note">2027年7月2日（金）〜4日（日）に幕張メッセ国際展示場で開催される「リベ大 お金の勉強フェス2027」での提供を予定しています。</span>
+      </dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">キャンセル・返金ポリシー</span>
-      <span class="info-val">
-        各決済会社の返金規定に従い対応いたします。<br>
-        返金に関するお問い合わせは、上記メールアドレスまでご連絡ください。
-      </span>
+    <div class="row">
+      <dt>キャンセル・返金について</dt>
+      <dd>
+        <ul>
+          <li>サービスの性質上、ご予約時間の開始後のキャンセル・返金はお受けできません</li>
+          <li>ご予約時間の開始前であれば、アプリ内よりキャンセルが可能です。この場合、お支払い金額を全額返金いたします</li>
+          <li>参加人数が不足し、当方の判断でサービスを提供できなかった場合は、お支払い金額を全額返金いたします</li>
+          <li>天候・災害・イベント自体の中止など、当方の責によらない事由でサービスを提供できなかった場合も、全額返金いたします</li>
+        </ul>
+        <span class="note">返金はお支払いいただいた決済手段を通じて行います。決済事業者の処理状況により、返金の反映までにお時間をいただく場合があります。</span>
+      </dd>
     </div>
 
-    <div class="info-row">
-      <span class="info-label">動作環境</span>
-      <span class="info-val">LINEアプリがインストールされたスマートフォン（iOS / Android）</span>
+    <div class="row">
+      <dt>動作環境</dt>
+      <dd>
+        LINEアプリが利用できるスマートフォン
+        <span class="note">本サービスはLINEミニアプリを使用します。専用アプリのダウンロードは不要ですが、LINEアカウントおよびインターネット接続が必要です。</span>
+      </dd>
     </div>
 
-  </div>
+    <div class="row">
+      <dt>ご利用にあたっての制限</dt>
+      <dd>
+        <ul>
+          <li>18歳未満の方のみでのご利用はできません（保護者または大人の同行者が必要です）</li>
+          <li>本サービスは恋愛・出会いを目的としたサービスではありません</li>
+          <li>交際を目的とした利用、および勧誘行為（マルチ商法・投資勧誘等）を禁止しています</li>
+          <li>他の参加者への迷惑行為が確認された場合、ご利用をお断りする場合があります</li>
+        </ul>
+        <span class="note">詳細は<a href="terms.html">利用規約</a>をご確認ください。</span>
+      </dd>
+    </div>
 
-  <div class="note-box">
-    <strong>📌 住所・電話番号の掲載について</strong>
-    現在、事業用連絡先を準備中です。取得次第、速やかに本ページへ掲載いたします。
-    お急ぎのお問い合わせはメールにてご対応いたします。
-  </div>
-
-  <div class="doc-section">
-    <h2>お問い合わせ</h2>
-    <p>本表記に関するご不明点は、下記メールアドレスよりお問い合わせください。</p>
-    <p>メールアドレス：<a href="mailto:hy.natori.0625@gmail.com" style="color:var(--green)">hy.natori.0625@gmail.com</a></p>
-  </div>
-
-</div>
+  </dl>
+</main>
 
 <footer>
-  <div>
-    <a href="index.html">トップ</a>
-    <a href="privacy.html">プライバシーポリシー</a>
-    <a href="terms.html">利用規約</a>
-    <a href="tokusho.html">特定商取引法に基づく表記</a>
-    <a href="mailto:hy.natori.0625@gmail.com">お問い合わせ</a>
+  <div class="footer-inner">
+    <p>&copy; 2026 ぼっち the 交流会</p>
+    <div class="footer-links">
+      <a href="index.html">トップページ</a>
+      <a href="privacy.html">プライバシーポリシー</a>
+      <a href="terms.html">利用規約</a>
+    </div>
   </div>
-  <p style="margin-top:16px">&copy; 2025 ぼっち the 交流会 運営：みゃー</p>
 </footer>
 
 </body>
