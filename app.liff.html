@@ -1078,7 +1078,7 @@
       if (!gd || gd.status !== "started" || !gd.startedAt) { el.classList.add("hidden"); stopTick(); return; }
       const now = Date.now();
       const startMs = Date.parse(gd.startedAt);
-      const endMs = gd.endsAt ? Date.parse(gd.endsAt) : startMs + 90 * 60000;
+      const endMs = gd.endsAt ? Date.parse(gd.endsAt) : startMs + 100 * 60000; // 通常はサーバーの endsAt を使う
       if (now >= endMs) {
         el.textContent = "⏱ クエストは終了しました";
         el.classList.remove("hidden");
@@ -1099,13 +1099,13 @@
     let myResvList = []; // 自分の予約（新規予約時の時間重複チェックに使う）
     let slotsCache = []; // 枠の一覧（締切を過ぎたか＝キャンセル可否の判定に使う）
 
-    // スロット時間帯 "13:00〜15:00" を分に変換（バックエンドと同じルール。終端不明は開始+90分）
+    // スロット時間帯 "13:00〜15:00" を分に変換（バックエンドと同じルール。終端不明は開始+100分）
     function timeRangeOf(timeStr) {
       const ms = (timeStr || "").match(/(\d{1,2}):(\d{2})/g);
       if (!ms || !ms.length) return null;
       const toMin = (s) => { const p = s.split(":"); return Number(p[0]) * 60 + Number(p[1]); };
       const start = toMin(ms[0]);
-      return { start: start, end: ms.length >= 2 ? toMin(ms[1]) : start + 90 };
+      return { start: start, end: ms.length >= 2 ? toMin(ms[1]) : start + 100 };
     }
     // 既存予約と重複・連続する枠か（同じ日付のみ判定）
     function conflictsWithMine(s) {
