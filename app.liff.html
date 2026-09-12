@@ -234,6 +234,14 @@
       60%  { background:#eef7f1; border-color:#bcd9c6; transform:scale(1); }
       100% { background:#f4f2ea; border-color:#e3ddcd; }
     }
+    /* ログイン期限切れの案内 */
+    #authExpired { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:300;
+      display:flex; align-items:center; justify-content:center; padding:24px; }
+    #authExpired .ae-card { width:320px; background:#fff; border-radius:14px; padding:22px 20px; text-align:center; }
+    #authExpired .ae-title { font-size:16px; font-weight:800; margin-bottom:10px; }
+    #authExpired .ae-text { font-size:13px; line-height:1.7; color:var(--sub); }
+    #authExpired .ae-btn { margin-top:16px; width:100%; padding:13px; font-size:15px; font-weight:800;
+      color:#fff; background:var(--green); border:none; border-radius:10px; cursor:pointer; }
     /* ===== ⑬ パーティ登録（予約画面）===== */
     .pmode { display:flex; flex-direction:column; gap:8px; }
     .pm-opt { display:block; width:100%; text-align:left; padding:12px 14px; border-radius:12px;
@@ -736,18 +744,56 @@
     // LINEの本人確認トークン。サーバー側で検証して「本人の操作か」を確かめる。
     // URLのパラメータに載せるとアクセスログに残るため、POSTの本文で送る。
     let liffIdToken = null;
-    const api = async (path, params) => {
+    // 現在のトークンを取り直す。変わっていれば true（＝もう一度試す価値がある）
+    function refreshIdToken() {
+      try {
+        const t = (typeof liff !== "undefined" && liff.getIDToken) ? liff.getIDToken() : null;
+        if (t && t !== liffIdToken) { liffIdToken = t; return true; }
+      } catch (e) {}
+      return false;
+    }
+    const api = async (path, params, retried) => {
       const body = Object.assign({}, params || {});
-      // 毎回取り直す（LINEがトークンを更新していれば新しいものになる）
-      try { const t = (typeof liff !== "undefined" && liff.getIDToken) ? liff.getIDToken() : null; if (t) liffIdToken = t; } catch (e) {}
+      refreshIdToken();
       if (liffIdToken) body.idToken = liffIdToken;
       const res = await fetch(BASE + "/" + path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-      return res.json();
+      const data = await res.json();
+      // 本人確認が切れたとき：一度だけトークンを取り直して再試行し、
+      // それでもだめなら案内を出す（黙って失敗させない）
+      if (res.status === 401 || res.status === 403) {
+        if (data && data.authRequired) {
+          if (!retried && refreshIdToken()) return api(path, params, true);
+          showAuthExpired();
+        }
+      }
+      return data;
     };
+
+    // ログインの有効期限切れの案内。全画面に出して、開き直す操作へ誘導する。
+    let authExpiredShown = false;
+    function showAuthExpired() {
+      if (authExpiredShown) return;
+      authExpiredShown = true;
+      if (typeof stopGroupPoll === "function") stopGroupPoll();
+      if (typeof stopTick === "function") stopTick();
+      const el = document.createElement("div");
+      el.id = "authExpired";
+      el.innerHTML =
+        '<div class="ae-card">' +
+        '<div class="ae-title">ログインの有効期限が切れました</div>' +
+        '<div class="ae-text">安全のため、一定時間で確認をやり直しています。<br>' +
+        'ボタンを押すと開き直せます。進行中のクエストはそのまま続けられます。</div>' +
+        '<button class="ae-btn" id="aeReload">開き直す</button></div>';
+      document.body.appendChild(el);
+      document.getElementById("aeReload").addEventListener("click", () => {
+        try { if (typeof liff !== "undefined" && liff.login) { liff.login({ redirectUri: location.href }); return; } } catch (e) {}
+        location.reload();
+      });
+    }
     const SCREENS = ["boot","screen-menu","screen-register","screen-group","screen-reserve","screen-coupon","screen-done"];
     function showScreen(name) {
       SCREENS.forEach(id => { $(id).classList.toggle("hidden", id !== name); });
@@ -779,6 +825,12 @@
       if (profile.pictureUrl) $("meIcon").src = profile.pictureUrl;
 
       const r = await api("getUser", { lineUserId: profile.userId });
+      // 起動時に本人確認で弾かれた場合は、登録画面を出さずに開き直す
+      // （ここで登録画面を出すと、登録済みの人に新規登録を求めてしまう）
+      if (r && r.authRequired) {
+        try { if (liff.login) { liff.login({ redirectUri: location.href }); return; } } catch (e) {}
+        return bootError("ログインの有効期限が切れました。アプリを開き直してください。");
+      }
       currentUser = r.user;
 
       // チェックインリンク（?mode=checkin&slot=…）で開かれたら、その枠をチェックイン
