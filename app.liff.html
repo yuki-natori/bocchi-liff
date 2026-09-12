@@ -738,6 +738,8 @@
     let liffIdToken = null;
     const api = async (path, params) => {
       const body = Object.assign({}, params || {});
+      // 毎回取り直す（LINEがトークンを更新していれば新しいものになる）
+      try { const t = (typeof liff !== "undefined" && liff.getIDToken) ? liff.getIDToken() : null; if (t) liffIdToken = t; } catch (e) {}
       if (liffIdToken) body.idToken = liffIdToken;
       const res = await fetch(BASE + "/" + path, {
         method: "POST",
