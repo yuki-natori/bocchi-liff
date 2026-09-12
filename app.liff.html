@@ -733,9 +733,17 @@
     let checkinError = null;
 
     const $ = (id) => document.getElementById(id);
+    // LINEの本人確認トークン。サーバー側で検証して「本人の操作か」を確かめる。
+    // URLのパラメータに載せるとアクセスログに残るため、POSTの本文で送る。
+    let liffIdToken = null;
     const api = async (path, params) => {
-      const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-      const res = await fetch(BASE + "/" + path + qs);
+      const body = Object.assign({}, params || {});
+      if (liffIdToken) body.idToken = liffIdToken;
+      const res = await fetch(BASE + "/" + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
       return res.json();
     };
     const SCREENS = ["boot","screen-menu","screen-register","screen-group","screen-reserve","screen-coupon","screen-done"];
@@ -760,6 +768,8 @@
       try { await liff.init({ liffId: LIFF_ID }); }
       catch (e) { return bootError("LIFF初期化に失敗: " + e.message); }
       if (!liff.isLoggedIn()) { liff.login(); return; }
+      // 本人確認トークンを取得（取れない環境でも動くように失敗は無視する）
+      try { liffIdToken = liff.getIDToken ? liff.getIDToken() : null; } catch (e) { liffIdToken = null; }
       try { profile = await liff.getProfile(); }
       catch (e) { return bootError("プロフィール取得に失敗: " + e.message); }
 
