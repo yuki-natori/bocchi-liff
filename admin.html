@@ -416,9 +416,17 @@
     const getKey = () => localStorage.getItem(KEY_STORE) || "";
 
     async function api(path, params = {}, admin = true) {
-      const p = new URLSearchParams(params);
-      if (admin) p.set("adminKey", getKey());
-      const res = await fetch(BASE + "/" + path + "?" + p.toString());
+      // 管理者キーはURLに載せない（サーバーのアクセスログやブラウザの履歴に残るため）。
+      // POSTの本文で送る。値はこれまでのURL方式と同じく、すべて文字列にそろえる
+      // （数値のまま送ると、サーバー側の === "1" のような比較が合わなくなる）。
+      const body = {};
+      new URLSearchParams(params).forEach((v, k) => { body[k] = v; });
+      if (admin) body.adminKey = getKey();
+      const res = await fetch(BASE + "/" + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
       let data;
       try { data = await res.json(); } catch (e) { data = { error: "応答エラー" }; }
       if (res.status === 401) { logout("管理者キーが違います。再ログインしてください"); throw new Error("401"); }
