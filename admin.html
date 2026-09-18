@@ -24,6 +24,7 @@
     button.sub-btn.danger { color:var(--err); border-color:var(--err); }
     button:disabled { opacity:.5; cursor:default; }
     .status { font-size:13px; margin-top:10px; min-height:18px; white-space:pre-wrap; }
+    #questPrincessMsg:empty { display:none; } /* 姫の条件のエラーは出ているときだけ場所を取る */
     .ok { color:var(--green); } .ng { color:var(--err); }
     .slot-row { border:1px solid #ece8dc; border-radius:8px; padding:10px 12px; margin-bottom:10px; }
     .slot-row .meta { font-size:13px; color:var(--sub); }
@@ -162,6 +163,7 @@
         <div class="q-sec">
           <div class="q-sec-h">👑 姫の救出条件<span class="q-note">保存すると進行中のパーティにもすぐ反映</span></div>
           <div id="questPrincessList"></div>
+          <div id="questPrincessMsg" class="status"></div>
         </div>
 
         <div class="q-sec">
@@ -1242,6 +1244,7 @@
     // ----- 姫の救出条件（1人1行）-----
     function renderPrincessEditor() {
       const box = $("questPrincessList"); box.innerHTML = "";
+      set("questPrincessMsg", "", "");
       questPrincesses.forEach((p, i) => {
         const d = document.createElement("div");
         d.className = "q-prow";
@@ -1377,6 +1380,7 @@
     $("questMissionList").addEventListener("input", markQuestDirty);
     $("questMissionList").addEventListener("change", () => { syncMissionInputs(); markQuestDirty(); renderMissionEditor(); });
     $("questPrincessList").addEventListener("input", markQuestDirty);
+    $("questPrincessList").addEventListener("input", () => set("questPrincessMsg", "", "")); // 直し始めたら消す
     $("questPrincessList").addEventListener("change", markQuestDirty);
 
     $("addMissionBtn").addEventListener("click", () => {
@@ -1406,6 +1410,19 @@
       }));
       if (princesses.some((p) => !Number.isFinite(p.need) || p.need < 1)) {
         set("questStatus", "姫の「必要なチカラ」は1以上の数値で入力してください", "ng"); return;
+      }
+      // 前の姫より大きい数でないと保存しない（同じ数も不可。サーバー側でも同じ確認をしている）
+      set("questPrincessMsg", "", "");
+      for (let i = 1; i < princesses.length; i++) {
+        if (princesses[i].need <= princesses[i - 1].need) {
+          const msg = questPrincesses[i].name + "の必要チカラ（" + princesses[i].need + "）は、前の" +
+            questPrincesses[i - 1].name + "（" + princesses[i - 1].need + "）より大きい数にしてください";
+          // 入力欄の位置まで画面が戻るので、下の保存ボタン横だけでなく姫の欄の下にも出す
+          set("questPrincessMsg", "⚠️ " + msg, "ng");
+          set("questStatus", msg, "ng");
+          const el = $("qp_need_" + i); if (el) { el.focus(); el.scrollIntoView({ block: "center" }); }
+          return;
+        }
       }
       if (!questMissions.length) { set("questStatus", "ミッションは1つ以上必要です", "ng"); return; }
       const empty = questMissions.findIndex((m) => !m.name);
