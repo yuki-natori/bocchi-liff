@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>bocchi</title>
+  <title>100 Quest</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- 手書きフォント（動物の鳴き声だけに使用。使う文字のみ配信される） -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -429,7 +429,7 @@
   <!-- 登録 / 編集 -->
   <div class="wrap hidden" id="screen-register">
     <div class="head">
-      <div class="logo">bocchi</div>
+      <div class="logo">100 Quest</div>
       <p id="regSub">当日のグループ分けに使うプロフィールを登録してね</p>
     </div>
     <div class="me">
@@ -485,7 +485,7 @@
 
   <!-- ホーム：リッチメニュー -->
   <div class="wrap hidden" id="screen-menu">
-    <div class="head"><div class="logo">bocchi</div></div>
+    <div class="head"><div class="logo">100 Quest</div></div>
     <div class="profile-bar">
       <div>
         <div class="pname" id="homeName">—</div>
@@ -1827,7 +1827,7 @@
       ctx.fillStyle = "#6b6b63"; ctx.font = "20px sans-serif"; ctx.fillText(fmtCardDate(q.date), W / 2, 745);
       const a = document.createElement("a");
       a.href = cv.toDataURL("image/png");
-      a.download = "bocchi_" + g.animal + ".png";
+      a.download = "100quest_" + (g.animal || "result") + ".png";
       a.click();
     });
     function wrapText(ctx, text, x, y, maxW, lh) {
