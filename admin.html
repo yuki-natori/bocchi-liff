@@ -395,8 +395,10 @@
     <div class="card">
       <h2>⑧ 返金対応リスト</h2>
       <div class="sub" style="margin-bottom:10px">
-        グループ不成立などで「要返金」になった人の一覧です。返金の手続きが済んだら「対応済みにする」を押してください。<br>
-        （⑦決済の導入までは、実際の返金は手動で行い、ここは対応漏れを防ぐチェックリストとして使います）
+        キャンセル・当日の不成立の返金は<b>自動</b>で行います。ここに出るのは、人の判断や対応が必要なものだけです。<br>
+        ・<b>マッチング不成立</b>：組み直しで入れる可能性があるので自動では返金しません。返すと決めたら「Stripeで返金」<br>
+        ・<b>返金に失敗</b>（PayPayでStripeの残高不足など）：残高が戻ってから「Stripeで返金」でやり直し<br>
+        ・Stripeの管理画面など別の方法で返した場合は「対応済みにする」
       </div>
       <button class="sub-btn" id="reloadRefunds">一覧を更新</button>
       <div id="refundList" style="margin-top:10px"></div>
@@ -1113,13 +1115,34 @@
           div.className = "slot-row";
           div.innerHTML =
             '<div class="title">' + esc(p.nickname || "(名前なし)") +
-            '<span class="pill">' + fmtDate(p.date) + " " + esc(p.time) + '</span></div>' +
-            '<div class="meta">' + esc(p.lineUserId) + '</div>';
+            (p.date ? '<span class="pill">' + fmtDate(p.date) + " " + esc(p.time) + '</span>' : '') +
+            (p.amount ? '<span class="pill">' + esc(Number(p.amount).toLocaleString("ja-JP")) + '円</span>' : '') +
+            (p.reason ? '<span class="pill warnp">' + esc(p.reason) + '</span>' : '') + '</div>' +
+            (p.error ? '<div class="meta ng">⚠️ 返金に失敗：' + esc(p.error) + '</div>' : '') +
+            (!p.sessionId ? '<div class="meta">決済導入前の予約（Stripeの支払いなし）</div>' : '') +
+            '<div class="meta">' + esc(p.lineUserId || "") + '</div>';
+          if (p.sessionId) {
+            const s = document.createElement("button");
+            s.className = "sub-btn warn"; s.textContent = "💳 Stripeで返金";
+            s.onclick = async () => {
+              const yes = await dangerConfirm({
+                title: "Stripeで全額返金",
+                body: "この支払いを全額返金します。取り消せません。",
+                target: (p.nickname || "(名前なし)") + "　" + (p.amount ? Number(p.amount).toLocaleString("ja-JP") + "円" : ""),
+                confirmText: "返金する"
+              });
+              if (!yes) return;
+              s.disabled = true;
+              const rr = await api("refundByAdmin", { sessionId: p.sessionId });
+              if (rr.ok) loadRefunds(); else { s.disabled = false; alert("⚠️ " + (rr.error || "失敗")); }
+            };
+            div.appendChild(s);
+          }
           const b = document.createElement("button");
           b.className = "sub-btn"; b.textContent = "✅ 対応済みにする";
           b.onclick = async () => {
             b.disabled = true;
-            const rr = await api("markRefunded", { lineUserId: p.lineUserId, slotId: p.slotId });
+            const rr = await api("markRefunded", { lineUserId: p.lineUserId || "", slotId: p.slotId || "", sessionId: p.sessionId || "" });
             if (rr.ok) loadRefunds(); else { b.disabled = false; alert("⚠️ " + (rr.error || "失敗")); }
           };
           div.appendChild(b);
@@ -1136,8 +1159,12 @@
             at.getHours() + ":" + String(at.getMinutes()).padStart(2, "0") : "";
           div.innerHTML =
             '<div class="title">✓ ' + esc(p.nickname || "(名前なし)") +
-            '<span class="pill">' + fmtDate(p.date) + " " + esc(p.time) + '</span></div>' +
-            (atLabel ? '<div class="meta">対応日時: ' + atLabel + '</div>' : "");
+            (p.date ? '<span class="pill">' + fmtDate(p.date) + " " + esc(p.time) + '</span>' : '') +
+            (p.amount ? '<span class="pill">' + esc(Number(p.amount).toLocaleString("ja-JP")) + '円</span>' : '') +
+            (p.reason ? '<span class="pill">' + esc(p.reason) + '</span>' : '') + '</div>' +
+            (atLabel ? '<div class="meta">' + (p.sessionId ? "返金日時: " : "対応日時: ") + atLabel + '</div>' : "");
+          // Stripeで返金したものはお金が戻っているので「未対応に戻す」は出さない
+          if (p.sessionId) { box.appendChild(div); return; }
           const b = document.createElement("button");
           b.className = "sub-btn"; b.textContent = "未対応に戻す";
           b.onclick = async () => {

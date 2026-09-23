@@ -1338,7 +1338,7 @@
           c.title = "予約締切を過ぎたためキャンセルできません";
         } else {
           c.textContent = "キャンセル";
-          c.onclick = () => cancelResv(r.slotId, formatSlot(r.date, r.time));
+          c.onclick = () => cancelResv(r.slotId, formatSlot(r.date, r.time), false, r.paymentSessionId ? (r.paidAmount || r.amount) : 0);
         }
         div.appendChild(c);
         if (pending) {
@@ -1385,19 +1385,31 @@
         };
       });
     }
-    async function cancelResv(slotId, label, pending) {
+    async function cancelResv(slotId, label, pending, paidAmount) {
       const ok = await dangerConfirm({
         title: pending ? "予約をやめる" : "予約をキャンセル",
         body: pending
           ? "お支払い前のこの予約をやめます。押さえている席は解放されます。よろしいですか？"
-          : "次の予約をキャンセルします。よろしいですか？",
+          : paidAmount
+            ? "次の予約をキャンセルします。お支払いの" + yen(paidAmount) + "は全額返金します。よろしいですか？"
+            : "次の予約をキャンセルします。よろしいですか？",
         target: label || "この予約",
         confirmText: pending ? "やめる" : "キャンセルする"
       });
       if (!ok) return;
       const r = await api("cancelReservation", { lineUserId: profile.userId, slotId: slotId });
-      if (r.ok) { setStatus("homeStatus", "キャンセルしました", ""); await renderReserve(); }
-      else setStatus("homeStatus", "キャンセルに失敗：" + (r.error || ""), "ng");
+      if (r.ok) {
+        const msg = r.refunded
+          ? "キャンセルしました。" + yen(r.refundAmount) + "を返金します（反映まで数日かかることがあります）"
+          : paidAmount
+            ? "キャンセルしました。返金の手続きを進めています（完了まで少しお時間をください）"
+            : "キャンセルしました";
+        await renderReserve();
+        setStatus("homeStatus", msg, "");
+      } else {
+        await renderReserve();
+        setStatus("homeStatus", "キャンセルできませんでした：" + (r.error || ""), "ng");
+      }
     }
     // 「＋別の時間帯を予約する」→ 日時選択を表示
     $("addReserveBtn").addEventListener("click", async () => {
