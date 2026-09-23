@@ -622,8 +622,8 @@
         </button>
       </div>
       <div class="hidden" id="joinCodeBox">
-        <input type="text" id="joinCode" maxlength="4" placeholder="A7K2"
-          autocapitalize="characters" autocomplete="off" />
+        <input type="text" id="joinCode" maxlength="8" placeholder="A7K2"
+          autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" />
         <div class="pm-note">仲間と<b>同じ日時</b>を選んでね。日時が違うと同じパーティになりません。</div>
       </div>
       <div class="pm-note hidden" id="partyNote">
@@ -692,7 +692,7 @@
     <div id="codeBox">
       <div class="section-title">🎫 クーポンコードを入力</div>
       <div class="code-input">
-        <input type="text" id="codeInput" placeholder="ABCD-EFGH" autocomplete="off" autocapitalize="characters" maxlength="12" />
+        <input type="text" id="codeInput" placeholder="ABCD-EFGH" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="20" />
         <button id="codeBtn">登録</button>
       </div>
       <div id="codeStatus"></div>
@@ -1156,6 +1156,9 @@
       const endMs = g.endsAt ? Date.parse(g.endsAt) : null;
       if (endMs && Date.now() >= endMs + 60000) { stopGroupPoll(); return; } // 終了1分後まで見たら停止
       if (groupPollBusy) return; // 前の更新が終わっていなければスキップ
+      // 入力中（パーティ名など）は画面を作り直さない。作り直すとキーボードが閉じ、打ちかけの文字も消えてしまう
+      const act = document.activeElement;
+      if (act && act.tagName === "INPUT" && $("screen-group").contains(act)) return;
       groupPollBusy = true;
       try {
         const slotId = currentGroupSlotId;
@@ -1716,25 +1719,29 @@
     }
 
     // パーティ名の入力欄（チュートリアル1つ目の行の中に出る）
+    // 打ちかけのパーティ名（10秒ごとの自動更新で入力欄が作り直されても消えないように覚えておく）
+    let partyNameDraft = null;   // { slotId, value }
     function buildPartyNameEditor(q) {
       const wrap = document.createElement("div");
       wrap.className = "m-name-edit";
       const max = (q.tutorial || {}).nameMax || 20;
-      wrap.innerHTML = '<input type="text" maxlength="' + max + '" placeholder="パーティ名（' + max + '文字まで）" '
-        + 'value="' + (q.named ? esc(q.partyName) : "") + '" />'
+      wrap.innerHTML = '<input type="text" maxlength="' + max + '" placeholder="パーティ名（' + max + '文字まで）" />'
         + '<button type="button">決定</button>';
       const input = wrap.querySelector("input");
       const btn = wrap.querySelector("button");
+      const draft = partyNameDraft && partyNameDraft.slotId === currentGroupSlotId ? partyNameDraft.value : null;
+      input.value = draft !== null ? draft : (q.named ? q.partyName : "");
+      input.addEventListener("input", () => { partyNameDraft = { slotId: currentGroupSlotId, value: input.value }; });
       btn.addEventListener("click", async () => {
         const name = input.value.trim();
         if (!name) { input.focus(); return; }
         btn.disabled = true; btn.textContent = "…";
         const r = await api("setPartyName", {
           lineUserId: profile.userId, slotId: currentGroupSlotId, name: name });
-        if (r.ok && r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
+        if (r.ok && r.quest) { partyNameDraft = null; questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
         else { btn.disabled = false; btn.textContent = "決定"; }
       });
-      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); btn.click(); } });
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); btn.click(); } });
       return wrap;
     }
 
@@ -2019,13 +2026,23 @@
       if (partyMode === "join") $("joinCode").focus();
     });
     // 入力は大文字4文字に寄せる（小文字・全角で打っても通るようサーバー側でも吸収している）
-    $("joinCode").addEventListener("input", (e) => {
-      e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
-    });
+    // 英数字のコード欄の共通処理。打っている最中（変換中を含む）は書き換えず、確定したときだけ整える。
+    // 入力のたびに中身を書き換えると、iPhoneの日本語入力や予測変換と衝突して文字が勝手に入ることがある。
+    function setupCodeInput(el, format) {
+      const tidy = () => { const v = format(el.value); if (v !== el.value) el.value = v; };
+      el.addEventListener("compositionend", tidy);
+      el.addEventListener("blur", tidy);
+      el.addEventListener("change", tidy);
+    }
+    // 全角英数字も半角にそろえる
+    const toHalfWidth = (s) => s.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    setupCodeInput($("joinCode"), (v) => toHalfWidth(v).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4));
 
     $("reserveBtn").addEventListener("click", async () => {
       if (!selectedSlotId) return;
-      const code = $("joinCode").value.trim();
+      // 変換の途中で押されても整った形で送る（全角・小文字・余計な記号を落とす）
+      const code = toHalfWidth($("joinCode").value).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+      $("joinCode").value = code;
       if (partyMode === "join" && code.length !== 4) {
         setStatus("homeStatus", "パーティコード（4文字）を入力してね", "ng"); return;
       }
@@ -2077,13 +2094,15 @@
     $("editBtn").addEventListener("click", () => openRegister(true));
 
     // リベシティID → 無料クーポン取得
-    // クーポンコード：入力は大文字・4文字ごとにハイフン（小文字・全角で打ってもサーバー側で吸収する）
-    $("codeInput").addEventListener("input", (e) => {
-      const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-      e.target.value = v.length > 4 ? v.slice(0, 4) + "-" + v.slice(4) : v;
+    // クーポンコード：確定したときに大文字・4文字ごとにハイフンへ整える（小文字・全角・空白もサーバー側で吸収する）
+    setupCodeInput($("codeInput"), (v) => {
+      const c = toHalfWidth(v).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+      return c.length > 4 ? c.slice(0, 4) + "-" + c.slice(4) : c;
     });
     $("codeBtn").addEventListener("click", async () => {
-      const val = $("codeInput").value.trim();
+      const raw = toHalfWidth($("codeInput").value).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+      const val = raw.length > 4 ? raw.slice(0, 4) + "-" + raw.slice(4) : raw;
+      $("codeInput").value = val;
       const st = $("codeStatus");
       if (!val) { st.textContent = "クーポンコードを入力してください"; st.className = "ng"; return; }
       $("codeBtn").disabled = true;
