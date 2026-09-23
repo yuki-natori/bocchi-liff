@@ -216,6 +216,14 @@
           </div>
         </div>
       </div>
+      <div class="row">
+        <div><label>料金</label>
+          <select id="slotPrice">
+            <option value="standard">通常料金（事前1,500円／当日2,000円）</option>
+            <option value="free">無料（テストプレイ・招待）</option>
+          </select>
+          <div class="meta" id="priceHint" style="margin-top:4px"></div></div>
+      </div>
       <div class="sub" style="margin-top:6px">
         <b>締切時刻に自動でマッチングされます</b>（LINE通知は送られません。内容を確認してから
         「結果を一斉通知」を押してください）。締切後は参加者がキャンセルできなくなります。<br>
@@ -530,6 +538,7 @@
       $("slotCap").value = s.capacity;
       $("slotDeadline").value = isoToLocalInput(s.deadline);
       $("slotTest").checked = !!s.isTest;
+      $("slotPrice").value = s.priceType || (s.isTest ? "free" : "standard");
       updateTimeHint(); updateCapHint(); // テスト枠かどうかで基準（30分/100分・組数）が変わるので最後に計算
       $("slotFormTitle").textContent = "① 予約枠を編集中";
       $("createSlotBtn").textContent = "この内容で更新する";
@@ -545,9 +554,27 @@
       $("cancelEditBtn").classList.add("hidden");
       $("slotDate").value = ""; $("slotTime").value = ""; $("slotCap").value = "50"; $("slotDeadline").value = "";
       $("slotTest").checked = false;
+      $("slotPrice").value = "standard";
+      updateTimeHint(); updateCapHint(); // 編集していた枠の目安表示が残らないように
       set("slotStatus", "", "");
     }
     $("cancelEditBtn").addEventListener("click", endEdit);
+
+    // テスト枠にしたら料金は無料を初期値に（新規作成のときだけ。既存の枠の料金は勝手に変えない）
+    $("slotTest").addEventListener("change", () => {
+      if (!editingSlotId) $("slotPrice").value = $("slotTest").checked ? "free" : "standard";
+    });
+    // 料金の表示はサーバーの値に合わせる（金額はサーバー側の1か所＝特商法と一致させる場所で管理）
+    let paymentsInfo = null;
+    function renderPriceInfo() {
+      const p = paymentsInfo;
+      if (!p) return;
+      const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
+      $("slotPrice").options[0].textContent = "通常料金（事前" + yen(p.advance) + "／当日" + yen(p.sameDay) + "）";
+      $("priceHint").textContent = p.enabled
+        ? "事前／当日は予約した日で決まります（枠の当日に予約すると当日料金）"
+        : "決済の導入前なので、今はどちらを選んでも料金はかかりません";
+    }
 
     // ----- 締切のプリセット・定員の目安 -----
     // グループ分けの規則はサーバー側(index.js の makeGroupSizes/makeGroupSizesTest)と同じ。
@@ -628,14 +655,15 @@
       if (editingSlotId) {
         // 編集（更新）。isTestはチェック状態をそのまま送る（"1"/"0"）
         const params = { slotId: editingSlotId, date, time, capacity, deadline: dl + "+09:00",
-          isTest: $("slotTest").checked ? "1" : "0" };
+          isTest: $("slotTest").checked ? "1" : "0", priceType: $("slotPrice").value };
         set("slotStatus", "更新中…", "");
         const r = await api("updateSlot", params);
         if (r.ok) { set("slotStatus", "✅ 更新しました（" + date + " " + time + "）", "ok"); endEdit(); loadSlots(); }
         else set("slotStatus", "⚠️ " + (r.error || "失敗"), "ng");
       } else {
         // 新規作成
-        const params = { date, time, capacity, deadline: dl + "+09:00" }; // 日本時間として送る
+        const params = { date, time, capacity, deadline: dl + "+09:00", // 日本時間として送る
+          priceType: $("slotPrice").value };
         if ($("slotTest").checked) params.isTest = "1"; // テストプレイ用（30分進行・3人グループ）
         set("slotStatus", "作成中…", "");
         const r = await api("createSlot", params);
@@ -656,6 +684,7 @@
     async function loadSlots() {
       const r = await api("getSlots", {}, false);
       allSlots = r.slots || [];
+      if (r.payments) { paymentsInfo = r.payments; renderPriceInfo(); }
       // 日付の一覧（昇順）
       const dates = [...new Set(allSlots.map((s) => s.date))].sort();
       if (!selectedDate || !dates.includes(selectedDate)) selectedDate = dates[0] || "";
@@ -706,6 +735,7 @@
         const badges =
           '<span class="pill">予約 ' + esc(s.reservedCount) + '/' + esc(s.capacity) + '</span>' +
           (s.isTest ? '<span class="pill warnp">⏩テスト30分・3人組</span>' : '') +
+          (s.priceType === "free" ? '<span class="pill">無料</span>' : '') +
           (s.closed ? '<span class="pill">締切済</span>' : '') +
           (!s.deadline ? '<span class="pill errp">⚠️締切未設定</span>' : '') +
           (s.matchedAt ? '<span class="pill okp">✅マッチング済' + (s.matchedAuto ? '（自動）' : '') + '</span>' : '') +
