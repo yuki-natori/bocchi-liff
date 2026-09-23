@@ -291,15 +291,35 @@
     <!-- ===== タブ: クーポン ===== -->
     <div id="tab-coupons" class="tab-page hidden">
 
-    <!-- リベシティID登録 -->
+    <!-- クーポンコード -->
     <div class="card">
-      <h2>④ 無料クーポン対象のリベシティIDを登録</h2>
-      <label>プロフィールURL または ID</label>
-      <input type="text" id="libeInput" placeholder="https://libecity.com/user_profile/xxxx" />
-      <label>メモ（任意）</label>
-      <input type="text" id="libeNote" placeholder="例：◯◯さん" />
-      <button id="registerLibeBtn">登録する</button>
-      <div class="status" id="libeStatus"></div>
+      <h2>④ クーポンコードを作る（仲間内に配る・1回限り）</h2>
+      <div class="sub" style="margin-bottom:10px">
+        作ったコードを相手に伝えると、相手がアプリの「クーポン」画面で入力して自分のクーポンにできます。1つのコードは1人・1回だけ使えます。
+      </div>
+      <div class="row">
+        <div><label>種類</label>
+          <select id="ccType">
+            <option value="free">参加無料</option>
+            <option value="discount">割引（円）</option>
+          </select></div>
+        <div><label>割引額（円）</label><input type="number" id="ccAmount" value="500" disabled /></div>
+      </div>
+      <div class="row">
+        <div><label>枚数</label><input type="number" id="ccCount" value="1" min="1" max="50" /></div>
+        <div><label>有効期限（任意）</label><input type="date" id="ccExpires" /></div>
+      </div>
+      <label>誰に渡すか（メモ）</label>
+      <input type="text" id="ccMemo" placeholder="例：田中さんグループ（4人分）" maxlength="100" />
+      <button id="createCodesBtn">コードを作る</button>
+      <div class="status" id="ccStatus"></div>
+      <div id="ccNew"></div>
+      <div style="margin-top:14px; display:flex; justify-content:space-between; align-items:center">
+        <b style="font-size:14px">作ったコード</b>
+        <button class="sub-btn" id="reloadCodesBtn">一覧を更新</button>
+      </div>
+      <div id="ccList" style="margin-top:8px"></div>
+      <div id="ccLegacy" class="meta" style="margin-top:12px"></div>
     </div>
 
     <!-- クーポン手動発行 -->
@@ -494,6 +514,7 @@
       localStorage.setItem(TAB_STORE, id);
       // クエストタブは開いたときに初回だけ読み込む（読み込まないと姫・ミッション・チカラが空になる）
       if (id === "tab-quest" && !questLoaded) loadQuestSettings();
+      if (id === "tab-coupons") loadCodes();
     }
     document.querySelectorAll(".atab").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
@@ -973,15 +994,69 @@
       });
     }
 
-    // ----- ④ リベID登録 -----
-    $("registerLibeBtn").addEventListener("click", async () => {
-      const libeId = $("libeInput").value.trim(), note = $("libeNote").value.trim();
-      if (!libeId) { set("libeStatus", "URLまたはIDを入力してください", "ng"); return; }
-      set("libeStatus", "登録中…", "");
-      const r = await api("registerLibeId", { libeId, note });
-      if (r.ok) { set("libeStatus", r.already ? "ℹ️ すでに登録済み：" + r.libeId : "✅ 登録：" + r.libeId, "ok"); $("libeInput").value = ""; $("libeNote").value = ""; }
-      else set("libeStatus", "⚠️ " + (r.error || "失敗"), "ng");
+    // ----- ④ クーポンコード -----
+    $("ccType").addEventListener("change", () => { $("ccAmount").disabled = $("ccType").value !== "discount"; });
+    $("createCodesBtn").addEventListener("click", async () => {
+      const type = $("ccType").value, amount = $("ccAmount").value, count = $("ccCount").value;
+      const memo = $("ccMemo").value.trim(), expiresAt = $("ccExpires").value;
+      if (type === "discount" && !(parseInt(amount, 10) > 0)) { set("ccStatus", "割引額を入力してください", "ng"); return; }
+      set("ccStatus", "作成中…", "");
+      $("createCodesBtn").disabled = true;
+      const r = await api("createCouponCodes", { type, amount, count, memo, expiresAt });
+      $("createCodesBtn").disabled = false;
+      if (!r.ok) { set("ccStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      set("ccStatus", "✅ " + r.codes.length + "件のコードを作りました", "ok");
+      // 作ったコードは目立つ形で出す（まとめてコピーできるように）
+      const text = r.codes.join("\n");
+      $("ccNew").innerHTML = '<textarea readonly style="margin-top:8px;font-family:monospace;font-size:15px;letter-spacing:.06em" rows="' +
+        Math.min(10, r.codes.length + 1) + '">' + esc(text) + '</textarea>' +
+        '<button class="sub-btn" id="ccCopyBtn">コードをコピー</button>';
+      $("ccCopyBtn").onclick = async () => {
+        try { await navigator.clipboard.writeText(text); set("ccStatus", "✅ コピーしました", "ok"); }
+        catch (e) { $("ccNew").querySelector("textarea").select(); }
+      };
+      $("ccMemo").value = "";
+      loadCodes();
     });
+    async function loadCodes() {
+      const box = $("ccList");
+      box.innerHTML = '<div class="meta">読み込み中…</div>';
+      const r = await api("listCouponCodes");
+      if (!r.ok) { box.innerHTML = '<div class="meta">⚠️ ' + esc(r.error || "失敗") + '</div>'; return; }
+      const STATUS = { active: "未使用", redeemed: "使用済み", disabled: "無効" };
+      const fmt = (iso) => { if (!iso) return ""; const d = new Date(iso); return (d.getMonth() + 1) + "/" + d.getDate(); };
+      box.innerHTML = r.codes.length ? "" : '<div class="meta">まだありません</div>';
+      r.codes.forEach((c) => {
+        const div = document.createElement("div");
+        div.className = "slot-row";
+        const expired = c.expiresAt && new Date(c.expiresAt) < new Date() && c.status === "active";
+        div.innerHTML =
+          '<div class="title" style="font-family:monospace;letter-spacing:.06em">' + esc(c.code) +
+          '<span class="pill ' + (c.status === "active" && !expired ? "okp" : "") + '">' + (expired ? "期限切れ" : STATUS[c.status] || esc(c.status)) + '</span>' +
+          '<span class="pill">' + (c.type === "free" ? "参加無料" : esc(Number(c.amount).toLocaleString("ja-JP")) + "円引き") + '</span></div>' +
+          '<div class="meta">' + (c.memo ? "📝 " + esc(c.memo) + "　" : "") + "作成 " + fmt(c.createdAt) +
+          (c.expiresAt ? "　期限 " + fmt(c.expiresAt) : "") +
+          (c.status === "redeemed" ? "　／　使った人：" + esc(c.redeemedNickname || c.redeemedBy) + "（" + fmt(c.redeemedAt) + "）" : "") + '</div>';
+        if (c.status !== "redeemed") {
+          const b = document.createElement("button");
+          b.className = "sub-btn";
+          b.textContent = c.status === "disabled" ? "有効に戻す" : "無効にする";
+          b.onclick = async () => {
+            b.disabled = true;
+            const rr = await api("disableCouponCode", c.status === "disabled" ? { code: c.code, undo: "1" } : { code: c.code });
+            if (rr.ok) loadCodes(); else { b.disabled = false; alert("⚠️ " + (rr.error || "失敗")); }
+          };
+          div.appendChild(b);
+        }
+        box.appendChild(div);
+      });
+      // 旧方式（リベシティID照合）の登録状況。未使用が0件なら廃止してよい
+      const L = r.legacyLibe || { total: 0, unredeemed: [] };
+      $("ccLegacy").innerHTML = "旧方式（リベシティID照合）の登録：" + L.total + "件・うち未使用 " + L.unredeemed.length + "件" +
+        (L.unredeemed.length ? "（" + L.unredeemed.map((x) => esc(x.note || x.libeId)).join("、") + "）" : "") +
+        "<br>アプリの入力欄はコード方式に切り替えたため、旧方式の対象者はアプリから受け取れません。未使用の人にはコードを渡してください。";
+    }
+    $("reloadCodesBtn").addEventListener("click", loadCodes);
 
     // ----- ⑤ クーポン手動発行 -----
     $("issueCouponBtn").addEventListener("click", async () => {

@@ -268,6 +268,13 @@
     /* ⑦決済：お支払い */
     .pay-amount { font-size:34px; font-weight:900; color:var(--ink); margin:10px 0 2px; }
     .pay-fine { font-size:11.5px; color:var(--sub); line-height:1.7; margin-top:10px; }
+    .pay-coupons { text-align:left; margin:14px 0 4px; }
+    .pay-coupons .pc-title { font-size:13px; font-weight:800; margin-bottom:6px; }
+    .pay-coupons label { display:flex; align-items:center; gap:8px; font-size:13.5px; padding:9px 11px;
+      border:1.5px solid #e3ddcd; border-radius:10px; margin-bottom:6px; cursor:pointer; background:#fff; }
+    .pay-coupons label.sel { border-color:var(--green); background:#f3faf6; }
+    .pay-coupons input { width:auto; margin:0; }
+    .pay-base { font-size:14px; color:var(--sub); text-decoration:line-through; margin-right:6px; font-weight:700; }
     .slot-price { display:inline-block; margin-left:8px; font-size:12px; font-weight:800; color:var(--ink); }
     /* 予約一覧の「支払い待ち」 */
     .resv-pay { flex:1 0 100%; order:3; margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -381,15 +388,15 @@
     .coupon .cinfo { font-size:12px; color:var(--sub); }
 
     /* リベシティID入力 */
-    #libeBox { margin-bottom:20px; }
-    #libeBox .libe-input { display:flex; gap:8px; }
-    #libeBox input { flex:1; padding:12px 14px; font-size:15px; border:1px solid #d9d4c6;
+    #codeBox { margin-bottom:20px; }
+    #codeBox .code-input { display:flex; gap:8px; }
+    #codeBox input { letter-spacing:.08em; flex:1; padding:12px 14px; font-size:15px; border:1px solid #d9d4c6;
       border-radius:10px; background:#fff; }
-    #libeBox input:focus { outline:none; border-color:var(--green); }
-    #libeBox button { padding:0 16px; font-size:14px; font-weight:700; color:#fff;
+    #codeBox input:focus { outline:none; border-color:var(--green); }
+    #codeBox button { padding:0 16px; font-size:14px; font-weight:700; color:#fff;
       background:var(--green); border:none; border-radius:10px; white-space:nowrap; }
-    #libeBox button:disabled { opacity:.5; }
-    #libeStatus { font-size:13px; margin-top:8px; min-height:18px; }
+    #codeBox button:disabled { opacity:.5; }
+    #codeStatus { font-size:13px; margin-top:8px; min-height:18px; }
 
     /* 予約済みカード */
     .reserved { background:#eaf6ef; border:1.5px solid var(--green); border-radius:var(--radius);
@@ -657,6 +664,7 @@
           お支払いが済むと予約が確定します。<br>
           <span id="payHold"></span>
         </div>
+        <div id="payCoupons" class="pay-coupons hidden"></div>
         <button class="submit" id="payBtn">お支払いに進む</button>
         <div class="pay-fine">
           クレジットカード／PayPayが使えます。<br>
@@ -680,14 +688,14 @@
       <div id="couponList"></div>
     </div>
 
-    <!-- リベシティ会員クーポン -->
-    <div id="libeBox">
-      <div class="section-title">🎫 リベシティ会員クーポン</div>
-      <div class="libe-input">
-        <input type="text" id="libeInput" placeholder="リベシティのプロフィールURL or ID" autocomplete="off" />
-        <button id="libeBtn">取得</button>
+    <!-- クーポンコード（運営から受け取ったコードを入力） -->
+    <div id="codeBox">
+      <div class="section-title">🎫 クーポンコードを入力</div>
+      <div class="code-input">
+        <input type="text" id="codeInput" placeholder="ABCD-EFGH" autocomplete="off" autocapitalize="characters" maxlength="12" />
+        <button id="codeBtn">登録</button>
       </div>
-      <div id="libeStatus"></div>
+      <div id="codeStatus"></div>
     </div>
 
     <div class="status" id="couponStatus"></div>
@@ -1206,28 +1214,73 @@
       return "あと" + Math.max(1, Math.round(ms / 60000)) + "分";
     }
     let payTarget = null;
-    function openPay(r) {
+    let payCouponId = "";      // 選んだクーポン（"" は使わない）
+    let payCouponList = [];
+    // クーポンを当てたあとの金額（表示用。実際の金額はサーバーが決める）。50円未満の残りは0円
+    function dueWith(base, c) {
+      if (!c) return base;
+      if (c.type === "free") return 0;
+      const d = Math.max(0, base - (Number(c.amount) || 0));
+      return d > 0 && d < 50 ? 0 : d;
+    }
+    function renderPayAmount() {
+      const base = payTarget.amount;
+      const c = payCouponList.find((x) => x.couponId === payCouponId) || null;
+      const due = dueWith(base, c);
+      $("payAmount").innerHTML = (due !== base ? '<span class="pay-base">' + esc(yen(base)) + '</span>' : "") + esc(yen(due));
+      $("payBtn").textContent = due === 0 ? "クーポンで予約を確定する" : "お支払いに進む";
+      // 0円なら支払い手段や明細の案内はいらない
+      document.querySelector("#payBox .pay-fine").classList.toggle("hidden", due === 0);
+      document.querySelectorAll("#payCoupons label").forEach((l) =>
+        l.classList.toggle("sel", l.dataset.id === payCouponId));
+    }
+    async function openPay(r) {
       payTarget = r;
+      payCouponId = r.couponId || "";   // 前に選んだクーポンがあれば引き継ぐ
+      payCouponList = [];
       $("myReserveBox").classList.add("hidden");
       $("chooseBox").classList.add("hidden");
       $("partyDoneBox").classList.add("hidden");
       $("payBox").classList.remove("hidden");
       $("paySlot").textContent = formatSlot(r.date, r.time);
-      $("payAmount").textContent = yen(r.amount);
+      $("payCoupons").classList.add("hidden");
       const left = holdLeftText(r.holdUntil);
       $("payHold").textContent = left
         ? "席を押さえています（" + left + "）。時間を過ぎると席は他の方に回ります。"
         : "時間内にお支払いがないと、席は他の方に回ります。";
       $("payBtn").disabled = false;
-      $("payBtn").textContent = "お支払いに進む";
+      renderPayAmount();
       setStatus("homeStatus", "", "");
+      // 使えるクーポン（未使用のもの＋この予約で押さえているもの）
+      const mc = await api("getMyCoupons", { lineUserId: profile.userId });
+      payCouponList = (mc.coupons || []).filter((c) => c.status === "active" || c.heldSlotId === r.slotId);
+      if (!payCouponList.some((c) => c.couponId === payCouponId)) payCouponId = "";
+      const box = $("payCoupons");
+      if (payCouponList.length) {
+        const opt = (id, text) => '<label data-id="' + esc(id) + '"><input type="radio" name="payCoupon" value="' + esc(id) + '"'
+          + (id === payCouponId ? " checked" : "") + '><span>' + text + '</span></label>';
+        box.innerHTML = '<div class="pc-title">🎟 クーポンを使う</div>'
+          + opt("", "使わない")
+          + payCouponList.map((c) => opt(c.couponId,
+              (c.type === "free" ? "参加無料クーポン" : esc(yen(c.amount)) + "引きクーポン")
+              + (c.reason ? '<br><span style="color:var(--sub);font-size:12px">' + esc(c.reason) + '</span>' : ""))).join("");
+        box.classList.remove("hidden");
+        box.querySelectorAll("input").forEach((i) => i.addEventListener("change", () => { payCouponId = i.value; renderPayAmount(); }));
+      }
+      renderPayAmount();
     }
     $("payLaterBtn").addEventListener("click", renderReserve);
     $("payBtn").addEventListener("click", async () => {
       if (!payTarget) return;
       $("payBtn").disabled = true;
       $("payBtn").textContent = "支払い画面を開いています…";
-      const r = await api("createCheckout", { lineUserId: profile.userId, slotId: payTarget.slotId });
+      const r = await api("createCheckout", { lineUserId: profile.userId, slotId: payTarget.slotId, couponId: payCouponId });
+      if (r.ok && r.free) {
+        // クーポンで0円になった＝支払い画面を通さずに確定
+        await renderReserve();
+        setStatus("homeStatus", "✅ クーポンを使って予約が確定しました", "ok");
+        return;
+      }
       if (r.ok && r.url) {
         // Stripeの支払い画面へ。支払い後は ?mode=paid でこのアプリに戻ってくる
         location.href = r.url;
@@ -1399,11 +1452,11 @@
       if (!ok) return;
       const r = await api("cancelReservation", { lineUserId: profile.userId, slotId: slotId });
       if (r.ok) {
-        const msg = r.refunded
+        const msg = (r.refunded
           ? "キャンセルしました。" + yen(r.refundAmount) + "を返金します（反映まで数日かかることがあります）"
           : paidAmount
             ? "キャンセルしました。返金の手続きを進めています（完了まで少しお時間をください）"
-            : "キャンセルしました";
+            : "キャンセルしました") + (r.couponReturned ? "。使ったクーポンはお返ししました" : "");
         await renderReserve();
         setStatus("homeStatus", msg, "");
       } else {
@@ -1851,8 +1904,11 @@
           ? '<span class="amt free">無料</span>'
           : '<span class="amt">¥' + Number(c.amount).toLocaleString() + '</span>';
         const label = isFree ? "参加無料クーポン" : "割引クーポン";
+        const exp = c.expiresAt ? (function () { const d = new Date(c.expiresAt); return (d.getMonth() + 1) + "/" + d.getDate() + "まで"; })() : "";
+        const held = c.status === "held"
+          ? '<br><b style="color:#b26a00">お支払い待ちの予約で使用中</b>' : "";
         row.innerHTML = amtHtml +
-          '<span class="cinfo">' + label + '<br>' + esc(c.reason || "") + '</span>';
+          '<span class="cinfo">' + label + '<br>' + esc(c.reason || "") + (exp ? "（" + exp + "）" : "") + held + '</span>';
         list.appendChild(row);
       });
     }
@@ -2021,22 +2077,28 @@
     $("editBtn").addEventListener("click", () => openRegister(true));
 
     // リベシティID → 無料クーポン取得
-    $("libeBtn").addEventListener("click", async () => {
-      const val = $("libeInput").value.trim();
-      const st = $("libeStatus");
-      if (!val) { st.textContent = "IDまたはURLを入力してください"; st.className = "ng"; return; }
-      $("libeBtn").disabled = true;
+    // クーポンコード：入力は大文字・4文字ごとにハイフン（小文字・全角で打ってもサーバー側で吸収する）
+    $("codeInput").addEventListener("input", (e) => {
+      const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+      e.target.value = v.length > 4 ? v.slice(0, 4) + "-" + v.slice(4) : v;
+    });
+    $("codeBtn").addEventListener("click", async () => {
+      const val = $("codeInput").value.trim();
+      const st = $("codeStatus");
+      if (!val) { st.textContent = "クーポンコードを入力してください"; st.className = "ng"; return; }
+      $("codeBtn").disabled = true;
       st.textContent = "確認中…"; st.className = "";
-      const r = await api("redeemLibeId", { lineUserId: profile.userId, libeId: val });
+      const r = await api("redeemCouponCode", { lineUserId: profile.userId, code: val });
       if (r.ok) {
-        st.textContent = "✅ 無料クーポンを発行しました！"; st.className = "ok";
-        $("libeInput").value = "";
+        st.textContent = r.type === "free" ? "✅ 参加無料クーポンを登録しました！" : "✅ " + yen(r.amount) + "引きクーポンを登録しました！";
+        st.className = "ok";
+        $("codeInput").value = "";
         const mc = await api("getMyCoupons", { lineUserId: profile.userId }); // 一覧更新
         renderCoupons(mc.coupons || []);
       } else {
-        st.textContent = "⚠️ " + (r.error || "取得できませんでした"); st.className = "ng";
+        st.textContent = "⚠️ " + (r.error || "登録できませんでした"); st.className = "ng";
       }
-      $("libeBtn").disabled = false;
+      $("codeBtn").disabled = false;
     });
 
     main();
