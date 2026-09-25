@@ -224,6 +224,14 @@
           </select>
           <div class="meta" id="priceHint" style="margin-top:4px"></div></div>
       </div>
+      <label style="margin-top:10px; font-weight:400; cursor:pointer;">
+        <input type="checkbox" id="slotAdults" style="width:auto; margin-right:6px; vertical-align:middle;" />
+        <b>大人のみ</b>の枠にする（18歳未満は参加不可）
+      </label>
+      <div class="sub" style="margin:2px 0 0 22px;">
+        大人だけで遊びたい人向け。この枠ではお子さまの招待・「子どもが参加」の予約ができません。アプリでは枠に小さく「お子さまは参加できない枠です」と表示します。すでに入っている18歳未満の予約はそのまま残ります。
+      </div>
+      <div class="meta ng" id="adultsWarn" style="margin:4px 0 0 22px"></div>
       <div class="sub" style="margin-top:6px">
         <b>締切時刻に自動でマッチングされます</b>（LINE通知は送られません。内容を確認してから
         「結果を一斉通知」を押してください）。締切後は参加者がキャンセルできなくなります。<br>
@@ -562,6 +570,8 @@
       $("slotDeadline").value = isoToLocalInput(s.deadline);
       $("slotTest").checked = !!s.isTest;
       $("slotPrice").value = s.priceType || (s.isTest ? "free" : "standard");
+      $("slotAdults").checked = !!s.adultsOnly;
+      $("adultsWarn").textContent = "";
       updateTimeHint(); updateCapHint(); // テスト枠かどうかで基準（30分/100分・組数）が変わるので最後に計算
       $("slotFormTitle").textContent = "① 予約枠を編集中";
       $("createSlotBtn").textContent = "この内容で更新する";
@@ -578,10 +588,18 @@
       $("slotDate").value = ""; $("slotTime").value = ""; $("slotCap").value = "50"; $("slotDeadline").value = "";
       $("slotTest").checked = false;
       $("slotPrice").value = "standard";
+      $("slotAdults").checked = false; $("adultsWarn").textContent = "";
       updateTimeHint(); updateCapHint(); // 編集していた枠の目安表示が残らないように
       set("slotStatus", "", "");
     }
     $("cancelEditBtn").addEventListener("click", endEdit);
+    $("slotAdults").addEventListener("change", async () => {
+      $("adultsWarn").textContent = "";
+      if (!editingSlotId || !$("slotAdults").checked) return;
+      const r = await api("listSlotReservations", { slotId: editingSlotId });
+      const n = r.ok ? (r.summary.minors || 0) : 0;
+      if (n) $("adultsWarn").textContent = "⚠️ この枠にはすでに18歳未満の予約が" + n + "件あります。大人のみにしても、その予約はそのまま残ります（新しい予約から適用）";
+    });
 
     // テスト枠にしたら料金は無料を初期値に（新規作成のときだけ。既存の枠の料金は勝手に変えない）
     $("slotTest").addEventListener("change", () => {
@@ -678,16 +696,24 @@
       if (editingSlotId) {
         // 編集（更新）。isTestはチェック状態をそのまま送る（"1"/"0"）
         const params = { slotId: editingSlotId, date, time, capacity, deadline: dl + "+09:00",
-          isTest: $("slotTest").checked ? "1" : "0", priceType: $("slotPrice").value };
+          isTest: $("slotTest").checked ? "1" : "0", priceType: $("slotPrice").value,
+          adultsOnly: $("slotAdults").checked ? "1" : "0" };
         set("slotStatus", "更新中…", "");
         const r = await api("updateSlot", params);
-        if (r.ok) { set("slotStatus", "✅ 更新しました（" + date + " " + time + "）", "ok"); endEdit(); loadSlots(); }
+        if (r.ok) {
+          endEdit();   // 入力欄を空に戻す（中で状態表示も消えるので、そのあとに結果を出す）
+          set("slotStatus", "✅ 更新しました（" + date + " " + time + "）" +
+            (r.existingMinors ? "\n⚠️ この枠にはすでに18歳未満の予約が" + r.existingMinors + "件あります（そのまま残ります。大人のみは新しい予約から適用）" : ""),
+            r.existingMinors ? "ng" : "ok");
+          loadSlots();
+        }
         else set("slotStatus", "⚠️ " + (r.error || "失敗"), "ng");
       } else {
         // 新規作成
         const params = { date, time, capacity, deadline: dl + "+09:00", // 日本時間として送る
           priceType: $("slotPrice").value };
-        if ($("slotTest").checked) params.isTest = "1"; // テストプレイ用（30分進行・3人グループ）
+        if ($("slotTest").checked) params.isTest = "1";
+        if ($("slotAdults").checked) params.adultsOnly = "1"; // テストプレイ用（30分進行・3人グループ）
         set("slotStatus", "作成中…", "");
         const r = await api("createSlot", params);
         if (r.ok) { set("slotStatus", "✅ 作成しました（" + date + " " + time + "）", "ok"); $("slotDate").value=""; $("slotTime").value=""; loadSlots(); }
@@ -759,6 +785,7 @@
           '<span class="pill">予約 ' + esc(s.reservedCount) + '/' + esc(s.capacity) + '</span>' +
           (s.isTest ? '<span class="pill warnp">⏩テスト30分・3人組</span>' : '') +
           (s.priceType === "free" ? '<span class="pill">無料</span>' : '') +
+          (s.adultsOnly ? '<span class="pill">大人のみ</span>' : '') +
           (s.closed ? '<span class="pill">締切済</span>' : '') +
           (!s.deadline ? '<span class="pill errp">⚠️締切未設定</span>' : '') +
           (s.matchedAt ? '<span class="pill okp">✅マッチング済' + (s.matchedAuto ? '（自動）' : '') + '</span>' : '') +

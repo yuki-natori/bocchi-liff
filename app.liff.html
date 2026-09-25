@@ -288,6 +288,8 @@
     .pay-coupons label.sel { border-color:var(--green); background:#f3faf6; }
     .pay-coupons input { width:auto; margin:0; }
     .pay-base { font-size:14px; color:var(--sub); text-decoration:line-through; margin-right:6px; font-weight:700; }
+    .kids-note { font-size:11px; color:var(--sub); margin-top:4px; }
+    .resv-kids-note { flex:1 0 100%; order:4; font-size:11.5px; color:var(--sub); margin-top:6px; }
     .slot-price { display:inline-block; margin-left:8px; font-size:12px; font-weight:800; color:var(--ink); }
     /* 予約一覧の「支払い待ち」 */
     .resv-pay { flex:1 0 100%; order:3; margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -653,7 +655,7 @@
         <input type="text" id="participantNickname" maxlength="20" placeholder="参加するお子さまのニックネーム" autocomplete="off" />
         <div class="pm-note">
           参加費は<b>無料</b>です。パーティの仲間には、この名前が表示されます。付き添いの保護者の方はパーティの人数に数えません。<br>
-          当日の受付で、スタッフが年齢を確認します。<br>
+          当日の受付で、スタッフが年齢を確認します。「お子さまは参加できない枠です」と書かれた枠は選べません。<br>
           お子さまが自分のスマホとLINEを持っている場合は、保護者の方が予約してから「👧 お子さまを招待」を使ってください。
         </div>
       </div>
@@ -1407,6 +1409,7 @@
       else if (inv.mine) msg = "この招待で参加済みです";
       else if (inv.status !== "active") msg = inv.status === "used" ? "この招待はすでに使われています" : "この招待は取り消されています";
       else if (inv.closed) msg = "予約締切を過ぎたため参加できません";
+      else if (inv.adultsOnly) msg = "この枠はお子さまは参加できない枠のため、招待では参加できません";
       if (msg) { btn.disabled = true; setStatus("homeStatus", msg, "ng"); } else setStatus("homeStatus", "", "");
     }
     $("iaLookupBtn").addEventListener("click", () => {
@@ -1622,7 +1625,13 @@
         }
         div.appendChild(c);
         // 保護者として：お子さまを招待（支払い済み・締切前・18歳未満の予約でないとき）
-        if (!pending && !closed && !r.minor) {
+        if (!pending && !closed && !r.minor && slot && slot.adultsOnly) {
+          const n = document.createElement("div");
+          n.className = "resv-kids-note";
+          n.textContent = "この枠はお子さまは参加できません";
+          div.appendChild(n);
+        }
+        if (!pending && !closed && !r.minor && !(slot && slot.adultsOnly)) {
           const box = document.createElement("div");
           box.className = "resv-invite";
           const inv = r.minorInvites || [];
@@ -2218,7 +2227,11 @@
       }
     }
 
-    function renderSlots(slots) {
+    let lastSlots = [];   // 「子どもが参加」を切り替えたときに枠一覧を描き直すため
+    function renderSlots(slots, keepSelection) {
+      lastSlots = slots;
+      const prevSel = keepSelection ? selectedSlotId : null;
+      const minorMode = $("minorBorrowed").checked;
       const list = $("slotList");
       list.innerHTML = "";
       selectedSlotId = null;
@@ -2229,23 +2242,27 @@
       }
       slots.forEach((s) => {
         const conflict = conflictsWithMine(s); // 予約済みの時間と重複・連続
-        const disabled = s.isFull || s.closed || conflict;
+        const adultsBlocked = minorMode && s.adultsOnly;   // 子どもが参加するときは大人のみの枠を選べない
+        const disabled = s.isFull || s.closed || conflict || adultsBlocked;
         const label = document.createElement("label");
         label.className = "slot-card" + (disabled ? " disabled" : "");
         let meta;
         if (s.closed)       meta = '<span class="full">締切</span>';
         else if (s.isFull)  meta = '<span class="full">満席</span>';
         else if (conflict)  meta = '<span class="full">予約と時間が重複</span>';
+        else if (adultsBlocked) meta = '<span class="full">お子さまは参加できない枠です</span>';
         else                meta = '<span class="ok-rem">残り' + s.remaining + '席</span>';
         // 料金（決済を入れるまでは出さない）。事前と当日で金額が変わる
-        if (paymentsInfo && paymentsInfo.enabled && !s.closed && !s.isFull) {
+        if (paymentsInfo && paymentsInfo.enabled && !disabled) {
           meta += '<span class="slot-price">' + (s.priceNow ? yen(s.priceNow) : "無料") + '</span>';
         }
         label.innerHTML =
           '<input type="radio" name="slot" value="' + esc(s.slotId) + '"' + (disabled?' disabled':'') + '>' +
           '<div class="slot-date">' + formatSlot(s.date, "").trim() + '</div>' +
           '<div class="slot-time">' + esc(s.time) + '</div>' +
-          '<div class="slot-meta">' + meta + '</div>';
+          '<div class="slot-meta">' + meta + '</div>' +
+          // 大人のみの枠：大人には目立たせず、子ども連れの家族が予約前に気づけるよう小さく添える
+          (s.adultsOnly && !adultsBlocked ? '<div class="kids-note">お子さまは参加できない枠です</div>' : '');
         if (!disabled) {
           label.addEventListener("click", () => {
             document.querySelectorAll(".slot-card").forEach(c => c.classList.remove("sel"));
@@ -2256,6 +2273,7 @@
           });
         }
         list.appendChild(label);
+        if (!disabled && prevSel === s.slotId) label.click();   // 切り替え前の選択を引き継ぐ
       });
     }
 
@@ -2288,6 +2306,7 @@
     // ② 18歳未満の子どもが保護者のスマホで参加
     $("minorBorrowed").addEventListener("change", () => {
       $("minorBox").classList.toggle("hidden", !$("minorBorrowed").checked);
+      if (lastSlots.length) renderSlots(lastSlots, true);   // 大人のみの枠を選べなくする／戻す
       // 18歳未満は無料なので、枠一覧の金額も「無料」に見せる（外したら元に戻す）
       document.querySelectorAll("#slotList .slot-price").forEach((el) => {
         if (!el.dataset.price) el.dataset.price = el.textContent;
