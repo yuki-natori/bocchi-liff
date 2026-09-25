@@ -265,6 +265,19 @@
     .pd-sub { font-size:13px; color:var(--sub); }
     .pd-text { font-size:13px; line-height:1.7; margin-top:14px; text-align:left;
       background:#f6f4ec; border-radius:8px; padding:11px 13px; }
+    /* ⑭ 18歳未満 */
+    .minor-check { display:flex; gap:8px; align-items:flex-start; font-size:13px; line-height:1.6; margin-top:16px;
+      padding:10px 12px; border:1.5px solid #e3ddcd; border-radius:10px; background:#fff; cursor:pointer; }
+    .minor-check input { width:auto; margin-top:4px; }
+    #minorBox { margin-top:8px; }
+    #minorBox input, #iaCodeInput { width:100%; padding:12px 14px; font-size:15px; border:1px solid #d9d4c6; border-radius:10px; }
+    .resv-minor { flex:1 0 100%; order:2; font-size:12px; font-weight:700; color:#8a5a00; margin-top:5px; }
+    .resv-invite { flex:1 0 100%; order:4; margin-top:8px; }
+    .resv-invite button { font-size:12.5px; font-weight:800; color:var(--green); background:#fff;
+      border:1.5px solid var(--green); border-radius:8px; padding:6px 12px; cursor:pointer; }
+    .mi-row { font-size:13px; padding:8px 10px; border:1px solid #e3ddcd; border-radius:8px; margin-bottom:6px;
+      display:flex; justify-content:space-between; align-items:center; gap:8px; background:#fff; }
+    .mi-row button { font-size:12px; background:none; border:none; color:var(--err); font-weight:700; cursor:pointer; }
     /* ⑦決済：お支払い */
     .pay-amount { font-size:34px; font-weight:900; color:var(--ink); margin:10px 0 2px; }
     .pay-fine { font-size:11.5px; color:var(--sub); line-height:1.7; margin-top:10px; }
@@ -464,25 +477,24 @@
         </div>
       </div>
       <div class="field">
-        <label>話したい話題</label>
+        <label>いちばん伸ばしたいチカラ</label>
         <div class="select-wrap">
+          <!-- 選択肢は POWER_META（5つのチカラ）から作る。チカラの名前を差し替えればここも変わる -->
           <select id="topic">
             <option value="">選択しない</option>
-            <option value="仕事・副業">仕事・副業</option>
-            <option value="お金・投資">お金・投資</option>
-            <option value="趣味・遊び">趣味・遊び</option>
-            <option value="生き方・考え方">生き方・考え方</option>
-            <option value="雑談">雑談</option>
           </select>
         </div>
-        <div class="hint">同じ話題の人と組みやすくなるよ</div>
-        <input type="text" id="topicDetail" maxlength="60" placeholder="もっと詳しく（自由記入・任意）" autocomplete="off" style="margin-top:8px" />
-        <div class="hint">例：「新NISAについて語りたい」「カメラ好きさんと話したい」（60文字まで）</div>
+        <div class="hint">任意。パーティの仲間に表示されます</div>
+      </div>
+      <div class="field">
+        <label>フェスに来た理由</label>
+        <input type="text" id="topicDetail" maxlength="30" placeholder="例：初参加！講演を聞きに／仲間に誘われて" autocomplete="off" />
+        <div class="hint">任意・30文字まで。パーティの仲間に表示されます</div>
       </div>
       <div class="field">
         <label>リベシティのプロフィールURL（任意）</label>
         <input type="text" id="libeUrl" maxlength="120" placeholder="https://libecity.com/user_profile/…" autocomplete="off" />
-        <div class="hint">入力すると、同じグループの仲間があなたのリベプロフィールを見られるよ（空欄でもOK・あとから追加/削除できます）</div>
+        <div class="hint">入力すると、同じパーティの仲間があなたのリベプロフィールを見られるよ（空欄でもOK・あとから追加/削除できます）</div>
       </div>
       <button type="submit" class="submit" id="regBtn">この内容で登録する</button>
       <button type="button" class="back-btn hidden" id="regBackBtn" style="width:100%;margin-top:10px">戻る</button>
@@ -598,6 +610,7 @@
       <div class="section-title">予約中の時間帯</div>
       <div id="reserveList"></div>
       <button class="add-resv-btn" id="addReserveBtn">＋ 別の時間帯を予約する</button>
+      <button class="back-link" id="inviteCodeLink" style="display:block;margin:12px auto 0;font-size:13px">👧 保護者から招待コードを受け取った方はこちら</button>
     </div>
 
     <!-- 日時選択 -->
@@ -631,6 +644,20 @@
         3人以上そろえば、そのままのメンバーで進みます（最大5人）。
       </div>
 
+      <!-- 18歳未満の子どもが保護者のスマホで参加（保護者は付き添いのみ） -->
+      <label class="minor-check">
+        <input type="checkbox" id="minorBorrowed" />
+        <span>参加するのは<b>18歳未満の子ども</b>です（保護者として同意し、付き添います）</span>
+      </label>
+      <div class="hidden" id="minorBox">
+        <input type="text" id="participantNickname" maxlength="20" placeholder="参加するお子さまのニックネーム" autocomplete="off" />
+        <div class="pm-note">
+          参加費は<b>無料</b>です。パーティの仲間には、この名前が表示されます。付き添いの保護者の方はパーティの人数に数えません。<br>
+          当日の受付で、スタッフが年齢を確認します。<br>
+          お子さまが自分のスマホとLINEを持っている場合は、保護者の方が予約してから「👧 お子さまを招待」を使ってください。
+        </div>
+      </div>
+
       <div class="pm-note">
         <b>予約締切を過ぎるとキャンセルできません。</b>締切の時点でパーティが決まるためです。<br>
         締切後にご都合が悪くなった場合は、公式LINEからご連絡ください。
@@ -651,6 +678,58 @@
         </div>
         <button class="submit" id="pdCopyBtn">コードをコピー</button>
         <button class="back-link" id="pdDoneBtn" style="display:block;margin:10px auto 0">予約一覧に戻る</button>
+      </div>
+    </div>
+
+    <!-- ⑭ 18歳未満：お子さまを招待（保護者） -->
+    <div class="hidden" id="minorInviteBox">
+      <div class="pd-card">
+        <div class="pd-lead">👧 お子さまを招待</div>
+        <div class="pd-sub" id="miSlot"></div>
+        <div class="pd-text">
+          お子さまが<b>自分のスマホとLINE</b>で参加するための招待です。<br>
+          ・参加費は無料。保護者の方と<b>必ず同じパーティ</b>になります<br>
+          ・招待できるのは<b>2人まで</b>。お子さまも席を1つ使います<br>
+          ・保護者の方がキャンセルすると、お子さまの予約も取り消されます<br>
+          ・当日の受付で、スタッフが年齢を確認します
+        </div>
+        <div id="miList" style="margin-top:12px;text-align:left"></div>
+        <div id="miCreate">
+          <label class="minor-check" style="text-align:left">
+            <input type="checkbox" id="miConsent" />
+            <span>18歳未満の子どもで、保護者として参加に同意します</span>
+          </label>
+          <button class="submit" id="miCreateBtn">招待を作る</button>
+        </div>
+        <div id="miNew" class="hidden" style="margin-top:12px">
+          <div class="pd-sub">招待コード</div>
+          <div class="pd-code" id="miCode" style="font-size:30px">----</div>
+          <button class="submit" id="miShareBtn">LINEで送る</button>
+          <button class="back-link" id="miCopyBtn" style="display:block;margin:8px auto 0">招待リンクをコピー</button>
+          <div class="pay-fine">お子さまのスマホでリンクを開いてもらうか、アプリの予約画面で上のコードを入力してもらいます。</div>
+        </div>
+        <button class="back-link" id="miBackBtn" style="display:block;margin:12px auto 0">予約一覧に戻る</button>
+      </div>
+    </div>
+
+    <!-- ⑭ 18歳未満：招待を受ける（お子さま） -->
+    <div class="hidden" id="inviteAcceptBox">
+      <div class="pd-card">
+        <div class="pd-lead">👧 参加の招待</div>
+        <div id="iaCodeInputWrap" class="hidden" style="margin-top:10px">
+          <input type="text" id="iaCodeInput" placeholder="ABCD-EFGH" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" maxlength="20" />
+          <button class="submit" id="iaLookupBtn">招待を確認する</button>
+        </div>
+        <div id="iaDetail" class="hidden">
+          <div class="pd-sub" id="iaFrom"></div>
+          <div class="pd-code" id="iaSlot" style="font-size:22px;letter-spacing:0;text-indent:0"></div>
+          <div class="pd-text">
+            参加費は<b>無料</b>です（18歳未満）。<br>
+            保護者の方と同じパーティで参加します。当日は<b>保護者の方と一緒に受付</b>してください。受付でスタッフが年齢を確認します。
+          </div>
+          <button class="submit" id="iaAcceptBtn">この招待で参加する</button>
+        </div>
+        <button class="back-link" id="iaBackBtn" style="display:block;margin:12px auto 0">予約一覧に戻る</button>
       </div>
     </div>
 
@@ -714,8 +793,8 @@
     <div class="member-card">
       <div class="mc-name" id="mcName">—</div>
       <div class="mc-row"><span class="mc-label">性別</span><span id="mcGender">—</span></div>
-      <div class="mc-row"><span class="mc-label">話したい話題</span><span id="mcTopic">—</span></div>
-      <div class="mc-detail-label">ひとこと</div>
+      <div class="mc-row"><span class="mc-label">伸ばしたいチカラ</span><span id="mcTopic">—</span></div>
+      <div class="mc-detail-label">フェスに来た理由</div>
       <div class="mc-detail" id="mcDetail">—</div>
       <button class="mc-libe hidden" id="mcLibe">🔗 リベシティのプロフィールを見る</button>
       <button id="mcClose">閉じる</button>
@@ -849,6 +928,7 @@
     }
 
     // ===== 起動 =====
+    let pendingInviteCode = null;   // 招待リンクから来て、先にプロフィール登録が必要な人
     async function main() {
       try { await liff.init({ liffId: LIFF_ID }); }
       catch (e) { return bootError("LIFF初期化に失敗: " + e.message); }
@@ -880,9 +960,14 @@
       }
 
       if (!currentUser) {
+        // 招待リンクから来た人は、登録が済んだら招待の画面へ進める
+        if (mode === "invite" && qp.get("code")) pendingInviteCode = qp.get("code");
         openRegister(false); // 新規登録
+        if (pendingInviteCode) $("regSub").textContent = "招待を受けるには、まずあなたのプロフィールを登録してね";
       } else if (mode === "checkin" && checkinSlot) {
         await openGroup(checkinSlot); // チェックインリンク → その枠のマイグループへ
+      } else if (mode === "invite" && qp.get("code")) {
+        await openInviteAccept(qp.get("code")); // 保護者からの招待リンク
       } else if (mode === "paid" && qp.get("slot")) {
         await afterPayment(qp.get("slot"), qp.get("canceled") === "1"); // 支払い画面から戻ってきた
       } else {
@@ -895,13 +980,23 @@
 
     // ===== 登録 / 編集画面 =====
     function openRegister(isEdit) {
-      $("regSub").textContent = isEdit ? "プロフィールを編集できます" : "当日のグループ分けに使うプロフィールを登録してね";
+      $("regSub").textContent = isEdit ? "プロフィールを編集できます" : "パーティの仲間に表示されるプロフィールを登録してね";
       $("regBtn").textContent = isEdit ? "この内容で更新する" : "この内容で登録する";
       $("regBackBtn").classList.toggle("hidden", !isEdit);
       // 既存値で埋める（編集時）／LINE名で埋める（新規時）
       $("nickname").value = currentUser ? (currentUser.nickname || "") : (profile.displayName || "");
       $("gender").value   = currentUser ? (currentUser.gender || "") : "";
-      $("topic").value    = currentUser ? (currentUser.topic || "") : "";
+      // 「いちばん伸ばしたいチカラ」の選択肢を5つのチカラから作る（初回だけ）
+      const tsel = $("topic");
+      if (tsel.options.length <= 1) {
+        POWER_ORDER.forEach((k) => {
+          const o = document.createElement("option");
+          o.value = k; o.textContent = POWER_META[k].emoji + POWER_META[k].label;
+          tsel.appendChild(o);
+        });
+      }
+      // 旧プロフィールの「話題」（お金・投資など）はサーバー側で空にして返すので「選択しない」になる
+      tsel.value = currentUser && POWER_META[currentUser.topic] ? currentUser.topic : "";
       $("topicDetail").value = currentUser ? (currentUser.topicDetail || "") : "";
       // リベID保存済みならURLの形で見せる（クーポン連携で登録済みの人も自動で入る）
       $("libeUrl").value = (currentUser && currentUser.libeId) ? "https://libecity.com/user_profile/" + currentUser.libeId : "";
@@ -929,6 +1024,7 @@
         // 最新のユーザー情報を取り直してホームへ
         const u = await api("getUser", { lineUserId: profile.userId });
         currentUser = u.user;
+        if (pendingInviteCode) { const c = pendingInviteCode; pendingInviteCode = null; await openInviteAccept(c); return; }
         $("doneTitle").textContent = r.isNew ? "登録が完了しました" : "プロフィールを更新しました";
         $("doneMsg").textContent = r.isNew ? "続いて参加日時を予約しましょう。" : "";
         showScreen("screen-done");
@@ -942,7 +1038,7 @@
     // ===== メニュー（リッチメニュー風ホーム）=====
     async function openMenu() {
       $("homeName").textContent = (currentUser.nickname || "") + " さん";
-      $("homeMeta").textContent = [currentUser.gender, currentUser.topic].filter(Boolean).join("・");
+      $("homeMeta").textContent = [currentUser.gender, powerLabel(currentUser.topic)].filter(Boolean).join("・");
       // 各メニューの状態ラベルを更新（予約は複数対応）
       const [mine, myCoupons] = await Promise.all([
         api("getMyReservation", { lineUserId: profile.userId }),
@@ -1207,6 +1303,127 @@
     let paymentsInfo = null; // 料金の案内（サーバーが決めた金額。enabled が false の間は金額を出さない）
     const yen = (n) => Number(n || 0).toLocaleString("ja-JP") + "円";
 
+    // ===== ⑭ 18歳未満：お子さまを招待（保護者）=====
+    let miTarget = null, miNewUrl = "", miNewCode = "";
+    function openMinorInvite(r) {
+      miTarget = r;
+      $("myReserveBox").classList.add("hidden");
+      $("minorInviteBox").classList.remove("hidden");
+      $("miSlot").textContent = formatSlot(r.date, r.time);
+      $("miConsent").checked = false;
+      $("miNew").classList.add("hidden");
+      setStatus("homeStatus", "", "");
+      renderMinorInviteList(r.minorInvites || [], r.minorInviteMax || 2);
+    }
+    function renderMinorInviteList(list, max) {
+      const box = $("miList");
+      box.innerHTML = list.length ? '<div class="pd-sub" style="margin-bottom:6px">作った招待（' + list.length + "/" + max + '）</div>' : "";
+      list.forEach((x) => {
+        const row = document.createElement("div");
+        row.className = "mi-row";
+        row.innerHTML = '<span>' + (x.status === "used"
+          ? "✅ 参加済み：" + esc(x.childNickname || "お子さま")
+          : "⏳ 未使用　<b>" + esc(x.code) + "</b>") + '</span>';
+        if (x.status === "active") {
+          const b = document.createElement("button");
+          b.textContent = "取り消す";
+          b.onclick = async () => {
+            b.disabled = true;
+            const rr = await api("revokeMinorInvite", { lineUserId: profile.userId, code: x.code });
+            if (rr.ok) await refreshMinorInvite(); else { b.disabled = false; setStatus("homeStatus", rr.error || "取り消せませんでした", "ng"); }
+          };
+          row.appendChild(b);
+        }
+        box.appendChild(row);
+      });
+      $("miCreate").classList.toggle("hidden", list.length >= max);
+    }
+    async function refreshMinorInvite() {
+      const mine = await api("getMyReservation", { lineUserId: profile.userId });
+      const r = (mine.reservations || []).find((x) => x.slotId === miTarget.slotId);
+      if (r) { miTarget = r; renderMinorInviteList(r.minorInvites || [], r.minorInviteMax || 2); }
+    }
+    $("miBackBtn").addEventListener("click", renderReserve);
+    $("miCreateBtn").addEventListener("click", async () => {
+      if (!$("miConsent").checked) { setStatus("homeStatus", "保護者としての同意にチェックしてください", "ng"); return; }
+      $("miCreateBtn").disabled = true;
+      const r = await api("createMinorInvite", { lineUserId: profile.userId, slotId: miTarget.slotId, consent: "1" });
+      $("miCreateBtn").disabled = false;
+      if (!r.ok) { setStatus("homeStatus", r.error || "招待を作れませんでした", "ng"); return; }
+      miNewUrl = r.url; miNewCode = r.code;
+      $("miCode").textContent = r.code;
+      $("miNew").classList.remove("hidden");
+      $("miConsent").checked = false;
+      setStatus("homeStatus", "✅ 招待を作りました。お子さまに送ってください", "ok");
+      await refreshMinorInvite();
+    });
+    function inviteMessage() {
+      return "【100 Quest】" + (currentUser.nickname || "") + "さんから参加の招待です👧\n" +
+        formatSlot(miTarget.date, miTarget.time) + "\n\n" +
+        "下のリンクを、あなたのスマホのLINEで開いてください（参加費は無料です）。\n" + miNewUrl + "\n\n" +
+        "招待コード：" + miNewCode;
+    }
+    $("miShareBtn").addEventListener("click", async () => {
+      // LINEの「友だちに送る」（shareTargetPicker）。使えない環境ではコピーに切り替える
+      try {
+        if (liff.isApiAvailable && liff.isApiAvailable("shareTargetPicker")) {
+          const res = await liff.shareTargetPicker([{ type: "text", text: inviteMessage() }]);
+          if (res) setStatus("homeStatus", "✅ 招待を送りました", "ok");
+          return;
+        }
+      } catch (e) { /* 失敗したらコピーへ */ }
+      await copyInvite();
+    });
+    async function copyInvite() {
+      try { await navigator.clipboard.writeText(inviteMessage()); setStatus("homeStatus", "✅ 招待の文面をコピーしました。LINEでお子さまに送ってください", "ok"); }
+      catch (e) { setStatus("homeStatus", "招待リンク：" + miNewUrl, ""); }
+    }
+    $("miCopyBtn").addEventListener("click", copyInvite);
+
+    // ===== ⑭ 18歳未満：招待を受ける（お子さま）=====
+    let iaCode = "";
+    async function openInviteAccept(code) {
+      await openReserve();
+      $("myReserveBox").classList.add("hidden");
+      $("inviteAcceptBox").classList.remove("hidden");
+      $("iaDetail").classList.add("hidden");
+      $("iaCodeInputWrap").classList.toggle("hidden", !!code);
+      $("iaCodeInput").value = "";
+      if (code) await lookupInvite(code);
+    }
+    async function lookupInvite(code) {
+      const r = await api("getMinorInvite", { lineUserId: profile.userId, code: code });
+      if (!r.ok) { setStatus("homeStatus", r.error || "招待が見つかりません", "ng"); $("iaCodeInputWrap").classList.remove("hidden"); return; }
+      const inv = r.invite;
+      iaCode = inv.code;
+      $("iaFrom").textContent = (inv.guardianNickname || "保護者の方") + "さん（保護者）からの招待";
+      $("iaSlot").textContent = inv.date ? formatSlot(inv.date, inv.time) : "";
+      $("iaDetail").classList.remove("hidden");
+      $("iaCodeInputWrap").classList.add("hidden");
+      const btn = $("iaAcceptBtn");
+      btn.disabled = false; btn.textContent = "この招待で参加する";
+      let msg = "";
+      if (inv.isGuardian) msg = "保護者ご本人は使えません。お子さまのスマホで開いてください";
+      else if (inv.mine) msg = "この招待で参加済みです";
+      else if (inv.status !== "active") msg = inv.status === "used" ? "この招待はすでに使われています" : "この招待は取り消されています";
+      else if (inv.closed) msg = "予約締切を過ぎたため参加できません";
+      if (msg) { btn.disabled = true; setStatus("homeStatus", msg, "ng"); } else setStatus("homeStatus", "", "");
+    }
+    $("iaLookupBtn").addEventListener("click", () => {
+      const v = toHalfWidth($("iaCodeInput").value).toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (v.length !== 8) { setStatus("homeStatus", "招待コードは8文字です（例：ABCD-EFGH）", "ng"); return; }
+      lookupInvite(v);
+    });
+    $("iaAcceptBtn").addEventListener("click", async () => {
+      $("iaAcceptBtn").disabled = true;
+      const r = await api("redeemMinorInvite", { lineUserId: profile.userId, code: iaCode });
+      if (!r.ok) { $("iaAcceptBtn").disabled = false; setStatus("homeStatus", r.error || "参加できませんでした", "ng"); return; }
+      await renderReserve();
+      setStatus("homeStatus", "✅ 参加が決まりました（" + formatSlot(r.date, r.time) + "・無料）。当日は保護者の方と一緒に受付してください", "ok");
+    });
+    $("iaBackBtn").addEventListener("click", renderReserve);
+    $("inviteCodeLink").addEventListener("click", () => openInviteAccept(null));
+
     // ===== ⑦決済：お支払い =====
     // 席を押さえていられる残り時間（サーバーが返す holdUntil から計算）
     function holdLeftText(holdUntil) {
@@ -1351,6 +1568,8 @@
       $("chooseBox").classList.add("hidden");
       $("partyDoneBox").classList.add("hidden");
       $("payBox").classList.add("hidden");
+      $("minorInviteBox").classList.add("hidden");
+      $("inviteAcceptBox").classList.add("hidden");
       $("myReserveBox").classList.remove("hidden");
       const [mine, slotsRes] = await Promise.all([
         api("getMyReservation", { lineUserId: profile.userId }),
@@ -1377,7 +1596,11 @@
             + r.party.size + '/' + r.party.max + '人<br>' + names
             + (r.party.size < 3 ? '<br>※当日ほかの参加者と合流します' : '') + '</div>';
         }
-        div.innerHTML = '<span class="rtime">' + formatSlot(r.date, r.time) + '</span>' + pHtml;
+        // 18歳未満の予約
+        let mHtml = "";
+        if (r.minor === "borrowed") mHtml = '<div class="resv-minor">👧 お子さまが参加：' + esc(r.participantNickname || r.nickname || "") + '（無料・保護者は付き添い）</div>';
+        else if (r.minor === "invited") mHtml = '<div class="resv-minor">👧 18歳未満（保護者：' + esc(r.guardianNickname || "") + 'さん）・無料</div>';
+        div.innerHTML = '<span class="rtime">' + formatSlot(r.date, r.time) + '</span>' + pHtml + mHtml;
         // 締切を過ぎるとキャンセルできない（締切時点でパーティが組まれるため）
         const slot = (slotsCache || []).find((x) => x.slotId === r.slotId);
         const closed = slot ? slot.closed : false;
@@ -1394,9 +1617,28 @@
           c.title = "予約締切を過ぎたためキャンセルできません";
         } else {
           c.textContent = "キャンセル";
-          c.onclick = () => cancelResv(r.slotId, formatSlot(r.date, r.time), false, r.paymentSessionId ? (r.paidAmount || r.amount) : 0);
+          const kids = (r.minorInvites || []).filter((x) => x.status === "used").length;
+          c.onclick = () => cancelResv(r.slotId, formatSlot(r.date, r.time), false, r.paymentSessionId ? (r.paidAmount || r.amount) : 0, kids);
         }
         div.appendChild(c);
+        // 保護者として：お子さまを招待（支払い済み・締切前・18歳未満の予約でないとき）
+        if (!pending && !closed && !r.minor) {
+          const box = document.createElement("div");
+          box.className = "resv-invite";
+          const inv = r.minorInvites || [];
+          const used = inv.filter((x) => x.status === "used");
+          const b = document.createElement("button");
+          b.textContent = "👧 お子さまを招待" + (inv.length ? "（" + inv.length + "/" + (r.minorInviteMax || 2) + "）" : "");
+          b.onclick = () => openMinorInvite(r);
+          box.appendChild(b);
+          if (used.length) {
+            const n = document.createElement("div");
+            n.className = "resv-minor";
+            n.textContent = "👧 一緒に参加：" + used.map((x) => x.childNickname || "お子さま").join("・");
+            box.appendChild(n);
+          }
+          div.appendChild(box);
+        }
         if (pending) {
           const box = document.createElement("div");
           box.className = "resv-pay";
@@ -1441,14 +1683,15 @@
         };
       });
     }
-    async function cancelResv(slotId, label, pending, paidAmount) {
+    async function cancelResv(slotId, label, pending, paidAmount, kids) {
+      const kidNote = kids ? "　※招待したお子さま（" + kids + "人）の予約も一緒に取り消されます。" : "";
       const ok = await dangerConfirm({
         title: pending ? "予約をやめる" : "予約をキャンセル",
-        body: pending
+        body: (pending
           ? "お支払い前のこの予約をやめます。押さえている席は解放されます。よろしいですか？"
           : paidAmount
             ? "次の予約をキャンセルします。お支払いの" + yen(paidAmount) + "は全額返金します。よろしいですか？"
-            : "次の予約をキャンセルします。よろしいですか？",
+            : "次の予約をキャンセルします。よろしいですか？") + kidNote,
         target: label || "この予約",
         confirmText: pending ? "やめる" : "キャンセルする"
       });
@@ -1459,7 +1702,8 @@
           ? "キャンセルしました。" + yen(r.refundAmount) + "を返金します（反映まで数日かかることがあります）"
           : paidAmount
             ? "キャンセルしました。返金の手続きを進めています（完了まで少しお時間をください）"
-            : "キャンセルしました") + (r.couponReturned ? "。使ったクーポンはお返ししました" : "");
+            : "キャンセルしました") + (r.couponReturned ? "。使ったクーポンはお返ししました" : "")
+          + (r.childrenCanceled ? "。お子さまの予約も取り消しました" : "");
         await renderReserve();
         setStatus("homeStatus", msg, "");
       } else {
@@ -1473,6 +1717,7 @@
       $("chooseBox").classList.remove("hidden");
       // 「だれと参加する？」は毎回ソロに戻す（前回の選択が残っていると事故のもと）
       partyMode = "solo"; $("joinCode").value = "";
+      $("minorBorrowed").checked = false; $("participantNickname").value = ""; $("minorBox").classList.add("hidden");
       document.querySelectorAll("#partyMode .pm-opt").forEach((x) =>
         x.classList.toggle("active", x.dataset.mode === "solo"));
       $("joinCodeBox").classList.add("hidden");
@@ -1499,6 +1744,8 @@
     let rescueQueue = [];   // 演出の待ち行列（複数同時救出に対応）
     let rescuePlaying = false;
 
+    // プロフィールの「いちばん伸ばしたいチカラ」の表示（5つのチカラ以外＝旧プロフィールの値は出さない）
+    const powerLabel = (k) => (POWER_META[k] ? POWER_META[k].emoji + POWER_META[k].label : "");
     const POWER_META = {
       save:    { emoji:"💰", label:"貯める" },
       earn:    { emoji:"💪", label:"稼ぐ" },
@@ -1924,8 +2171,8 @@
     function openMemberProfile(m) {
       $("mcName").textContent = (m.nickname || "") + (m.nickname === (currentUser.nickname || "") ? "（あなた）" : "");
       $("mcGender").textContent = m.gender || "未設定";
-      $("mcTopic").textContent = m.topic || "未設定";
-      $("mcDetail").textContent = m.topicDetail || "（ひとことの記入はありません）";
+      $("mcTopic").textContent = powerLabel(m.topic) || "未設定";
+      $("mcDetail").textContent = m.topicDetail || "（記入はありません）";
       // リベシティのプロフィールリンク（任意入力の人だけ表示。ID化して保存済みなのでURLはこちらで組み立てる）
       const lb = $("mcLibe");
       if (m.libeId) {
@@ -1951,8 +2198,8 @@
         const row = document.createElement("div");
         row.className = "gmember" + (isMe ? " me" : "");
         row.innerHTML =
-          '<span class="gm-name">' + esc(m.nickname || "") + '</span>' +
-          '<span class="gm-topic">' + esc(m.topic || "") + ' ›</span>';
+          '<span class="gm-name">' + esc(m.nickname || "") + (m.minor ? " 👧" : "") + '</span>' +
+          '<span class="gm-topic">' + esc(powerLabel(m.topic)) + ' ›</span>';
         row.addEventListener("click", () => openMemberProfile(m)); // タップでプロフィール表示
         box.appendChild(row);
       });
@@ -2038,8 +2285,23 @@
     const toHalfWidth = (s) => s.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
     setupCodeInput($("joinCode"), (v) => toHalfWidth(v).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4));
 
+    // ② 18歳未満の子どもが保護者のスマホで参加
+    $("minorBorrowed").addEventListener("change", () => {
+      $("minorBox").classList.toggle("hidden", !$("minorBorrowed").checked);
+      // 18歳未満は無料なので、枠一覧の金額も「無料」に見せる（外したら元に戻す）
+      document.querySelectorAll("#slotList .slot-price").forEach((el) => {
+        if (!el.dataset.price) el.dataset.price = el.textContent;
+        el.textContent = $("minorBorrowed").checked ? "無料（18歳未満）" : el.dataset.price;
+      });
+      if ($("minorBorrowed").checked) $("participantNickname").focus();
+    });
     $("reserveBtn").addEventListener("click", async () => {
       if (!selectedSlotId) return;
+      const minorBorrowed = $("minorBorrowed").checked;
+      const childName = $("participantNickname").value.trim();
+      if (minorBorrowed && !childName) {
+        setStatus("homeStatus", "参加するお子さまのニックネームを入力してね", "ng"); $("participantNickname").focus(); return;
+      }
       // 変換の途中で押されても整った形で送る（全角・小文字・余計な記号を落とす）
       const code = toHalfWidth($("joinCode").value).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
       $("joinCode").value = code;
@@ -2048,9 +2310,10 @@
       }
       $("reserveBtn").disabled = true;
       setStatus("homeStatus", "予約中…", "");
-      const r = await api("reserveSlot", {
+      const r = await api("reserveSlot", Object.assign({
         lineUserId: profile.userId, slotId: selectedSlotId,
-        partyMode: partyMode, partyCode: code });
+        partyMode: partyMode, partyCode: code },
+        minorBorrowed ? { minorBorrowed: "1", minorConsent: "1", participantNickname: childName } : {}));
       if (r.ok && r.status === "pending") {
         // 支払いが必要な枠：席を押さえた状態でお支払い画面へ
         pendingPartyCode = (partyMode === "create" && r.partyCode) ? r.partyCode : null;
@@ -2066,6 +2329,10 @@
         $("pdSlot").textContent = formatSlot(r.date, r.time);
         $("partyDoneBox").classList.remove("hidden");
         setStatus("homeStatus", "", "");
+      } else if (r.ok && minorBorrowed) {
+        await renderReserve();
+        setStatus("homeStatus", "✅ お子さま（" + childName + "）の予約が確定しました（無料）"
+          + (r.partyCode ? "／パーティ " + r.partyCode : ""), "ok");
       } else if (r.ok) {
         setStatus("homeStatus", "✅ 予約しました（" + formatSlot(r.date, r.time) + "）"
           + (r.partyCode ? "／パーティ " + r.partyCode + "（" + r.partySize + "人）" : ""), "ok");

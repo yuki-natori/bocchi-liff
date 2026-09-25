@@ -816,7 +816,9 @@
           : (x.paidAmount ? yen(x.paidAmount) + "支払い済み" : (x.coupon ? "0円" : (x.priceKind === "無料枠" || x.priceKind === "決済導入前" ? "—" : "0円")));
         return '<div class="slot-row" style="padding:8px 12px">' +
           '<div class="title" style="font-size:14px">' + esc(x.nickname || "(名前なし)") + state +
-            (x.priceKind ? '<span class="pill">' + esc(x.priceKind) + '</span>' : '') +
+            (x.minor === "invited" ? '<span class="pill warnp">👧 18歳未満（保護者：' + esc(x.guardianNickname || "") + 'さん）</span>'
+              : x.minor === "borrowed" ? '<span class="pill warnp">👧 18歳未満（保護者のスマホで参加・持ち主：' + esc(x.guardianNickname || "") + 'さん）</span>'
+              : (x.priceKind ? '<span class="pill">' + esc(x.priceKind) + '</span>' : '')) +
             (x.coupon ? '<span class="pill">🎟 ' + esc(x.coupon) + (x.couponHeld ? "（押さえ中）" : "") + '</span>' : '') +
             (x.refund ? '<span class="pill errp">' + esc(x.refund) + '</span>' : '') + '</div>' +
           '<div class="meta">💴 ' + esc(money) +
@@ -828,7 +830,8 @@
       showResult(
         '<h3 style="margin:0 0 6px">💳 ' + esc(fmtDate(r.slot.date)) + " " + esc(r.slot.time) + " の予約者と支払い</h3>" +
         '<div class="meta" style="margin-bottom:8px">' +
-          "確定 <b>" + S.confirmed + "</b>人　／　支払い待ち <b>" + S.pending + "</b>人　／　クーポン利用 " + S.couponUsed + "人<br>" +
+          "確定 <b>" + S.confirmed + "</b>人　／　支払い待ち <b>" + S.pending + "</b>人　／　クーポン利用 " + S.couponUsed + "人" +
+          (S.minors ? "　／　👧 18歳未満 " + S.minors + "人（0円）" : "") + "<br>" +
           "受け取った額 <b>" + yen(S.paidTotal) + "</b>　−　返金 " + yen(S.refundedTotal) + "　＝　<b>" + yen(S.netTotal) + "</b>" +
           '<span style="font-size:11px">（Stripeの手数料を引く前。キャンセルで返金した分も含めて計算）</span></div>' +
         (rows || '<div class="meta">予約はありません</div>'));
@@ -1292,6 +1295,8 @@
     $("reloadRefunds").addEventListener("click", loadRefunds);
 
     // ----- ⑨ ユーザー検索 -----
+    // プロフィールの「いちばん伸ばしたいチカラ」（アプリの POWER_META と同じ）
+    const PROFILE_POWER = { save: "💰貯める", earn: "💪稼ぐ", grow: "📈増やす", protect: "🛡守る", use: "🎁使う" };
     async function searchUsers() {
       const q = $("usQuery").value.trim();
       if (!q) { set("usStatus", "ニックネーム か LINEユーザーIDを入力してください", "ng"); return; }
@@ -1310,6 +1315,8 @@
           (v.groupName
             ? "　🐣 " + esc(v.groupName)
             : (v.unmatched ? "　😢 不成立" : "　（グループ未発表）")) +
+          (v.minor === "invited" ? "　👧18歳未満（保護者：" + esc(v.guardianNickname || "") + "さん）" : "") +
+          (v.minor === "borrowed" ? "　👧18歳未満（保護者のスマホで参加：" + esc(v.participantNickname || "") + "）" : "") +
           (v.status === "pending" ? "　⏳支払い待ち" : "") +
           (v.paid ? "　💴" + Number(v.paidAmount || 0).toLocaleString("ja-JP") + "円支払い済み" : "") +
           (v.couponUsed ? "　🎟クーポン利用" : "") +
@@ -1325,7 +1332,8 @@
           '</div>').join("");
         div.innerHTML =
           '<div class="title">' + esc(u.nickname || "(名前なし)") +
-          '<span class="pill">' + esc([u.gender, u.topic].filter(Boolean).join("・") || "プロフィール未設定") + '</span></div>' +
+          '<span class="pill">' + esc([u.gender, PROFILE_POWER[u.topic]].filter(Boolean).join("・") || "プロフィール未設定") + '</span></div>' +
+          (u.topicDetail ? '<div class="meta">フェスに来た理由：' + esc(u.topicDetail) + '</div>' : '') +
           '<div class="meta">' + esc(u.lineUserId) + (u.libeId ? "　／　リベID: " + esc(u.libeId) : "") + '</div>' +
           resvHtml + cpHtml;
         box.appendChild(div);
