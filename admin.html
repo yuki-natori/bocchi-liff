@@ -450,8 +450,27 @@
   </div>
 
   <script>
-    const BASE = "https://asia-northeast1-bocchi-liff-test.cloudfunctions.net";
-    const KEY_STORE = "bocchi_admin_key";
+    // 接続先は「開いた場所」で自動で切り替える。本番と開発用で同じファイルをそのままアップロードしてよい。
+    //   本番   = https://yuki-natori.github.io/bocchi-liff/…
+    //   開発用 = それ以外（開発用リポジトリ・手元で開いた場合など）。本番につながらない側に倒す
+    const ENVS = {
+      prod: { base: "https://asia-northeast1-bocchi-liff-test.cloudfunctions.net" },
+      dev:  { base: "https://asia-northeast1-quest100-kaihatsu.cloudfunctions.net" }
+    };
+    const ENV_NAME = location.pathname.startsWith("/bocchi-liff/") ? "prod" : "dev";
+    const BASE = ENVS[ENV_NAME].base;
+    // 開発用で開いているときは画面の隅に目印を出す（本番と取り違えないため）
+    if (ENV_NAME !== "prod") {
+      document.title = "【開発用】" + document.title;
+      const b = document.createElement("div");
+      b.textContent = "開発用";
+      b.style.cssText = "position:fixed;top:0;left:0;z-index:9999;background:#d33;color:#fff;font-size:11px;font-weight:bold;padding:2px 8px;border-bottom-right-radius:6px;pointer-events:none";
+      document.addEventListener("DOMContentLoaded", () => document.body.appendChild(b));
+      if (document.body) document.body.appendChild(b);
+    }
+    if (!BASE) alert("接続先が未設定です（" + ENV_NAME + "）");
+    // 本番と開発用は同じ github.io 上にあるので、ブラウザに覚える管理者キーは環境ごとに分ける
+    const KEY_STORE = ENV_NAME === "prod" ? "bocchi_admin_key" : "bocchi_admin_key_" + ENV_NAME;
     const $ = (id) => document.getElementById(id);
     const getKey = () => localStorage.getItem(KEY_STORE) || "";
 
