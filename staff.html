@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>100 Quest ブースの様子</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    :root { --green:#2f6d4f; --paper:#faf7f0; --ink:#2b2b28; --sub:#6b6b63; --err:#d6453d; --accent:#e6a817; }
+    body { font-family:-apple-system,"Hiragino Sans",sans-serif; background:var(--paper); color:var(--ink); line-height:1.5; }
+    .wrap { max-width:900px; margin:0 auto; padding:16px 14px 60px; }
+    .hidden { display:none !important; }
+    button { font-family:inherit; cursor:pointer; }
+    h1 { font-size:22px; color:var(--green); }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+    .clock { font-size:15px; font-weight:800; color:var(--sub); }
+    .logout { background:none; border:1px solid #cfc9b8; border-radius:8px; padding:6px 12px; color:var(--sub); font-size:13px; }
+    .note { font-size:13px; color:var(--sub); margin-bottom:12px; }
+    .err { color:var(--err); font-weight:700; font-size:14px; min-height:20px; margin:6px 0; white-space:pre-wrap; }
+    /* ログイン */
+    #login { max-width:380px; margin:60px auto; background:#fff; border:1px solid #ece8dc; border-radius:14px; padding:22px; }
+    #login label { display:block; font-weight:800; margin:14px 0 6px; }
+    #login input { width:100%; font-size:22px; padding:12px; border:1.5px solid #d9d4c6; border-radius:10px; letter-spacing:.06em; text-transform:uppercase; }
+    .big { width:100%; margin-top:14px; padding:15px; font-size:18px; font-weight:800; color:#fff; background:var(--green); border:none; border-radius:12px; }
+    /* 枠と組 */
+    .range { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+    .range button { padding:7px 12px; border-radius:99px; border:1.5px solid #d9d4c6; background:#fff; font-size:13px; font-weight:700; color:var(--sub); }
+    .range button.on { background:var(--green); color:#fff; border-color:var(--green); }
+    .slot { margin-bottom:18px; }
+    .slot-head { font-size:20px; font-weight:900; color:var(--green); display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+    .slot-head small { font-size:13px; font-weight:700; color:var(--sub); }
+    .slot-head .now { background:var(--accent); color:#fff; font-size:12px; padding:2px 8px; border-radius:99px; }
+    .groups { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; margin-top:8px; }
+    .grp { background:#fff; border:1.5px solid #e3ddcd; border-radius:14px; overflow:hidden; }
+    .grp-head { display:flex; align-items:center; gap:10px; padding:10px 12px; flex-wrap:wrap; }
+    .grp-head .nm { white-space:nowrap; }
+    .grp-head .emo { font-size:40px; line-height:1; }
+    .grp-head .nm { font-size:20px; font-weight:900; }
+    .grp-head .pn { font-size:12px; color:var(--sub); font-weight:700; }
+    .st { margin-left:auto; font-size:12px; font-weight:800; padding:3px 9px; border-radius:99px; white-space:nowrap; }
+    .st.wait { background:#fff6df; color:#8a5e00; }
+    .st.go { background:#eaf6ef; color:var(--green); }
+    .st.ng { background:#fdf1f0; color:var(--err); }
+    .arr { padding:0 12px 6px; font-size:15px; font-weight:800; }
+    .mem { display:flex; align-items:center; gap:8px; padding:9px 12px; border-top:1px solid #f0ece1; font-size:16px; }
+    .mem .who { flex:1; font-weight:700; }
+    .mem .tag { font-size:12px; font-weight:800; }
+    .mem .tag.in { color:var(--green); }
+    .mem .tag.no { color:#a9a393; }
+    .mem .tag.run { color:var(--accent); }
+    .mem button { padding:8px 10px; font-size:13px; font-weight:800; border-radius:9px; border:1.5px solid var(--green); background:#fff; color:var(--green); }
+    .mem .pay { font-size:12px; font-weight:800; padding:2px 7px; border-radius:99px; white-space:nowrap; }
+    .mem .pay.no { background:#fff6df; color:#8a5e00; }
+    .mem .pay.ok { background:#eaf6ef; color:var(--green); }
+    .mem button.paybtn { border-color:var(--accent); color:#8a5e00; }
+    .cbox .opts { margin:10px 0; display:flex; flex-direction:column; gap:8px; }
+    .cbox .opt { display:flex; align-items:center; gap:10px; border:1.5px solid #e3ddcd; border-radius:10px; padding:10px 12px; font-size:15px; cursor:pointer; }
+    .cbox .opt input { width:20px; height:20px; }
+    .cbox .opt small { display:block; color:var(--sub); font-size:12px; }
+    .cbox .due { font-size:26px; font-weight:900; text-align:center; margin:6px 0; }
+    .cbox .meth { display:flex; gap:8px; margin:4px 0 10px; }
+    .cbox .meth label { flex:1; text-align:center; border:2px solid #e3ddcd; border-radius:12px; padding:12px 6px; font-size:17px; font-weight:900; cursor:pointer; color:var(--sub); }
+    .cbox .meth input { display:none; }
+    .cbox .meth label:has(input:checked) { border-color:var(--green); background:#eaf6ef; color:var(--green); }
+    .cbox .undo { background:none; border:none; color:var(--err); font-size:13px; text-decoration:underline; margin-top:8px; }
+    .start { display:block; width:calc(100% - 24px); margin:10px 12px 12px; padding:13px; font-size:16px; font-weight:900; border:none; border-radius:12px; color:#fff; background:var(--accent); }
+    .start:disabled { background:#ddd6c4; color:#fff; cursor:default; }
+    .empty { color:var(--sub); font-size:14px; padding:16px 0; }
+    /* 確認 */
+    #confirm { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .cbox { width:min(420px, 100%); background:#fff; border-radius:16px; padding:22px; }
+    .cbox .ct { font-size:20px; font-weight:900; margin-bottom:8px; }
+    .cbox .cb { font-size:16px; margin-bottom:8px; white-space:pre-wrap; }
+    .cbox .cw { background:#fff6df; border:1.5px solid rgba(230,168,23,.5); border-radius:10px; padding:10px 12px; font-weight:700; margin:8px 0; }
+    .cbtns { display:flex; gap:10px; margin-top:14px; }
+    .cbtns button { flex:1; padding:15px; font-size:17px; font-weight:800; border:none; border-radius:12px; }
+    .cbtns .no { background:#eee7d6; color:var(--ink); }
+    .cbtns .yes { background:var(--green); color:#fff; }
+    body.embed .wrap { padding-top:8px; }
+    body.embed .logout, body.embed h1 { display:none; }
+  </style>
+</head>
+<body>
+  <!-- ログイン -->
+  <div id="login" class="hidden">
+    <h1>ブースの様子（スタッフ用）</h1>
+    <label for="keyIn">スタッフキー</label>
+    <input id="keyIn" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" />
+    <button class="big" id="loginBtn">はじめる</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+
+  <!-- 本体 -->
+  <div class="wrap hidden" id="main">
+    <div class="top">
+      <h1>🚩 ブースの様子</h1>
+      <div class="clock" id="clock">—</div>
+      <button class="logout" id="logoutBtn">ログアウト</button>
+    </div>
+    <div class="note">10秒ごとに自動で更新します。チェックインと「パーティが集まった」は、操作に困っている人の代わりに押すときだけ使ってください。</div>
+    <div class="range" id="range">
+      <button data-b="20" data-a="20">前後20分</button>
+      <button data-b="40" data-a="30" class="on">前40分〜後30分</button>
+      <button data-b="90" data-a="60">前90分〜後60分</button>
+    </div>
+    <div class="err" id="mainErr"></div>
+    <div id="slots"></div>
+  </div>
+
+  <!-- 確認 -->
+  <div id="confirm" class="hidden">
+    <div class="cbox">
+      <div class="ct" id="cTitle"></div>
+      <div class="cb" id="cBody"></div>
+      <div class="cw hidden" id="cWarn"></div>
+      <div class="hidden" id="cExtra"></div>
+      <div class="cbtns"><button class="no" id="cNo">やめる</button><button class="yes" id="cYes">OK</button></div>
+    </div>
+  </div>
+
+  <script>
+    // 接続先は「開いた場所」で自動で切り替える（app.liff.html / admin.html と同じ仕組み）
+    const ENVS = {
+      prod: { base: "https://asia-northeast1-bocchi-liff-test.cloudfunctions.net" },
+      dev:  { base: "https://asia-northeast1-quest100-kaihatsu.cloudfunctions.net" }
+    };
+    const ENV_NAME = location.pathname.startsWith("/bocchi-liff/") ? "prod" : "dev";
+    const BASE = ENVS[ENV_NAME].base;
+    if (ENV_NAME !== "prod") {
+      document.title = "【開発用】" + document.title;
+      const b = document.createElement("div");
+      b.textContent = "開発用";
+      b.style.cssText = "position:fixed;top:0;left:0;z-index:9999;background:#d33;color:#fff;font-size:11px;font-weight:bold;padding:2px 8px;border-bottom-right-radius:6px;pointer-events:none";
+      document.body.appendChild(b);
+    }
+    if (new URLSearchParams(location.search).get("embed") === "1") document.body.classList.add("embed");
+
+    // スタッフキーはブラウザに覚える（環境ごとに分ける）。管理画面にログイン済みなら管理者キーをそのまま使う
+    const STAFF_STORE = ENV_NAME === "prod" ? "bocchi_staff_key" : "bocchi_staff_key_" + ENV_NAME;
+    const ADMIN_STORE = ENV_NAME === "prod" ? "bocchi_admin_key" : "bocchi_admin_key_" + ENV_NAME;
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+    const store = { get: (k) => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
+                    set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+                    del: (k) => { try { localStorage.removeItem(k); } catch (e) {} } };
+    let adminUsable = true;   // 覚えている管理者キーが通らなかったら、以後はスタッフキーだけを使う
+    function auth() {
+      const ak = adminUsable ? store.get(ADMIN_STORE) : "";
+      if (ak) return { adminKey: ak };
+      const sk = store.get(STAFF_STORE);
+      return sk ? { staffKey: sk } : null;
+    }
+    // キーはURLに載せず、POSTの本文で送る。値は文字列にそろえる
+    async function api(path, params) {
+      const a = auth();
+      const body = Object.assign({}, a || {});
+      Object.entries(params || {}).forEach(([k, v]) => { body[k] = String(v); });
+      const res = await fetch(BASE + "/" + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      let data; try { data = await res.json(); } catch (e) { data = { error: "応答エラー" }; }
+      if (res.status === 401 && a && a.adminKey) adminUsable = false;
+      if (res.status === 401) { logout(a && a.staffKey ? "スタッフキーが違うか、無効になっています。管理者に確認してください" : "キーが違います"); throw new Error("401"); }
+      return Object.assign({ status: res.status }, data);
+    }
+    function logout(msg) {
+      store.del(STAFF_STORE);
+      stopPoll();
+      $("main").classList.add("hidden");
+      $("login").classList.remove("hidden");
+      $("loginErr").textContent = msg || "";
+    }
+    $("logoutBtn").addEventListener("click", () => logout(""));
+    $("loginBtn").addEventListener("click", async () => {
+      const k = $("keyIn").value.trim();
+      if (!k) return;
+      store.set(STAFF_STORE, k);
+      try { const r = await api("boothStatus", range); if (r.ok) start(r); } catch (e) {}
+    });
+    $("keyIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
+
+    let range = { before: 40, after: 30 };
+    $("range").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      range = { before: Number(b.dataset.b), after: Number(b.dataset.a) };
+      document.querySelectorAll("#range button").forEach((x) => x.classList.toggle("on", x === b));
+      refresh();
+    });
+
+    const hm = (iso) => { const d = new Date(iso); return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); };
+    const BY = { party: "パーティ", staff: "スタッフ", admin: "管理者", auto: "自動" };
+    function render(r) {
+      $("clock").textContent = "いま " + hm(r.now);
+      $("mainErr").textContent = "";
+      const box = $("slots");
+      if (!r.slots.length) { box.innerHTML = '<div class="empty">この時間帯の枠はありません</div>'; return; }
+      const now = Date.parse(r.now);
+      box.innerHTML = r.slots.map((s) => {
+        const open = s.checkinOpenAt && now >= Date.parse(s.checkinOpenAt) && now < Date.parse(s.autoStartAt);
+        const head = '<div class="slot-head">' + esc(s.time) + (s.isTest ? " ⏩" : "") + (open ? '<span class="now">受付中</span>' : "")
+          + '<small>受付 ' + (s.checkinOpenAt ? hm(s.checkinOpenAt) : "—") + '〜／自動スタート ' + (s.autoStartAt ? hm(s.autoStartAt) : "—") + '</small></div>';
+        if (!s.matched) return '<div class="slot">' + head + '<div class="empty">まだパーティが決まっていません（マッチング前）</div></div>';
+        return '<div class="slot">' + head + '<div class="groups">' + s.groups.map((g) => {
+          const color = (g.mark && g.mark.color) || "#2f6d4f";
+          const st = g.status === "started" ? '<span class="st go">スタート済み ' + (g.startedAt ? hm(g.startedAt) : "") + '（' + (BY[g.startedBy] || "") + '）</span>'
+            : g.status === "failed" ? '<span class="st ng">不成立</span>' : '<span class="st wait">集合待ち</span>';
+          const mem = g.members.map((m) => {
+            let tag;
+            if (m.lateJoined) tag = '<span class="tag run">🏃 途中合流</span>';
+            else if (m.checkedIn) tag = '<span class="tag in">✅ 到着</span>';
+            else if (m.noShow) tag = '<span class="tag no">不在</span>';
+            else tag = '<span class="tag no">まだ</span>';
+            const canCk = !m.checkedIn && g.status !== "failed" && !(g.status === "started" && g.lateJoinUntil && now > Date.parse(g.lateJoinUntil));
+            // 当日ブースでの支払い（スタート直前に受け取る）。無料・18歳未満は出さない
+            const pay = !r.payAtBooth || !m.needPay ? ""
+              : m.paid ? '<span class="pay ok">💴 済</span>'
+              : '<span class="pay no">💴 未払い' + (m.price ? " " + yen(m.price) : "") + '</span>';
+            const canPay = r.payAtBooth && m.needPay && g.status !== "failed";
+            const data = ' data-s="' + s.slotId + '" data-g="' + g.groupId + '" data-i="' + m.idx + '" data-n="' + esc(m.nickname) + '" data-l="' + esc(g.label) + '"';
+            return '<div class="mem"><span class="who">' + esc(m.nickname) + (m.minor ? " 👧" : "") + '</span>' + pay + tag
+              + (canCk ? '<button data-act="ck"' + data + '>代わりにチェックイン</button>' : "")
+              + (canPay ? '<button class="paybtn" data-act="pay"' + data + '>' + (m.paid ? "内容" : "受け取る") + '</button>' : "")
+              + '</div>';
+          }).join("");
+          const absent = g.members.filter((m) => !m.checkedIn).map((m) => m.nickname + "さん").join("・");
+          const unpaid = g.members.filter((m) => m.checkedIn && m.needPay && !m.paid).map((m) => m.nickname + "さん").join("・");
+          const startBtn = g.status === "waiting"
+            ? '<button class="start" data-act="go" data-s="' + s.slotId + '" data-g="' + g.groupId + '" data-l="' + esc(g.label) + '" data-a="' + esc(absent) + '" data-u="' + esc(unpaid) + '"' + (g.canStart ? "" : " disabled") + '>'
+              + (!g.canStart ? r.minToStart + "人以上の到着でスタートできます"
+                 : unpaid ? "💴 未払い " + g.unpaidHere + "人（受け取ってからスタート）" : "🚩 パーティが集まった（代わりに押す）") + '</button>' : "";
+          return '<div class="grp" style="border-top:8px solid ' + esc(color) + '"><div class="grp-head"><span class="emo">' + esc(g.mark ? g.mark.emoji : "🎲") + '</span>'
+            + '<div><div class="nm">' + esc(g.name) + '</div>' + (g.partyName ? '<div class="pn">' + esc(g.partyName) + '</div>' : "") + '</div>' + st + '</div>'
+            + '<div class="arr">到着 ' + g.arrived + ' / ' + g.total + '人</div>' + mem + startBtn + '</div>';
+        }).join("") + '</div></div>';
+      }).join("");
+    }
+
+    // 確認（大きいボタン・1回押せば実行）
+    function ask(title, body, warn, yes, extraHtml) {
+      return new Promise((resolve) => {
+        $("cTitle").textContent = title; $("cBody").textContent = body;
+        $("cWarn").textContent = warn || ""; $("cWarn").classList.toggle("hidden", !warn);
+        $("cExtra").innerHTML = extraHtml || ""; $("cExtra").classList.toggle("hidden", !extraHtml);
+        $("cYes").textContent = yes || "OK";
+        $("confirm").classList.remove("hidden");
+        const done = (v) => { $("confirm").classList.add("hidden"); $("cYes").onclick = null; $("cNo").onclick = null; resolve(v); };
+        $("cYes").onclick = () => done(true); $("cNo").onclick = () => done(false);
+      });
+    }
+    $("slots").addEventListener("click", async (e) => {
+      const b = e.target.closest("button[data-act]"); if (!b) return;
+      const d = b.dataset;
+      try {
+        if (d.act === "ck") {
+          if (!await ask("代わりにチェックイン", d.l + "\n" + d.n + " さんを到着にします。", "", "チェックインする")) return;
+          b.disabled = true;
+          const r = await api("staffCheckIn", { slotId: d.s, groupId: d.g, idx: d.i });
+          if (!r.ok) $("mainErr").textContent = "⚠️ " + (r.error || "チェックインできませんでした");
+        } else if (d.act === "go") {
+          const warn = [d.a ? "まだ来ていない人：" + d.a + "（あとから途中で合流できます）" : "",
+            d.u ? "⚠️ まだ受け取っていない人：" + d.u + "\nこのままスタートする場合は、あとで必ず受け取ってください" : ""].filter(Boolean).join("\n\n");
+          if (!await ask("パーティが集まった（代わりに押す）", d.l + " をスタートします。100分のクエストが始まります。",
+            warn, d.u ? "未払いのままスタート" : "スタートする")) return;
+          b.disabled = true;
+          const r = await api("staffStartParty", { slotId: d.s, groupId: d.g, allowUnpaid: d.u ? "1" : "" });
+          if (!r.ok) $("mainErr").textContent = "⚠️ " + (r.error || "スタートできませんでした");
+        } else if (d.act === "pay") {
+          await payFlow(d);
+        }
+      } catch (err) { return; }
+      refresh();
+    });
+
+    // 当日ブースでの支払い：受け取り方とクーポンを選ぶ → 金額を確認 → 受け取ったら「受け取りました」
+    const yen = (n) => Number(n || 0).toLocaleString("ja-JP") + "円";
+    const METHOD_STORE = "bocchi_pay_method";
+    async function payFlow(d) {
+      const info = await api("staffPayInfo", { slotId: d.s, groupId: d.g, idx: d.i });
+      if (!info.ok) { $("mainErr").textContent = "⚠️ " + (info.error || "読み込めませんでした"); return; }
+      if (info.paid) {
+        // 支払い済み → 内容を見せて、押し間違いなら取り消せる
+        const undo = await ask("支払い済み", d.l + "\n" + info.nickname + " さん：" + yen(info.paid.amount) + (info.paid.coupon ? "（" + info.paid.coupon + "）" : "")
+          + (info.paid.method ? "\n受け取り方：" + info.paid.method : ""),
+          "押し間違いのときだけ取り消してください。使ったクーポンは本人に戻ります", "取り消す");
+        if (!undo) return;
+        const r = await api("staffPay", { slotId: d.s, groupId: d.g, idx: d.i, undo: "1" });
+        if (!r.ok) $("mainErr").textContent = "⚠️ " + (r.error || "取り消せませんでした");
+        return;
+      }
+      const opts = [{ id: "", label: "クーポンを使わない", reason: "", due: info.base }].concat(info.coupons);
+      // 受け取り方は、そのスマホで前回選んだものを最初から選んでおく（Squareの係・現金の係で分かれる想定）
+      const lastM = store.get(METHOD_STORE) === "square" ? "square" : "cash";
+      const meth = '<div class="meth" id="payMeth">' + [["cash", "💴 現金"], ["square", "💳 Square"]].map(([v, t]) =>
+        '<label><input type="radio" name="pm" value="' + v + '"' + (v === lastM ? " checked" : "") + '>' + t + '</label>').join("") + '</div>';
+      const html = '<div class="due" id="payDue">' + yen(info.base) + '</div>' + meth + '<div class="opts">' + opts.map((c, i) =>
+        '<label class="opt"><input type="radio" name="cp" value="' + esc(c.id) + '" data-due="' + c.due + '"' + (i === 0 ? " checked" : "") + '>'
+        + '<span>' + esc(c.label) + (c.reason ? '<small>' + esc(c.reason) + '</small>' : "") + '</span></label>').join("") + '</div>';
+      const p = ask("参加費を受け取る", d.l + "\n" + info.nickname + " さん（" + info.kind + "・" + yen(info.base) + "）", "", "受け取りました", html);
+      // クーポン・受け取り方を選ぶと、金額とボタンの文字が変わる（0円なら受け取り方は要らない）
+      const update = () => {
+        const due = Number(document.querySelector('#cExtra input[name="cp"]:checked').dataset.due);
+        const mv = document.querySelector('#cExtra input[name="pm"]:checked').value;
+        $("payDue").textContent = yen(due);
+        $("payMeth").classList.toggle("hidden", due === 0);
+        $("cYes").textContent = due === 0 ? "0円で受け付けました" : (mv === "square" ? "Squareで" : "現金で") + "受け取りました（" + yen(due) + "）";
+      };
+      $("cExtra").querySelectorAll('input[name="cp"], input[name="pm"]').forEach((el) => el.addEventListener("change", update));
+      update();
+      if (!await p) return;
+      const sel = document.querySelector('#cExtra input[name="cp"]:checked');
+      const m = document.querySelector('#cExtra input[name="pm"]:checked');
+      const method = m ? m.value : "cash";
+      store.set(METHOD_STORE, method);
+      const r = await api("staffPay", { slotId: d.s, groupId: d.g, idx: d.i, couponId: sel ? sel.value : "", method });
+      if (!r.ok) $("mainErr").textContent = "⚠️ " + (r.error || "受け取りを記録できませんでした");
+    }
+
+    let poll = null, busy = false;
+    function stopPoll() { if (poll) { clearInterval(poll); poll = null; } }
+    async function refresh() {
+      if (busy || !auth()) return;
+      busy = true;
+      try { const r = await api("boothStatus", range); if (r.ok) render(r); else $("mainErr").textContent = "⚠️ " + (r.error || "読み込めませんでした"); }
+      catch (e) { if (String(e.message) !== "401") $("mainErr").textContent = "⚠️ 通信できませんでした。電波を確認してください（自動でやり直します）"; }
+      finally { busy = false; }
+    }
+    function start(first) {
+      $("login").classList.add("hidden");
+      $("main").classList.remove("hidden");
+      if (first) render(first); else refresh();
+      stopPoll();
+      poll = setInterval(refresh, 10000);
+    }
+    if (auth()) start(); else $("login").classList.remove("hidden");
+  </script>
+</body>
+</html>

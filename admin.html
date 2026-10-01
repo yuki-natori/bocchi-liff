@@ -34,6 +34,13 @@
     .pill.warnp { background:#fdf3e3; color:#b96b00; }
     .pill.errp  { background:#fdf1f0; color:var(--err); font-weight:700; }
     .dl-presets { display:flex; gap:5px; flex-wrap:wrap; margin-top:5px; }
+    /* まとめて作成のプレビュー */
+    .b-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .b-table th, .b-table td { padding:5px 8px; border-bottom:1px solid #f0ece1; text-align:left; white-space:nowrap; }
+    .b-table th { position:sticky; top:0; background:#f6f4ec; font-size:12px; color:var(--sub); }
+    .b-table tr.skip td { color:#aaa; text-decoration:line-through; }
+    .b-table tr.skip td.why { text-decoration:none; color:var(--err); }
+    .chip .x { background:none; border:none; color:var(--sub); padding:0 0 0 6px; margin:0; font-size:13px; cursor:pointer; }
     .dl-presets .sub-btn { margin:0; padding:5px 9px; font-size:12px; }
     #login { max-width:360px; margin:80px auto; }
     .hidden { display:none !important; }
@@ -157,7 +164,7 @@
           合計が条件に届くと姫を救出します。
         </div>
 
-        <!-- 現在のバランス（チカラごとの合計と、最後の姫に届くか）-->
+        <!-- 現在のバランス（チカラの満点と、最後の姫に届くか）-->
         <div id="questSummary" class="q-summary"></div>
 
         <div class="q-sec">
@@ -235,18 +242,63 @@
       <div class="sub" style="margin-top:6px">
         <b>締切時刻に自動でマッチングされます</b>（LINE通知は送られません。内容を確認してから
         「結果を一斉通知」を押してください）。締切後は参加者がキャンセルできなくなります。<br>
-        当日の飛び込み参加を受けたい枠は「開始10分前」にしてください（チェックインも10分前からです）。
+        当日の飛び込み参加を受けたい枠は「開始10分前」にしてください（チェックインの受付開始は🎪当日運用の「ブースの流れの設定」で決めます）。
       </div>
       <label style="margin-top:10px; font-weight:400; cursor:pointer;">
         <input type="checkbox" id="slotTest" style="width:auto; margin-right:6px; vertical-align:middle;" />
         ⏩ テストプレイ用の枠にする（<b>30分進行・3人基本グループ</b>）
       </label>
       <div class="sub" style="margin:2px 0 0 22px;">
-        進行が短縮されます：締切+5分／お題2 +12分／お題3 +25分／終了+30分。グループは3人＞4人＞5人の優先で分けます。
+        進行が短縮されます：折り返し +12分／ラストスパート +25分／終了 +30分（待機猶予・途中合流はテスト枠用の設定値）。グループは3人＞4人＞5人の優先で分けます。
       </div>
       <button id="createSlotBtn">この枠を作成</button>
       <button id="cancelEditBtn" class="sub-btn hidden">編集をやめる</button>
       <div class="status" id="slotStatus"></div>
+    </div>
+
+    <!-- 枠をまとめて作成（フェスの細かい間隔の枠を一度に） -->
+    <div class="card">
+      <h2>①+ 予約枠をまとめて作成</h2>
+      <div class="sub" style="margin-bottom:6px">日付と「最初〜最後の開始時刻・間隔」から枠を並べて作ります。作る前に一覧で確認できます。同じ日付・同じ開始時刻の枠がすでにあれば作りません。作った枠は、あとから1枠ずつ編集・削除できます。</div>
+      <label>日付（複数選べます）</label>
+      <div class="row" style="align-items:center">
+        <div><input type="date" id="bDateInput" /></div>
+        <div style="flex:0 0 auto;min-width:0"><button type="button" class="sub-btn" id="bDateAdd" style="margin:0">＋ 追加</button></div>
+      </div>
+      <div id="bDates" style="margin-top:6px"></div>
+      <div class="row">
+        <div><label>最初の開始時刻</label><input type="time" id="bFirst" value="10:10" /></div>
+        <div><label>最後の開始時刻</label><input type="time" id="bLast" value="15:00" /></div>
+        <div><label>間隔（分）</label><input type="number" id="bStep" value="20" min="5" step="5" /></div>
+        <div><label>時間帯の長さ（分）</label><input type="number" id="bLen" value="100" min="10" step="5" /></div>
+      </div>
+      <div class="row">
+        <div><label>定員</label><input type="number" id="bCap" value="20" /></div>
+        <div><label>料金</label>
+          <select id="bPrice">
+            <option value="standard">通常料金（事前1,500円／当日2,000円）</option>
+            <option value="free">無料（テストプレイ・招待）</option>
+          </select></div>
+        <div><label>予約締切の決め方</label>
+          <select id="bDl">
+            <option value="prev20">前日20:00</option>
+            <option value="60" selected>開始60分前</option>
+            <option value="10">開始10分前</option>
+            <option value="custom">開始の◯分前（下で指定）</option>
+          </select>
+          <input type="number" id="bDlMin" value="30" min="0" step="5" class="hidden" style="margin-top:6px" placeholder="分" /></div>
+      </div>
+      <label style="margin-top:10px; font-weight:400; cursor:pointer;">
+        <input type="checkbox" id="bAdults" style="width:auto; margin-right:6px; vertical-align:middle;" /><b>大人のみ</b>の枠にする
+      </label>
+      <label style="margin-top:4px; font-weight:400; cursor:pointer;">
+        <input type="checkbox" id="bTest" style="width:auto; margin-right:6px; vertical-align:middle;" />⏩ テストプレイ用の枠にする（30分進行・3人基本）
+      </label>
+      <div class="meta ng" id="bLenWarn" style="margin-top:4px"></div>
+      <button type="button" class="sub-btn" id="bPreviewBtn">作る枠を確認する</button>
+      <div class="status" id="bStatus"></div>
+      <div class="hidden" id="bPreview" style="max-height:340px;overflow:auto;border:1px solid #ece8dc;border-radius:8px;margin-top:8px"></div>
+      <button id="bCreateBtn" class="hidden">この内容で作成する</button>
     </div>
 
     <!-- スロット一覧＋マッチング／通知 -->
@@ -348,6 +400,63 @@
     <!-- ===== タブ: 当日運用 ===== -->
     <div id="tab-ops" class="tab-page hidden">
 
+    <!-- ブースの様子（スタッフ用ページと同じ画面を埋め込む。管理者キーでそのまま使える） -->
+    <div class="card">
+      <h2>🚩 ブースの様子</h2>
+      <div class="sub" style="margin-bottom:8px">今の時刻の前後の枠の組（仮名・到着・スタート状況）。チェックインと「パーティが集まった」の代行ができます。
+        スタッフには、下のスタッフキーで <b>スタッフ用ページ</b>（<a href="staff.html" target="_blank">staff.html</a>）を使ってもらいます。</div>
+      <button class="sub-btn" id="boothToggle">表示する</button>
+      <a class="sub-btn" href="staff.html" target="_blank" style="display:inline-block;text-decoration:none">別のタブで開く ↗</a>
+      <iframe id="boothFrame" class="hidden" style="width:100%;height:640px;border:1px solid #ece8dc;border-radius:8px;margin-top:8px"></iframe>
+    </div>
+
+    <!-- スタッフキー -->
+    <div class="card">
+      <h2>🔑 スタッフキー</h2>
+      <div class="sub" style="margin-bottom:8px">スタッフ用ページだけで使うキーです（管理者キーとは別）。できるのは「ブースの様子を見る・チェックインの代行・パーティが集まったの代行・参加費の受け取り（クーポンを使う）」だけで、枠・マッチング・通知・クーポンの発行・返金・売上の記録・ユーザー検索などはできません。
+        開催日ごとに発行し直したり、すぐ無効にしたりできます。キーは発行したときに<b>1回だけ</b>表示します。</div>
+      <div class="meta" id="staffKeyState">—</div>
+      <div class="row" style="align-items:flex-end">
+        <div><label>メモ（例：DAY1）</label><input type="text" id="staffKeyLabel" maxlength="30" /></div>
+        <div style="flex:0 0 auto;min-width:0"><button id="staffKeyIssue" style="margin:0">発行する／発行し直す</button></div>
+      </div>
+      <button class="sub-btn danger" id="staffKeyOff">無効にする</button>
+      <button class="sub-btn" id="staffKeyOn">有効に戻す</button>
+      <div class="result hidden" id="staffKeyShow"></div>
+      <div class="status" id="staffKeyStatus"></div>
+    </div>
+
+    <!-- ブースの流れの設定値 -->
+    <div class="card">
+      <h2>⏱ ブースの流れの設定</h2>
+      <div class="sub" style="margin-bottom:6px">チェックインの受付開始・「パーティが集まった」が押されないときの自動スタート・途中合流の受付時間。LINEの案内文にもこの値が入ります。</div>
+      <table class="b-table" style="max-width:520px">
+        <tr><th></th><th>通常の枠</th><th>テスト枠（30分）</th></tr>
+        <tr><td>受付開始（開始◯分前から）</td><td><input type="number" id="tm_normal_checkinOpenMin" min="0" max="60" /></td><td><input type="number" id="tm_test_checkinOpenMin" min="0" max="60" /></td></tr>
+        <tr><td>待機猶予（開始◯分後に自動スタート）</td><td><input type="number" id="tm_normal_graceMin" min="0" max="30" /></td><td><input type="number" id="tm_test_graceMin" min="0" max="30" /></td></tr>
+        <tr><td>途中合流（スタート後◯分まで）</td><td><input type="number" id="tm_normal_lateJoinMin" min="0" max="60" /></td><td><input type="number" id="tm_test_lateJoinMin" min="0" max="60" /></td></tr>
+      </table>
+      <button id="timingSave">保存する</button>
+      <div class="status" id="timingStatus"></div>
+    </div>
+
+    <!-- 売上の記録（個人情報なし） -->
+    <div class="card">
+      <h2>📄 売上の記録</h2>
+      <div class="sub" style="margin-bottom:8px">ブースで受け取った参加費の記録です。<b>名前・ニックネーム・LINEのIDは入りません</b>。
+        フェス後にデータを消す<b>前に</b>CSV（Excelで開けます）を保存して、確定申告などの根拠として手元に残してください。
+        「現金」の合計は、閉店後のお金の箱の中身と突き合わせに使えます。</div>
+      <div class="row">
+        <div><label>この日から（空ならすべて）</label><input type="date" id="salesFrom" /></div>
+        <div><label>この日まで</label><input type="date" id="salesTo" /></div>
+      </div>
+      <button id="salesView">集計を見る</button>
+      <button class="sub-btn" id="salesCsvRows">CSVで保存（1件ずつの明細）</button>
+      <button class="sub-btn" id="salesCsvDays">CSVで保存（日ごとの合計）</button>
+      <div class="status" id="salesStatus"></div>
+      <div id="salesBox" style="margin-top:8px;overflow-x:auto"></div>
+    </div>
+
     <!-- イベント進行（自動アナウンス／不在対応）-->
     <div class="card">
       <h2>⑥ イベント進行（自動アナウンス・不在対応）</h2>
@@ -423,7 +532,8 @@
     <div class="card">
       <h2>⑧ 返金対応リスト</h2>
       <div class="sub" style="margin-bottom:10px">
-        キャンセル・当日の不成立の返金は<b>自動</b>で行います。ここに出るのは、人の判断や対応が必要なものだけです。<br>
+        <b>ブースで受け取ったあとに不成立</b>になった人がここに出ます。現金はその場でお返し、SquareはSquareのアプリで返金して「対応済みにする」。<br>
+        （以下はアプリ決済を使っていたときの分）キャンセル・当日の不成立の返金は<b>自動</b>で行います。ここに出るのは、人の判断や対応が必要なものだけです。<br>
         ・<b>マッチング不成立</b>：組み直しで入れる可能性があるので自動では返金しません。返すと決めたら「Stripeで返金」<br>
         ・<b>返金に失敗</b>（PayPayでStripeの残高不足など）：残高が戻ってから「Stripeで返金」でやり直し<br>
         ・Stripeの管理画面など別の方法で返した場合は「対応済みにする」
@@ -542,6 +652,7 @@
       // クエストタブは開いたときに初回だけ読み込む（読み込まないと姫・ミッション・チカラが空になる）
       if (id === "tab-quest" && !questLoaded) loadQuestSettings();
       if (id === "tab-coupons") loadCodes();
+      if (id === "tab-ops") { loadTiming(); loadStaffKey(); }
     }
     document.querySelectorAll(".atab").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
@@ -740,6 +851,154 @@
       }
     });
 
+    // ----- 🚩 ブースの様子（staff.html を埋め込む。同じ github.io なので管理者キーがそのまま使われる） -----
+    $("boothToggle").addEventListener("click", () => {
+      const f = $("boothFrame"), show = f.classList.contains("hidden");
+      if (show && !f.src) f.src = "staff.html?embed=1";
+      f.classList.toggle("hidden", !show);
+      $("boothToggle").textContent = show ? "隠す" : "表示する";
+    });
+
+    // ----- 🔑 スタッフキー -----
+    async function loadStaffKey(params) {
+      const r = await api("staffKeyStatus", params || {});
+      if (!r.ok) { set("staffKeyStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      $("staffKeyState").innerHTML = !r.issued ? "まだ発行していません"
+        : (r.enabled ? '<span class="ok">✅ 有効</span>' : '<span class="ng">⛔ 無効</span>')
+          + "（" + esc(r.label || "メモなし") + "・" + esc(fmtDateTime(r.issuedAt)) + " 発行）";
+    }
+    $("staffKeyIssue").addEventListener("click", async () => {
+      const ok = await dangerConfirm({ title: "スタッフキーを発行", body: "新しいスタッフキーを発行します。前のキーは使えなくなります（スタッフ用ページから自動でログアウトされます）。",
+        target: "メモ：" + ($("staffKeyLabel").value || "なし"), confirmText: "発行する" });
+      if (!ok) return;
+      const r = await api("issueStaffKey", { label: $("staffKeyLabel").value });
+      if (!r.ok) { set("staffKeyStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      $("staffKeyShow").innerHTML = '<div class="rhead">新しいスタッフキー（この画面でだけ表示します）</div>'
+        + '<div style="font-size:26px;font-weight:800;letter-spacing:.08em;font-family:monospace">' + esc(r.key) + '</div>'
+        + '<div class="meta">スタッフに直接伝えてください。LINEのグループなど、残る場所に貼るのは避けてください。</div>';
+      $("staffKeyShow").classList.remove("hidden");
+      set("staffKeyStatus", "✅ 発行しました", "ok");
+      loadStaffKey();
+    });
+    $("staffKeyOff").addEventListener("click", async () => {
+      const ok = await dangerConfirm({ title: "スタッフキーを無効にする", body: "スタッフ用ページがすぐに使えなくなります。", target: "スタッフキー", confirmText: "無効にする" });
+      if (ok) { await loadStaffKey({ enabled: "0" }); $("staffKeyShow").classList.add("hidden"); set("staffKeyStatus", "無効にしました", ""); }
+    });
+    $("staffKeyOn").addEventListener("click", async () => { await loadStaffKey({ enabled: "1" }); set("staffKeyStatus", "有効に戻しました", "ok"); });
+
+    // ----- ⏱ ブースの流れの設定 -----
+    const TM_KEYS = ["checkinOpenMin", "graceMin", "lateJoinMin"];
+    async function loadTiming() {
+      const r = await api("timingSettings", {});
+      if (!r.ok) { set("timingStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      for (const kind of ["normal", "test"]) for (const k of TM_KEYS) $("tm_" + kind + "_" + k).value = r.timing[kind][k];
+    }
+    $("timingSave").addEventListener("click", async () => {
+      const p = { save: "1" };
+      for (const kind of ["normal", "test"]) for (const k of TM_KEYS) p[kind + "_" + k] = String($("tm_" + kind + "_" + k).value);
+      const r = await api("timingSettings", p);
+      if (!r.ok) { set("timingStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      set("timingStatus", "✅ 保存しました（受付は開始" + r.timing.normal.checkinOpenMin + "分前から・自動スタートは開始" + r.timing.normal.graceMin + "分後・途中合流はスタートから" + r.timing.normal.lateJoinMin + "分まで）", "ok");
+    });
+
+    // ----- ①+ 予約枠をまとめて作成 -----
+    let bDates = [];          // 選んだ日付（YYYY-MM-DD・昇順）
+    let bPlan = null;         // 確認した内容（入力を変えたら作り直す）
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const hmOf = (min) => pad2(Math.floor(min / 60)) + ":" + pad2(min % 60);
+    const minOf = (v) => { const m = String(v || "").match(/^(\d{1,2}):(\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+    function renderBDates() {
+      $("bDates").innerHTML = bDates.length
+        ? bDates.map((d) => '<span class="chip in">' + fmtDate(d) + '<button type="button" class="x" data-d="' + d + '">×</button></span>').join("")
+        : '<span class="meta">まだ日付がありません</span>';
+    }
+    function invalidateB() { bPlan = null; $("bCreateBtn").classList.add("hidden"); $("bPreview").classList.add("hidden"); }
+    $("bDateAdd").addEventListener("click", () => {
+      const d = $("bDateInput").value; if (!d) return;
+      if (!bDates.includes(d)) { bDates.push(d); bDates.sort(); }
+      renderBDates(); invalidateB();
+    });
+    $("bDates").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-d]"); if (!b) return;
+      bDates = bDates.filter((d) => d !== b.dataset.d); renderBDates(); invalidateB();
+    });
+    ["bFirst","bLast","bStep","bLen","bCap","bPrice","bDl","bDlMin","bAdults","bTest"].forEach((id) => {
+      $(id).addEventListener("input", invalidateB); $(id).addEventListener("change", invalidateB);
+    });
+    $("bDl").addEventListener("change", () => $("bDlMin").classList.toggle("hidden", $("bDl").value !== "custom"));
+    function updateBLenWarn() {
+      const need = $("bTest").checked ? 30 : 100, len = parseInt($("bLen").value, 10) || 0;
+      $("bLenWarn").textContent = len && len < need ? "⚠️ 時間帯が" + len + "分しかありません。クエストは" + need + "分です" : "";
+    }
+    $("bLen").addEventListener("input", updateBLenWarn); $("bTest").addEventListener("change", updateBLenWarn);
+    renderBDates();
+
+    // 入力から作る枠を並べる（締切は日本時間で計算してISOにする）
+    function buildBatchSlots() {
+      const first = minOf($("bFirst").value), last = minOf($("bLast").value);
+      const step = parseInt($("bStep").value, 10), len = parseInt($("bLen").value, 10);
+      if (!bDates.length) throw new Error("日付を1つ以上追加してください");
+      if (first === null || last === null) throw new Error("最初と最後の開始時刻を入れてください");
+      if (last < first) throw new Error("最後の開始時刻が最初より前になっています");
+      if (!(step >= 5)) throw new Error("間隔は5分以上にしてください");
+      if (!(len >= 10)) throw new Error("時間帯の長さを入れてください");
+      if (first + len > 24 * 60 || last + len > 24 * 60) throw new Error("終わりが日付をまたぐ枠は作れません");
+      const dlMode = $("bDl").value, dlMin = dlMode === "custom" ? parseInt($("bDlMin").value, 10) : parseInt(dlMode, 10);
+      if (dlMode === "custom" && !(dlMin >= 0)) throw new Error("締切の「◯分前」を入れてください");
+      const out = [];
+      for (const date of bDates) {
+        for (let m = first; m <= last; m += step) {
+          const start = new Date(date + "T" + hmOf(m) + ":00+09:00");
+          // 前日20:00＝その日の20:00（日本時間）の24時間前。それ以外は開始の◯分前
+          const dl = dlMode === "prev20"
+            ? new Date(new Date(date + "T20:00:00+09:00").getTime() - 24 * 3600000)
+            : new Date(start.getTime() - dlMin * 60000);
+          out.push({ date, time: hmOf(m) + "〜" + hmOf(m + len), deadline: dl.toISOString() });
+        }
+      }
+      return out;
+    }
+    function batchParams(slots, dryRun) {
+      const p = { slots: JSON.stringify(slots), capacity: $("bCap").value, priceType: $("bPrice").value };
+      if ($("bTest").checked) p.isTest = "1";
+      if ($("bAdults").checked) p.adultsOnly = "1";
+      if (dryRun) p.dryRun = "1";
+      return p;
+    }
+    $("bPreviewBtn").addEventListener("click", async () => {
+      let slots;
+      try { slots = buildBatchSlots(); } catch (e) { set("bStatus", "⚠️ " + e.message, "ng"); invalidateB(); return; }
+      set("bStatus", "確認中…", "");
+      const r = await api("createSlotsBatch", batchParams(slots, true));
+      if (!r.ok) { set("bStatus", "⚠️ " + (r.error || "失敗"), "ng"); invalidateB(); return; }
+      bPlan = slots;
+      const why = { exists: "すでにある", duplicate: "重複" };
+      $("bPreview").innerHTML = '<table class="b-table"><tr><th>日付</th><th>時間帯</th><th>予約締切</th><th></th></tr>'
+        + r.plan.map((x) => '<tr class="' + (x.skip ? "skip" : "") + '"><td>' + fmtDate(x.date) + '</td><td>' + esc(x.time)
+          + '</td><td>' + esc(fmtDateTime(x.deadline)) + '</td><td class="why">' + (x.skip ? why[x.skip] + "ので作らない" : "") + '</td></tr>').join("")
+        + '</table>';
+      $("bPreview").classList.remove("hidden");
+      set("bStatus", "作成 " + r.createCount + "枠" + (r.skipCount ? "／作らない " + r.skipCount + "枠（すでにある・重複）" : "")
+        + "（定員" + $("bCap").value + "・" + ($("bPrice").value === "free" ? "無料" : "通常料金")
+        + ($("bAdults").checked ? "・大人のみ" : "") + ($("bTest").checked ? "・テストプレイ用" : "") + "）", r.createCount ? "ok" : "ng");
+      $("bCreateBtn").classList.toggle("hidden", !r.createCount);
+      $("bCreateBtn").textContent = "この内容で " + r.createCount + "枠を作成する";
+    });
+    $("bCreateBtn").addEventListener("click", async () => {
+      if (!bPlan) return;
+      const ok = await dangerConfirm({ title: "予約枠をまとめて作成", body: "次の内容で枠を作ります。作った枠は1枠ずつ削除できます。",
+        target: $("bStatus").textContent, confirmText: $("bCreateBtn").textContent.replace("この内容で ", "") });
+      if (!ok) return;
+      $("bCreateBtn").disabled = true;
+      set("bStatus", "作成中…", "");
+      const r = await api("createSlotsBatch", batchParams(bPlan, false));
+      $("bCreateBtn").disabled = false;
+      if (!r.ok) { set("bStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      invalidateB();
+      set("bStatus", "✅ " + r.created + "枠を作成しました" + (r.skipped ? "（" + r.skipped + "枠はすでにあったので作っていません）" : ""), "ok");
+      loadSlots();
+    });
+
     // ----- ② スロット一覧 -----
     function fmtDate(d) {
       const [y, m, day] = d.split("-").map(Number);
@@ -859,7 +1118,10 @@
           : '<span class="pill okp">確定</span>';
         const money = x.status === "pending"
           ? yen(x.amount) + "（未払い）"
-          : (x.paidAmount ? yen(x.paidAmount) + "支払い済み" : (x.coupon ? "0円" : (x.priceKind === "無料枠" || x.priceKind === "決済導入前" ? "—" : "0円")));
+          : (x.boothPaid ? yen(x.paidAmount) + "受け取り済み（" + (x.boothMethod || "") + "）"
+            : x.paidAmount ? yen(x.paidAmount) + "支払い済み"
+            : x.boothPrice ? yen(x.boothPrice) + "（当日ブースで・まだ）"
+            : (x.coupon ? "0円" : (x.priceKind === "無料枠" || x.priceKind === "決済導入前" ? "—" : "0円")));
         return '<div class="slot-row" style="padding:8px 12px">' +
           '<div class="title" style="font-size:14px">' + esc(x.nickname || "(名前なし)") + state +
             (x.minor === "invited" ? '<span class="pill warnp">👧 18歳未満（保護者：' + esc(x.guardianNickname || "") + 'さん）</span>'
@@ -879,7 +1141,7 @@
           "確定 <b>" + S.confirmed + "</b>人　／　支払い待ち <b>" + S.pending + "</b>人　／　クーポン利用 " + S.couponUsed + "人" +
           (S.minors ? "　／　👧 18歳未満 " + S.minors + "人（0円）" : "") + "<br>" +
           "受け取った額 <b>" + yen(S.paidTotal) + "</b>　−　返金 " + yen(S.refundedTotal) + "　＝　<b>" + yen(S.netTotal) + "</b>" +
-          '<span style="font-size:11px">（Stripeの手数料を引く前。キャンセルで返金した分も含めて計算）</span></div>' +
+          '<span style="font-size:11px">（Squareの手数料を引く前。返金した分も含めて計算）</span></div>' +
         (rows || '<div class="meta">予約はありません</div>'));
     }
 
@@ -901,12 +1163,9 @@
         ).join("");
         // クエストの進捗（チカラ合計・救出した姫）
         const hasQuest = (typeof g.totalPower === "number");
-        const pw = g.powers || {};
         const pwLine = hasQuest
-          ? "<div class='gmeta'>⚡ チカラ " + esc(g.totalPower) +
-            "　／　救出 " + esc((g.rescued || []).length) + "人 " + esc(g.rescuedEmojis || "") +
-            "　／　💰" + esc(pw.save || 0) + " 💪" + esc(pw.earn || 0) + " 📈" + esc(pw.grow || 0) +
-            " 🛡" + esc(pw.protect || 0) + " 🎁" + esc(pw.use || 0) + "</div>"
+          ? "<div class='gmeta'>⚡ レベル" + esc((g.rescued || []).length + 1) + "（チカラ " + esc(g.totalPower) + "）" +
+            "　／　救出 " + esc((g.rescued || []).length) + "人 " + esc(g.rescuedEmojis || "") + "</div>"
           : "";
         // プレイヤーが名前を付けたら「〇〇（パーティ1）」と両方出す（管理側の識別用に連番を残す）
         const title = g.partyName ? esc(g.partyName) + "（" + esc(g.name) + "）" : esc(g.name);
@@ -1253,6 +1512,53 @@
       else set("bcStatus", "⚠️ " + (r.error || "失敗"), "ng");
     });
 
+    // ----- 📄 売上の記録 -----
+    const SALES_ROW_COLS = [["no", "No."], ["date", "日付"], ["time", "枠"], ["kind", "区分"], ["base", "基本料金"], ["coupon", "クーポン"],
+      ["discount", "クーポンで引いた額"], ["amount", "受け取った額"], ["method", "受け取り方"], ["paidAt", "受け取った時刻"], ["refund", "返金"], ["refundAmount", "返金額"]];
+    const SALES_DAY_COLS = [["date", "日付"], ["count", "件数"], ["base", "基本料金の合計"], ["discount", "クーポンで引いた額"], ["amount", "受け取った額"],
+      ["cash", "うち現金"], ["square", "うちSquare"], ["refunded", "返金済み"], ["refundPending", "返金待ち"], ["net", "売上（受け取った額−返金）"]];
+    async function loadSales() {
+      set("salesStatus", "読み込み中…");
+      const r = await api("exportSales", { from: $("salesFrom").value, to: $("salesTo").value });
+      if (!r.ok) { set("salesStatus", "⚠️ " + (r.error || "失敗"), "ng"); return null; }
+      set("salesStatus", r.rows.length ? "" : "この期間に受け取った記録はありません");
+      return r;
+    }
+    function salesRange() {
+      const f = $("salesFrom").value, t = $("salesTo").value;
+      return f || t ? "_" + (f || "最初") + "〜" + (t || "最後") : "";
+    }
+    // CSVはExcelで文字化けしないよう、先頭にBOMを付ける
+    function downloadCsv(name, cols, list) {
+      const cell = (v) => { const x = String(v ?? ""); return /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+      const text = [cols.map((c) => c[1]).join(",")].concat(list.map((o) => cols.map((c) => cell(o[c[0]])).join(","))).join("\r\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob(["\ufeff" + text], { type: "text/csv" }));
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+    $("salesView").addEventListener("click", async () => {
+      const r = await loadSales(); if (!r) return;
+      const yen = (n) => Number(n || 0).toLocaleString("ja-JP");
+      const money = new Set(["base", "discount", "amount", "cash", "square", "refunded", "refundPending", "net"]);
+      const tr = (o, bold) => "<tr" + (bold ? ' style="font-weight:700"' : "") + ">" + SALES_DAY_COLS.map((c) =>
+        "<td" + (money.has(c[0]) ? ' style="text-align:right"' : "") + ">" + esc(money.has(c[0]) ? yen(o[c[0]]) : (c[0] === "date" && o.date !== "合計" ? fmtDate(o.date) : o[c[0]])) + "</td>").join("") + "</tr>";
+      $("salesBox").innerHTML = r.rows.length ? '<table class="b-table"><tr>' + SALES_DAY_COLS.map((c) => "<th>" + esc(c[1]) + "</th>").join("") + "</tr>"
+        + r.days.map((d) => tr(d)).join("") + tr(r.total, true) + "</table>"
+        + '<div class="meta" style="margin-top:6px">Squareの手数料（約3.25%）は引く前の金額です。返金待ちは、返す前提で売上から引いています。</div>' : "";
+    });
+    $("salesCsvRows").addEventListener("click", async () => {
+      const r = await loadSales(); if (!r || !r.rows.length) return;
+      downloadCsv("100quest_売上明細" + salesRange() + ".csv", SALES_ROW_COLS, r.rows);
+      set("salesStatus", "✅ 明細を保存しました（" + r.rows.length + "件）", "ok");
+    });
+    $("salesCsvDays").addEventListener("click", async () => {
+      const r = await loadSales(); if (!r || !r.rows.length) return;
+      downloadCsv("100quest_売上日別" + salesRange() + ".csv", SALES_DAY_COLS, r.days.concat([r.total]));
+      set("salesStatus", "✅ 日ごとの合計を保存しました", "ok");
+    });
+
     // ----- ⑧ 返金対応リスト -----
     async function loadRefunds() {
       const box = $("refundList");
@@ -1280,7 +1586,8 @@
             (p.amount ? '<span class="pill">' + esc(Number(p.amount).toLocaleString("ja-JP")) + '円</span>' : '') +
             (p.reason ? '<span class="pill warnp">' + esc(p.reason) + '</span>' : '') + '</div>' +
             (p.error ? '<div class="meta ng">⚠️ 返金に失敗：' + esc(p.error) + '</div>' : '') +
-            (!p.sessionId ? '<div class="meta">決済導入前の予約（Stripeの支払いなし）</div>' : '') +
+            (p.booth ? '<div class="meta">💴 ブースで受け取り（' + esc(p.booth) + '）→ ' + (p.booth === "Square" ? "Squareのアプリで返金" : p.booth === "現金" ? "現金でお返し" : "ブースでお返し") + 'して「対応済みにする」</div>'
+              : !p.sessionId ? '<div class="meta">決済導入前の予約（Stripeの支払いなし）</div>' : '') +
             '<div class="meta">' + esc(p.lineUserId || "") + '</div>';
           if (p.sessionId) {
             const s = document.createElement("button");
@@ -1341,8 +1648,8 @@
     $("reloadRefunds").addEventListener("click", loadRefunds);
 
     // ----- ⑨ ユーザー検索 -----
-    // プロフィールの「いちばん伸ばしたいチカラ」（アプリの POWER_META と同じ）
-    const PROFILE_POWER = { save: "💰貯める", earn: "💪稼ぐ", grow: "📈増やす", protect: "🛡守る", use: "🎁使う" };
+    // プロフィールの「フェスでいちばん楽しみなこと」（アプリの FUN_META と同じ）。名前は旧来のまま
+    const PROFILE_POWER = { stage: "🎤ステージ", booth: "🎪ブース巡り", food: "🍽グルメ", meet: "🤝仲間との交流", learn: "📚学び" };
     async function searchUsers() {
       const q = $("usQuery").value.trim();
       if (!q) { set("usStatus", "ニックネーム か LINEユーザーIDを入力してください", "ng"); return; }
@@ -1380,7 +1687,7 @@
           '<div class="title">' + esc(u.nickname || "(名前なし)") +
           '<span class="pill">' + esc([u.gender, PROFILE_POWER[u.topic]].filter(Boolean).join("・") || "プロフィール未設定") + '</span></div>' +
           (u.topicDetail ? '<div class="meta">フェスに来た理由：' + esc(u.topicDetail) + '</div>' : '') +
-          '<div class="meta">' + esc(u.lineUserId) + (u.libeId ? "　／　リベID: " + esc(u.libeId) : "") + '</div>' +
+          '<div class="meta">' + esc(u.lineUserId) + (u.libeId ? "　／　リベシティID: " + esc(u.libeId) : "") + '</div>' +
           resvHtml + cpHtml;
         box.appendChild(div);
       });
@@ -1396,7 +1703,7 @@
     let questDirty   = false;  // 未保存の変更があるか
     let missionFilter = "all"; // ミッション一覧の絞り込み（チカラの種類）
 
-    // サーバーから取得できなかった場合の保険（5つのチカラはコード側の定義と同じ順・同じキー）
+    // サーバーから取得できなかった場合の保険（チカラの種類は画面に出さなくなったが、データの既定値として残す）
     const POWER_FALLBACK = [
       { key: "save",    emoji: "💰", label: "貯める" },
       { key: "earn",    emoji: "💪", label: "稼ぐ" },
@@ -1435,13 +1742,10 @@
       $("saveAllQuestBtn").textContent = questDirty ? "保存する（未保存）" : "保存する";
     }
 
-    // 現在のバランス。チカラごとの合計⭐と、最後の姫に届くかを表示する
+    // 現在のバランス。チカラの満点（⭐の合計）と、最後の姫に届くかを表示する
+    //   チカラは1種類（2026-10-01〜。フェスの二次創作ガイドラインで「5つの力」を想起させる作りをやめた）
     function renderQuestSummary() {
-      const per = {}; powerList().forEach((p) => { per[p.key] = 0; });
-      questTutorial.concat(questMissions).forEach((m) => {
-        if (per[m.power] !== undefined) per[m.power] += (Number(m.stars) || 0);
-      });
-      const total = powerList().reduce((s, p) => s + per[p.key], 0);
+      const total = questTutorial.concat(questMissions).reduce((s, m) => s + (Number(m.stars) || 0), 0);
       const tutTotal = questTutorial.reduce((s, m) => s + (Number(m.stars) || 0), 0);
       const maxNeed = questPrincesses.length
         ? Math.max(...questPrincesses.map((p) => Number(p.need) || 0)) : 0;
@@ -1462,9 +1766,6 @@
       $("questSummary").innerHTML =
         '<span class="qs-main">チュートリアル ' + questTutorial.length + '件（⭐' + tutTotal + '）／ ' +
         'ミッション ' + questMissions.length + '件 ／ 満点 ⭐' + total + '</span>' +
-        powerList().map((p) =>
-          '<span class="qs-p' + (per[p.key] ? '' : ' zero') + '">' +
-          esc(p.emoji) + esc(p.label) + ' ' + per[p.key] + '</span>').join("") +
         line;
     }
 
@@ -1478,9 +1779,7 @@
         d.innerHTML =
           '<span class="qp-name">' + esc(p.emoji) + " " + esc(p.name) + '</span>' +
           '<input type="number" min="1" id="qp_need_' + i + '" value="' + esc(p.need) + '" />' +
-          '<span class="qp-unit">チカラで救出</span>' +
-          '<label class="qp-all"><input type="checkbox" id="qp_all_' + i + '"' +
-          (p.requireAllPowers ? ' checked' : '') + ' />5種すべて1つ以上</label>';
+          '<span class="qp-unit">チカラで救出（レベル' + (i + 1) + '→' + (i + 2) + '）</span>';
         box.appendChild(d);
       });
       renderQuestSummary();
@@ -1495,10 +1794,6 @@
         d.className = "q-mrow";
         d.innerHTML =
           '<input type="text" class="qm-name" maxlength="60" id="qt_name_' + i + '" value="' + esc(m.name) + '" />' +
-          '<select class="qm-power" id="qt_power_' + i + '">' +
-            powerList().map((p) => '<option value="' + esc(p.key) + '"' +
-              (p.key === m.power ? ' selected' : '') + '>' + esc(p.emoji) + " " + esc(p.label) + '</option>').join("") +
-          '</select>' +
           '<select class="qm-stars" id="qt_stars_' + i + '">' +
             [1, 2, 3].map((n) => '<option value="' + n + '"' + (n === m.stars ? ' selected' : '') + '>' +
               "⭐".repeat(n) + '</option>').join("") +
@@ -1512,7 +1807,7 @@
         id:    m.id,
         kind:  m.kind,
         name:  ($("qt_name_"  + i) ? $("qt_name_"  + i).value.trim() : m.name),
-        power: ($("qt_power_" + i) ? $("qt_power_" + i).value : m.power),
+        power: m.power,   // 種類は使わない（保存されている値をそのまま残す）
         stars: ($("qt_stars_" + i) ? parseInt($("qt_stars_" + i).value, 10) : m.stars)
       }));
     }
@@ -1539,14 +1834,10 @@
       renderQuestSummary();
       renderQuestBar();
     }
+    // チカラの種類で絞り込むボタン（種類をやめたので出さない）
     function renderMissionFilter() {
-      const counts = {};
-      questMissions.forEach((m) => { counts[m.power] = (counts[m.power] || 0) + 1; });
-      const btns = [{ key: "all", emoji: "", label: "すべて", n: questMissions.length }]
-        .concat(powerList().map((p) => ({ key: p.key, emoji: p.emoji, label: p.label, n: counts[p.key] || 0 })));
-      $("missionFilter").innerHTML = btns.map((b) =>
-        '<button class="q-fbtn' + (missionFilter === b.key ? ' active' : '') + '" data-f="' + esc(b.key) + '">' +
-        esc(b.emoji) + esc(b.label) + ' ' + b.n + '</button>').join("");
+      missionFilter = "all";
+      $("missionFilter").innerHTML = "";
     }
     function renderMissionList() {
       const ml = $("questMissionList"); ml.innerHTML = "";
@@ -1566,10 +1857,6 @@
         d.innerHTML =
           '<input type="text" class="qm-name" maxlength="60" placeholder="ミッション名" ' +
             'id="qm_name_' + i + '" value="' + esc(m.name) + '" />' +
-          '<select class="qm-power" id="qm_power_' + i + '">' +
-            powerList().map((p) => '<option value="' + esc(p.key) + '"' +
-              (p.key === m.power ? ' selected' : '') + '>' + esc(p.emoji) + " " + esc(p.label) + '</option>').join("") +
-          '</select>' +
           '<select class="qm-stars" id="qm_stars_' + i + '">' +
             [1, 2, 3].map((n) => '<option value="' + n + '"' + (n === m.stars ? ' selected' : '') + '>' +
               "⭐".repeat(n) + '</option>').join("") +
@@ -1584,7 +1871,7 @@
       questMissions = questMissions.map((m, i) => ({
         id:    m.id,
         name:  ($("qm_name_"  + i) ? $("qm_name_"  + i).value.trim() : m.name),
-        power: ($("qm_power_" + i) ? $("qm_power_" + i).value : m.power),
+        power: m.power,   // 種類は使わない（保存されている値をそのまま残す）
         stars: ($("qm_stars_" + i) ? parseInt($("qm_stars_" + i).value, 10) : m.stars)
       }));
     }
@@ -1612,8 +1899,7 @@
 
     $("addMissionBtn").addEventListener("click", () => {
       syncMissionInputs();
-      const power = (missionFilter === "all") ? powerList()[0].key : missionFilter;
-      questMissions.push({ id: "", name: "", power: power, stars: 1 });
+      questMissions.push({ id: "", name: "", power: "earn", stars: 1 });   // 種類は使わない（内部の既定値）
       markQuestDirty();
       renderMissionEditor();
       const el = $("qm_name_" + (questMissions.length - 1));
@@ -1633,7 +1919,7 @@
       const princesses = questPrincesses.map((p, i) => ({
         id: p.id,
         need: ($("qp_need_" + i) ? parseInt($("qp_need_" + i).value, 10) : p.need),
-        requireAllPowers: ($("qp_all_" + i) ? $("qp_all_" + i).checked : !!p.requireAllPowers)
+        requireAllPowers: false
       }));
       if (princesses.some((p) => !Number.isFinite(p.need) || p.need < 1)) {
         set("questStatus", "姫の「必要なチカラ」は1以上の数値で入力してください", "ng"); return;
