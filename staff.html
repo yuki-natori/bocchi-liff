@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow">
   <title>100 Quest ブースの様子</title>
   <style>
     * { box-sizing:border-box; margin:0; padding:0; }
@@ -104,6 +105,7 @@
       <button data-b="90" data-a="60">前90分〜後60分</button>
     </div>
     <div class="err" id="mainErr"></div>
+    <div id="attention" class="hidden" style="background:#fdf1f0;border:2px solid var(--err);border-radius:12px;padding:12px 14px;margin:8px 0 14px"></div>
     <div id="slots"></div>
   </div>
 
@@ -190,6 +192,14 @@
     function render(r) {
       $("clock").textContent = "いま " + hm(r.now);
       $("mainErr").textContent = "";
+      // リーダーに知らせてほしい枠（要確認・発表が届いていない・発表がまだ送られていない）
+      const at = r.attention || [];
+      $("attention").classList.toggle("hidden", !at.length);
+      $("attention").innerHTML = at.length
+        ? '<div style="font-weight:700;color:var(--err);font-size:16px">⚠️ リーダーに知らせてください（' + at.length + '件）</div>'
+          + at.map((x) => '<div style="margin-top:6px"><b>' + esc(x.time) + '</b>　' + esc(x.note) + '</div>').join("")
+          + '<div style="margin-top:8px;font-size:13px;color:var(--sub)">このままだと、参加者にパーティの発表が届きません。管理画面での対応が必要です。</div>'
+        : "";
       const box = $("slots");
       if (!r.slots.length) { box.innerHTML = '<div class="empty">この時間帯の枠はありません</div>'; return; }
       const now = Date.parse(r.now);
@@ -228,7 +238,9 @@
                  : unpaid ? "💴 未払い " + g.unpaidHere + "人（受け取ってからスタート）" : "🚩 パーティが集まった（代わりに押す）") + '</button>' : "";
           return '<div class="grp" style="border-top:8px solid ' + esc(color) + '"><div class="grp-head"><span class="emo">' + esc(g.mark ? g.mark.emoji : "🎲") + '</span>'
             + '<div><div class="nm">' + esc(g.name) + '</div>' + (g.partyName ? '<div class="pn">' + esc(g.partyName) + '</div>' : "") + '</div>' + st + '</div>'
-            + '<div class="arr">到着 ' + g.arrived + ' / ' + g.total + '人</div>' + mem + startBtn + '</div>';
+            + '<div class="arr">到着 ' + g.arrived + ' / ' + g.total + '人'
+            + (g.destination ? '　🧭 ' + esc(g.destination) + (g.destinationChosen ? '（選択済み）' : g.status === "waiting" ? '（おすすめのまま）' : '') : '') + '</div>'
+            + mem + startBtn + '</div>';
         }).join("") + '</div></div>';
       }).join("");
     }

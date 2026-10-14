@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow">
   <title>100 Quest 管理画面</title>
   <style>
     * { box-sizing:border-box; margin:0; padding:0; }
@@ -150,7 +151,7 @@
       <button class="atab active" data-tab="tab-slots">📅 予約枠</button>
       <button class="atab" data-tab="tab-ops">🎪 当日運用</button>
       <button class="atab" data-tab="tab-coupons">🎟 クーポン</button>
-      <button class="atab" data-tab="tab-spots">📍 集合場所</button>
+      <button class="atab" data-tab="tab-spots">📍 行き先</button>
       <button class="atab" data-tab="tab-users">👤 ユーザー</button>
       <button class="atab" data-tab="tab-quest">🏰 クエスト</button>
     </div>
@@ -174,10 +175,11 @@
         </div>
 
         <div class="q-sec">
-          <div class="q-sec-h">🐧 チュートリアル<span class="q-note">ブース前3つ＋移動1つ／合計＝ペンペン姫の条件になるように</span></div>
+          <div class="q-sec-h">🧭 チュートリアル<span class="q-note">移動1つ＋移動先でのアイスブレイク3つ／合計＝最初の姫の条件になるように</span></div>
           <div class="sub" style="font-size:12px; margin:-4px 0 10px">
-            行の追加・削除はできません（名前の入力欄や目的地の仕掛けが各行に紐づいているため）。
-            移動の行には <b>{destination}</b> を必ず残してください（📍集合場所タブの地点名が入ります）。
+            行の追加・削除・並べ替えはできません（名前の入力欄や目的地の仕掛けが各行に紐づいているため）。
+            スタートした時点で移動先を出し、<b>移動を全員でチェックするまで残りの3つは押せません</b>（ブースではチュートリアルをしない）。
+            移動の行には <b>{destination}</b> を必ず残してください（パーティが選んだ行き先＝📍行き先タブの候補が入ります）。
           </div>
           <div id="questTutorialList"></div>
           <button class="sub-btn danger" id="resetTutorialBtn">チュートリアルを既定に戻す</button>
@@ -217,16 +219,17 @@
           <div class="meta" id="capHint" style="margin-top:4px"></div></div>
         <div><label>予約締切（必須）</label><input type="datetime-local" id="slotDeadline" />
           <div class="dl-presets" id="dlPresets">
-            <button type="button" class="sub-btn" data-dl="prev20">前日20:00</button>
+            <button type="button" class="sub-btn" data-dl="45">開始45分前（基本）</button>
             <button type="button" class="sub-btn" data-dl="60">開始60分前</button>
             <button type="button" class="sub-btn" data-dl="10">開始10分前</button>
+            <button type="button" class="sub-btn" data-dl="prev20">前日20:00</button>
           </div>
         </div>
       </div>
       <div class="row">
         <div><label>料金</label>
           <select id="slotPrice">
-            <option value="standard">通常料金（事前1,500円／当日2,000円）</option>
+            <option value="standard">有料（早割1,500円／通常2,000円）</option>
             <option value="free">無料（テストプレイ・招待）</option>
           </select>
           <div class="meta" id="priceHint" style="margin-top:4px"></div></div>
@@ -240,9 +243,10 @@
       </div>
       <div class="meta ng" id="adultsWarn" style="margin:4px 0 0 22px"></div>
       <div class="sub" style="margin-top:6px">
-        <b>締切時刻に自動でマッチングされます</b>（LINE通知は送られません。内容を確認してから
-        「結果を一斉通知」を押してください）。締切後は参加者がキャンセルできなくなります。<br>
-        当日の飛び込み参加を受けたい枠は「開始10分前」にしてください（チェックインの受付開始は🎪当日運用の「ブースの流れの設定」で決めます）。
+        <b>締切時刻に自動でマッチングされます</b>。パーティの発表（LINE）は、下の「📣 パーティ発表の自動配信」が
+        <b>ONなら自動で</b>、OFFなら内容を確認してから「結果を一斉通知」を押して送ります。締切後は参加者がキャンセルできなくなります。<br>
+締切の基本は<b>開始45分前</b>です（会場内の移動時間を見て、30〜45分で調整）。チェックインの受付開始は🎪当日運用の「ブースの流れの設定」で決めます。<br>
+        締切を<b>当日用の席が開く時刻（下の🎫）より前</b>にすると、その枠は当日用の席を残しません（残しても、開く前に締め切られて誰も予約できないため）。
       </div>
       <label style="margin-top:10px; font-weight:400; cursor:pointer;">
         <input type="checkbox" id="slotTest" style="width:auto; margin-right:6px; vertical-align:middle;" />
@@ -276,14 +280,15 @@
         <div><label>定員</label><input type="number" id="bCap" value="20" /></div>
         <div><label>料金</label>
           <select id="bPrice">
-            <option value="standard">通常料金（事前1,500円／当日2,000円）</option>
+            <option value="standard">有料（早割1,500円／通常2,000円）</option>
             <option value="free">無料（テストプレイ・招待）</option>
           </select></div>
         <div><label>予約締切の決め方</label>
           <select id="bDl">
-            <option value="prev20">前日20:00</option>
-            <option value="60" selected>開始60分前</option>
+            <option value="45" selected>開始45分前（基本）</option>
+            <option value="60">開始60分前</option>
             <option value="10">開始10分前</option>
+            <option value="prev20">前日20:00（当日用の席は残りません）</option>
             <option value="custom">開始の◯分前（下で指定）</option>
           </select>
           <input type="number" id="bDlMin" value="30" min="0" step="5" class="hidden" style="margin-top:6px" placeholder="分" /></div>
@@ -301,6 +306,57 @@
       <button id="bCreateBtn" class="hidden">この内容で作成する</button>
     </div>
 
+    <!-- 当日来場者のための席 -->
+    <div class="card">
+      <h2>🎫 当日来場者のための席</h2>
+      <div class="sub" style="margin-bottom:8px">出店要項「事前予約が満席で、当日の来場者が体験できない状況を避ける」への対応です。
+        各枠で、<b>先に予約できるのは定員のこの割合まで</b>。残りの席は<b>開始の◯分前になると</b>開き、だれでも予約できます（会場に来ている人のための席）。
+        先に予約できる分の空きや、キャンセルで戻った席は、締切までいつでも予約できます。
+        テスト枠と、18歳未満の招待（保護者と同じパーティ）は対象外。<b>締切が「席の開く時刻」以前の枠</b>は、席を残しません。変えると、そのあとの予約から効きます（入っている予約はそのまま）。</div>
+      <div class="row" style="align-items:flex-end">
+        <div><label>先に予約できる割合（%・50〜100）</label><input type="number" id="advPercent" min="50" max="100" step="5" /></div>
+        <div><label>残りの席を開く時間（開始の何分前・15〜720）</label><input type="number" id="dayOpenMin" min="15" max="720" step="15" /></div>
+        <div style="flex:0 0 auto;min-width:0"><button id="advSave" style="margin:0">保存する</button></div>
+      </div>
+      <div class="meta" id="advExample"></div>
+      <div class="status" id="advStatus"></div>
+    </div>
+
+    <!-- パーティ発表の自動配信・リーダーへの通知 -->
+    <div class="card">
+      <h2>📣 パーティ発表の自動配信</h2>
+      <div class="sub" style="margin-bottom:8px">ONにすると、締切で自動マッチングした枠のパーティ発表（LINE）を、<b>その場で自動で送ります</b>（締切から5分以内）。
+        送るのは、<b>⚠️要確認が付いていない・全員がパーティに入っている枠だけ</b>です。
+        要確認の枠・手動で組み直した枠・OFFの間にマッチングだけ済んだ枠は、今までどおり「結果を一斉通知」で送ってください。
+        LINEがエラーを返したときは、あと2回まで自動でやり直し、それでも送れなければ枠に「⚠️届いていません」と出ます。<br>
+        ※相手が公式アカウントをブロックしていると、LINEは「成功」を返すため、ここでは分かりません。</div>
+      <label style="font-weight:700; cursor:pointer;"><input type="checkbox" id="autoNotify" style="width:auto; margin-right:8px; vertical-align:middle;" />自動で送る</label>
+      <div class="status" id="autoNotifyStatus"></div>
+      <h2 style="margin-top:18px">🔔 リーダーへのお知らせ（LINE）</h2>
+      <div class="sub" style="margin-bottom:8px">⚠️要確認の枠が出たときと、パーティの発表を送れなかったときに、ここに登録した人のLINEへ知らせます（3人まで）。
+        登録できるのは、アプリでプロフィールを登録している人です。ニックネームで探して追加してください。</div>
+      <div id="leaderList" class="meta">読み込み中…</div>
+      <div class="row" style="align-items:flex-end; margin-top:8px">
+        <div><label>ニックネームで探す</label><input type="text" id="leaderQuery" placeholder="ニックネームの最初の数文字" /></div>
+        <div style="flex:0 0 auto;min-width:0"><button type="button" class="sub-btn" id="leaderSearch" style="margin:0">探す</button></div>
+      </div>
+      <div id="leaderFound"></div>
+      <button type="button" class="sub-btn" id="leaderTest" style="margin-top:8px">テストのLINEを送る</button>
+      <div class="status" id="leaderStatus"></div>
+    </div>
+
+    <!-- 早割の状況 -->
+    <div class="card">
+      <h2>🏷 早割</h2>
+      <div class="sub" style="margin-bottom:8px">早割は<b>期限までの予約・先着の人数まで・1人1回</b>。早割の予約がキャンセルされると、その分は次の人が早割で予約できます。
+        ただし、<b>一度上限の人数に達したら終了</b>し、そのあとキャンセルが出ても再開しません。無料の枠と18歳未満は数えません。
+        金額・人数・期限は、特定商取引法のページと同じ内容をコードで決めています（変えるときはClaudeに依頼）。</div>
+      <div id="earlyInfo" class="meta">読み込み中…</div>
+      <button type="button" class="sub-btn" id="earlyRecount" style="margin-top:8px">人数を数え直す</button>
+      <div class="meta">テストの予約を消したあとなど、記録の人数が実際とずれたときに使います。</div>
+      <div class="status" id="earlyStatus"></div>
+    </div>
+
     <!-- スロット一覧＋マッチング／通知 -->
     <div class="card">
       <h2>② 予約枠の一覧・マッチング・通知</h2>
@@ -309,8 +365,8 @@
       <!-- 締切必須化の移行用。締切が入っていない枠が残っていると自動マッチングが走らない -->
       <div class="hidden" id="noDeadlineBox" style="background:#fdf1f0;border:1px solid #f0c9c5;border-radius:8px;padding:11px 13px;margin-bottom:12px">
         <div style="font-weight:700;color:var(--err)" id="noDeadlineMsg"></div>
-        <div class="meta" style="margin-top:4px">締切が入っていない枠は<b>自動マッチングの対象になりません</b>。まとめて「開始60分前」を入れられます。</div>
-        <button class="sub-btn" id="fillDeadlineBtn">締切がない枠に「開始60分前」をまとめて設定</button>
+        <div class="meta" style="margin-top:4px">締切が入っていない枠は<b>自動マッチングの対象になりません</b>。まとめて「開始45分前」を入れられます。</div>
+        <button class="sub-btn" id="fillDeadlineBtn">締切がない枠に「開始45分前」をまとめて設定</button>
       </div>
       <div id="slotList"></div>
       <div class="result hidden" id="matchResult"></div>
@@ -323,22 +379,26 @@
 
     <!-- 集合場所 -->
     <div class="card">
-      <h2 id="spotFormTitle">③ 地点を登録</h2>
+      <h2 id="spotFormTitle">③ 行き先の候補を登録</h2>
       <div class="sub" style="margin-bottom:10px">
-        ここに登録した地点が<b>チュートリアルの移動先</b>になります。マッチング時に登録順で
-        パーティへ順繰りに割り当て（<b>専有ではないので重複しても大丈夫</b>）、
-        ブース前の3つを終えるとペンペン姫が行き先として告げます。<br>
-        目安は<b>8〜12地点</b>（同時スタートが4〜8組のため）。条件はブースから徒歩3〜5分・目印になり迷わない・
-        動線を塞がない・人が滞留しても平気な広さ。<b>0件のときは全パーティ「スタート地点」と表示</b>されます。
+        ここに登録したエリアが<b>最初の行き先の候補</b>になります。マッチング時に、パーティごとに<b>候補3つ</b>（先頭が「おすすめ」）を
+        登録順からずらして割り当てます（同じ枠・隣の枠でおすすめが重ならないように）。
+        ブースでスタッフが候補を紹介し、パーティがアプリで1つ選びます（だれが選んでもOK・出発までは変更可。選ばなければおすすめ）。<br>
+        候補は<b>フェスの見どころのエリア</b>にします（例：フードエリア、ブースが並ぶ通り）。
+        <b>つながるエリア・公式ブースエリア・ステージの前と客席・フォトスポット・こどもエリアは候補にしない</b>（企画書の約束）。
+        目安は<b>5〜8件</b>。<b>0件のときは全パーティ「スタート地点」と表示</b>されます。
       </div>
       <div class="row">
-        <div><label>種類</label>
-          <select id="spotType">
-            <option>長テーブル</option><option>丸テーブル</option><option>ソファー</option>
+        <div><label>エリアの名前（20文字まで）</label><input id="spotLabel" maxlength="20" placeholder="例：フードエリア" /></div>
+        <div><label>楽しみと結びつける（任意）</label>
+          <select id="spotFun">
+            <option value="">なし</option><option value="stage">🎤 ステージ</option><option value="booth">🎪 ブース巡り</option>
+            <option value="food">🍽 グルメ</option><option value="meet">🤝 仲間との交流</option><option value="learn">📚 学び</option>
           </select>
         </div>
-        <div><label>番号</label><input type="number" id="spotNumber" value="1" /></div>
       </div>
+      <div><label>ひとこと説明（40文字まで・任意）</label><input id="spotNote" maxlength="40" placeholder="例：キッチンカーや屋台が並ぶエリア" /></div>
+      <div class="sub" style="margin:6px 0 10px">「楽しみ」を選んでおくと、その楽しみを選んだメンバーの名前が候補に添えられます（選ぶきっかけ）。</div>
       <button id="createSpotBtn">登録する</button>
       <button id="cancelSpotEditBtn" class="sub-btn hidden">編集をやめる</button>
       <button class="sub-btn" id="reloadSpots">一覧を更新</button>
@@ -653,6 +713,7 @@
       if (id === "tab-quest" && !questLoaded) loadQuestSettings();
       if (id === "tab-coupons") loadCodes();
       if (id === "tab-ops") { loadTiming(); loadStaffKey(); }
+      if (id === "tab-slots") { loadBooking(); loadEarly(); loadNotifySettings(); }
     }
     document.querySelectorAll(".atab").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
@@ -741,10 +802,11 @@
       const p = paymentsInfo;
       if (!p) return;
       const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
-      $("slotPrice").options[0].textContent = "通常料金（事前" + yen(p.advance) + "／当日" + yen(p.sameDay) + "）";
-      $("priceHint").textContent = p.enabled
-        ? "事前／当日は予約した日で決まります（枠の当日に予約すると当日料金）"
-        : "決済の導入前なので、今はどちらを選んでも料金はかかりません";
+      const label = "有料（早割" + yen(p.early) + "／通常" + yen(p.regular) + "）";
+      $("slotPrice").options[0].textContent = label;
+      if ($("bPrice")) $("bPrice").options[0].textContent = label;
+      $("priceHint").textContent = "早割か通常かは、予約した時点で決まります（早割の状況は下の「🏷 早割」）。"
+        + (p.booth ? "参加費は当日ブースで受け取ります" : "");
     }
 
     // ----- 締切のプリセット・定員の目安 -----
@@ -758,14 +820,12 @@
         const k = Math.floor(n / 3), r = n % 3;
         return r === 0 ? k : (r === 1 ? k : k - 1);
       }
-      if (n <= 6) return 1;
-      let k = Math.floor(n / 5);
-      return (n - 5 * k <= k) ? k : k + 1;
+      return Math.ceil(n / 5);  // 本番枠：1組は最大5人・均等割り（12人→4人×3組）
     }
     function updateCapHint() {
       const n = $("slotCap").value, t = $("slotTest").checked;
       const p = estParties(n, t);
-      $("capHint").textContent = p ? "満席なら 最大" + p + "組（" + (t ? "3人基本" : "5人基本") + "）" : "";
+      $("capHint").textContent = p ? "満席なら 最大" + p + "組（" + (t ? "3人基本" : "1組は最大5人") + "）" : "";
     }
     $("slotCap").addEventListener("input", updateCapHint);
     $("slotTest").addEventListener("change", updateCapHint);
@@ -901,6 +961,115 @@
       set("timingStatus", "✅ 保存しました（受付は開始" + r.timing.normal.checkinOpenMin + "分前から・自動スタートは開始" + r.timing.normal.graceMin + "分後・途中合流はスタートから" + r.timing.normal.lateJoinMin + "分まで）", "ok");
     });
 
+    // ----- 🎫 当日来場者のための席 -----
+    function advExample() {
+      const v = Number($("advPercent").value) || 0, m = Number($("dayOpenMin").value) || 0;
+      if (!v || !m) { $("advExample").textContent = ""; return; }
+      const first = Math.floor(12 * v / 100);
+      const open = new Date(new Date("2027-07-02T13:00:00+09:00").getTime() - m * 60000);
+      const hm = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", hour: "numeric", minute: "2-digit" }).format(open);
+      $("advExample").textContent = "例：定員12 → 先に予約できるのは " + first + "人まで・残りの " + (12 - first) + "席は開始の" + m + "分前に開く（13:00開始の枠なら " + hm + " から）";
+    }
+    $("advPercent").addEventListener("input", advExample);
+    $("dayOpenMin").addEventListener("input", advExample);
+    async function loadBooking() {
+      const r = await api("bookingSettings", {});
+      if (!r.ok) { set("advStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      $("advPercent").value = r.booking.advancePercent; $("dayOpenMin").value = r.booking.dayOpenMin; advExample();
+    }
+    $("advSave").addEventListener("click", async () => {
+      const r = await api("bookingSettings", { save: "1", advancePercent: String($("advPercent").value), dayOpenMin: String($("dayOpenMin").value) });
+      if (!r.ok) { set("advStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      $("advPercent").value = r.booking.advancePercent; $("dayOpenMin").value = r.booking.dayOpenMin; advExample();
+      set("advStatus", "✅ 保存しました（先に予約できるのは定員の" + r.booking.advancePercent + "%まで・残りは開始の" + r.booking.dayOpenMin + "分前に開く）", "ok");
+    });
+
+    // ----- 📣 パーティ発表の自動配信・🔔 リーダーへのお知らせ -----
+    function renderNotifySettings(r) {
+      $("autoNotify").checked = !!r.auto;
+      const box = $("leaderList");
+      if (!r.leaders.length) { box.textContent = "通知先はまだ登録されていません"; return; }
+      box.innerHTML = "";
+      r.leaders.forEach((l) => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;align-items:center;gap:8px;margin:4px 0";
+        row.innerHTML = '<span>🔔 <b>' + esc(l.nickname || "（名前なし）") + '</b></span>';
+        const b = document.createElement("button"); b.type = "button"; b.className = "sub-btn"; b.textContent = "外す"; b.style.margin = "0";
+        b.onclick = async () => {
+          const x = await api("notifySettings", { removeLeader: l.id });
+          if (!x.ok) { set("leaderStatus", "⚠️ " + (x.error || "失敗"), "ng"); return; }
+          renderNotifySettings(x); set("leaderStatus", "✅ 通知先から外しました", "ok");
+        };
+        row.appendChild(b); box.appendChild(row);
+      });
+    }
+    async function loadNotifySettings() {
+      const r = await api("notifySettings", {});
+      if (!r.ok) { $("leaderList").textContent = ""; set("autoNotifyStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      renderNotifySettings(r);
+    }
+    $("autoNotify").addEventListener("change", async () => {
+      const want = $("autoNotify").checked;
+      if (want && !confirm("パーティ発表の自動配信をONにします。\nこれ以降に締切を迎える枠は、確認なしで参加者にLINEが届きます。ONにしてよいですか？")) { $("autoNotify").checked = false; return; }
+      const r = await api("notifySettings", { save: "1", auto: want ? "1" : "0" });
+      if (!r.ok) { $("autoNotify").checked = !want; set("autoNotifyStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      renderNotifySettings(r);
+      set("autoNotifyStatus", r.auto ? "✅ ONにしました（これ以降に締切を迎える枠から、自動で送ります）" : "✅ OFFにしました（発表は「結果を一斉通知」で送ってください）", "ok");
+    });
+    $("leaderSearch").addEventListener("click", async () => {
+      const q = $("leaderQuery").value.trim();
+      const box = $("leaderFound"); box.innerHTML = "";
+      if (!q) { set("leaderStatus", "ニックネームを入れてください", "ng"); return; }
+      const r = await api("searchUser", { query: q });
+      if (!r.ok) { set("leaderStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      if (!r.users.length) { set("leaderStatus", "見つかりませんでした（アプリでプロフィールを登録している人だけ探せます）", "ng"); return; }
+      set("leaderStatus", "", "");
+      r.users.forEach((u) => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;align-items:center;gap:8px;margin:4px 0";
+        row.innerHTML = '<span>' + esc(u.nickname || "（名前なし）") + '</span>';
+        const b = document.createElement("button"); b.type = "button"; b.className = "sub-btn"; b.textContent = "通知先に追加"; b.style.margin = "0";
+        b.onclick = async () => {
+          const x = await api("notifySettings", { addLeader: u.lineUserId });
+          if (!x.ok) { set("leaderStatus", "⚠️ " + (x.error || "失敗"), "ng"); return; }
+          renderNotifySettings(x); box.innerHTML = ""; $("leaderQuery").value = "";
+          set("leaderStatus", "✅ 追加しました。「テストのLINEを送る」で届くか確かめてください", "ok");
+        };
+        row.appendChild(b); box.appendChild(row);
+      });
+    });
+    $("leaderTest").addEventListener("click", async () => {
+      set("leaderStatus", "送信中…", "");
+      const r = await api("notifySettings", { testLeader: "1" });
+      if (!r.ok) { set("leaderStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      const ng = r.test.filter((t) => !t.ok);
+      set("leaderStatus", ng.length ? "⚠️ 送れなかった人：" + ng.map((t) => t.nickname + "（" + t.error + "）").join("、")
+        : "✅ " + r.test.length + "人に送りました。LINEに届いているか確かめてください（届いていなければ、公式アカウントを友だち追加・ブロック解除してください）", ng.length ? "ng" : "ok");
+    });
+
+    // ----- 🏷 早割の状況 -----
+    function renderEarly(r) {
+      const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
+      const m = String(r.until || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const until = m ? m[1] + "年" + Number(m[2]) + "月" + Number(m[3]) + "日" : r.until;
+      const state = r.open ? "✅ 受付中（残り " + r.remaining + "名）"
+        : (r.ended === "full" ? "⛔ 終了（上限の" + r.limit + "名に達しました）" : "⛔ 終了（期限の" + until + "を過ぎました）");
+      $("earlyInfo").innerHTML = "<b>" + esc(state) + "</b><br>"
+        + "早割で予約中：<b>" + esc(r.count) + "名</b>／" + esc(r.limit) + "名　・　期限：" + esc(until) + "まで　・　早割 " + yen(r.price) + "／通常 " + yen(r.regularPrice)
+        + (r.count !== r.actual ? '<br><span style="color:#c0392b">⚠️ 記録は' + esc(r.count) + "名ですが、予約を数えると" + esc(r.actual) + "名です。「人数を数え直す」で合わせられます</span>" : "");
+    }
+    async function loadEarly() {
+      const r = await api("earlyBirdStatus", {});
+      if (!r.ok) { $("earlyInfo").textContent = ""; set("earlyStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      renderEarly(r);
+    }
+    $("earlyRecount").addEventListener("click", async () => {
+      const r = await api("earlyBirdStatus", { recount: "1" });
+      if (!r.ok) { set("earlyStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      renderEarly(r);
+      set("earlyStatus", "✅ 数え直しました（早割で予約中：" + r.count + "名）", "ok");
+    });
+
     // ----- ①+ 予約枠をまとめて作成 -----
     let bDates = [];          // 選んだ日付（YYYY-MM-DD・昇順）
     let bPlan = null;         // 確認した内容（入力を変えたら作り直す）
@@ -1024,17 +1193,17 @@
     }
     $("reloadSlots").addEventListener("click", loadSlots);
     $("fillDeadlineBtn").addEventListener("click", async () => {
-      const prev = await api("fillMissingDeadlines", { beforeMin: 60, dryRun: 1 });
+      const prev = await api("fillMissingDeadlines", { dryRun: 1 });   // 分数はサーバーの既定（開始45分前）
       if (!prev.ok) { set("slotStatus", "⚠️ " + esc(prev.error || "失敗"), "ng"); return; }
       const ok = await dangerConfirm({
         title: "締切をまとめて設定",
-        body: "締切が未設定の枠に「開始60分前」を締切として入れます。\n個別に変えたい枠は、あとで「編集」から直せます。",
+        body: "締切が未設定の枠に「開始" + prev.beforeMin + "分前」を締切として入れます。\n個別に変えたい枠は、あとで「編集」から直せます。",
         target: prev.count + "件の枠",
         confirmText: "まとめて設定する"
       });
       if (!ok) return;
       set("slotStatus", "設定中…", "");
-      const r = await api("fillMissingDeadlines", { beforeMin: 60 });
+      const r = await api("fillMissingDeadlines", {});
       if (r.ok) { set("slotStatus", "✅ " + r.count + "件に締切を設定しました", "ok"); loadSlots(); }
       else set("slotStatus", "⚠️ " + esc(r.error || "失敗"), "ng");
     });
@@ -1068,14 +1237,19 @@
           (!s.deadline ? '<span class="pill errp">⚠️締切未設定</span>' : '') +
           (s.matchedAt ? '<span class="pill okp">✅マッチング済' + (s.matchedAuto ? '（自動）' : '') + '</span>' : '') +
           (s.matchedAt && !s.notifiedAt ? '<span class="pill warnp">📣未通知</span>' : '') +
-          (s.notifiedAt ? '<span class="pill okp">📨通知済</span>' : '') +
+          (s.notifiedAt ? '<span class="pill okp">📨通知済' + (s.notifiedBy === "auto" ? '（自動）' : (s.notifiedBy === "manual" ? '（手動）' : '')) + '</span>' : '') +
+          (s.notifyFailedCount ? '<span class="pill errp">⚠️' + esc(s.notifyFailedCount) + '人に届いていません' + (s.notifyRetrying ? '（自動でやり直し中）' : '') + '</span>' : '') +
           (s.reNotifyNeeded ? '<span class="pill errp">⚠️再通知が必要</span>' : '');
         div.innerHTML =
           '<div class="title">' + esc(s.time) + badges + '</div>' +
           (s.needsReview
             ? '<div class="meta ng" style="font-weight:700">⚠️ ' + esc(s.needsReviewNote || "要確認") + '</div>' : '') +
+          (s.notifyFailedCount
+            ? '<div class="meta ng">⚠️ パーティの発表が ' + esc(s.notifyFailedCount) + '人に届いていません（' + esc(s.notifyError || "送信エラー") + '）。'
+              + (s.notifiedAt ? '「届かなかった人に送り直す」を押してください' : '「結果を一斉通知」を押してください') + '</div>' : '') +
           '<div class="meta">締切 ' + (s.deadline ? esc(fmtDateTime(s.deadline)) : "未設定") +
             '　／　満席時 最大' + esc(s.maxParties || "?") + '組' +
+            (s.dayNeverOpens ? '　／　<span title="締切が、当日用の席が開く時刻より前のため">当日用の席なし</span>' : '') +
             '　／　slotId: ' + esc(s.slotId) + '</div>';
         const mBtn = document.createElement("button"); mBtn.className = "sub-btn"; mBtn.textContent = "マッチング実行";
         mBtn.onclick = () => runMatch(s.slotId);
@@ -1092,6 +1266,11 @@
         const dBtn = document.createElement("button"); dBtn.className = "sub-btn danger"; dBtn.textContent = "枠を削除";
         dBtn.onclick = () => deleteSlot(s);
         div.appendChild(mBtn); div.appendChild(vBtn); div.appendChild(yBtn); div.appendChild(pBtn); div.appendChild(nBtn); div.appendChild(eBtn); div.appendChild(dBtn);
+        if (s.notifyFailedCount && s.notifiedAt) {
+          const fBtn = document.createElement("button"); fBtn.className = "sub-btn warn"; fBtn.textContent = "届かなかった人に送り直す";
+          fBtn.onclick = () => notify(s.slotId, false, false, true);
+          div.appendChild(fBtn);
+        }
         if (s.needsReview) {
           const rBtn = document.createElement("button"); rBtn.className = "sub-btn"; rBtn.textContent = "⚠️を消す";
           rBtn.onclick = async () => {
@@ -1177,7 +1356,7 @@
           (g.members || []).length + "人" +
           (g.destination ? "　／　🚶 移動先 " + esc(g.destination) : "") +
           (g.partyMix ? "　／　👑 " + esc(g.partyMix) : "") +
-          (g.tutorialDone === true ? "　／　🐧 チュートリアル完了" : "") + "</div>" +
+          (g.tutorialDone === true ? "　／　🧭 チュートリアル完了" : "") + "</div>" +
           pwLine +
           "<div>" + chips + "</div></div>";
       }).join("");
@@ -1194,10 +1373,10 @@
         if (typeof r.missionCount === "number") {
           head += "🏰 ミッション " + r.missionCount + "件を適用" +
             (r.missionsCustom ? "（管理画面で編集したもの）" : "（コードの既定）") +
-            "　／　🐧 チュートリアル " + (r.tutorialCount || 0) + "件<br>" +
+            "　／　🧭 チュートリアル " + (r.tutorialCount || 0) + "件<br>" +
             (r.destinationCount
               ? "🚶 移動先 " + r.destinationCount + "地点を順繰りに割り当て<br>"
-              : '<span class="ng">⚠️ 📍集合場所が0件です。全パーティが「スタート地点」と表示され、混雑します</span><br>') +
+              : '<span class="ng">⚠️ 📍行き先の候補が0件です。全パーティが「スタート地点」と表示され、混雑します</span><br>') +
             '<div class="meta" style="font-size:12px;margin:2px 0 8px">' +
             esc((r.missionNames || []).join(" / ")) + "</div>";
         }
@@ -1250,17 +1429,21 @@
       } else showResult("⚠️ " + esc(r.error || "失敗"));
     }
 
-    async function notify(slotId, dry, force) {
-      if (!dry && !force && !confirm("このパーティ全員にLINEで結果を送信します。送信してよいですか？")) return;
+    async function notify(slotId, dry, force, retry) {
+      if (!dry && !force && !confirm(retry ? "発表がまだ届いていない人にだけ、LINEで送り直します。よいですか？" : "このパーティ全員にLINEで結果を送信します。送信してよいですか？")) return;
       showResult(dry ? "プレビュー取得中…" : "送信中…");
-      const params = dry ? { slotId, dryRun: "1" } : (force ? { slotId, force: "1" } : { slotId });
+      const params = dry ? { slotId, dryRun: "1" } : (force ? { slotId, force: "1" } : (retry ? { slotId, retry: "1" } : { slotId }));
       const r = await api("notifyMatchingResults", params);
       if (r.ok && dry) {
         showResult("【プレビュー】対象 " + r.targetCount + "人<br>――――<br>" + esc(r.sampleMessage || "").replace(/\n/g, "<br>"));
       } else if (r.ok) {
-        showResult("✅ 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗"
-          + (r.resent ? "<br>（2回目の送信でした）" : ""));
+        showResult((r.failed ? "⚠️" : "✅") + " 送信完了：" + r.sent + "件成功 / " + r.failed + "件失敗"
+          + (r.skipped ? "（すでに届いている " + r.skipped + "人には送っていません）" : "")
+          + (r.failed ? "<br>届かなかった人がいます。少し待ってから「届かなかった人に送り直す」を押してください" : "")
+          + (r.resent && !retry ? "<br>（2回目の送信でした）" : ""));
         loadSlots();
+      } else if (r.busy) {
+        showResult("⏳ " + esc(r.error));
       } else if (r.alreadyNotified) {
         // 二重送信は既定で止める。送り直すなら2段階確認で明示的に。
         showResult("⚠️ " + esc(r.error));
@@ -1280,31 +1463,34 @@
     let editingSpotId = null;
 
     $("createSpotBtn").addEventListener("click", async () => {
-      const type = $("spotType").value, number = $("spotNumber").value;
+      const label = $("spotLabel").value.trim(), note = $("spotNote").value.trim(), fun = $("spotFun").value;
+      if (!label) { set("spotStatus", "エリアの名前を入れてください", "ng"); return; }
       if (editingSpotId) {
         set("spotStatus", "更新中…", "");
-        const r = await api("updateMeetingSpot", { spotId: editingSpotId, type, number });
+        const r = await api("updateMeetingSpot", { spotId: editingSpotId, label, note, fun });
         if (r.ok) { set("spotStatus", "✅ 更新：" + r.label, "ok"); endSpotEdit(); loadSpots(); }
         else set("spotStatus", "⚠️ " + (r.error || "失敗"), "ng");
       } else {
         set("spotStatus", "登録中…", "");
-        const r = await api("createMeetingSpot", { type, number });
-        if (r.ok) { set("spotStatus", "✅ 登録：" + r.label, "ok"); loadSpots(); }
+        const r = await api("createMeetingSpot", { label, note, fun });
+        if (r.ok) { set("spotStatus", "✅ 登録：" + r.label, "ok"); $("spotLabel").value = ""; $("spotNote").value = ""; $("spotFun").value = ""; loadSpots(); }
         else set("spotStatus", "⚠️ " + (r.error || "失敗"), "ng");
       }
     });
     function editSpot(s) {
       editingSpotId = s.spotId;
-      $("spotType").value = s.type;
-      $("spotNumber").value = s.number;
-      $("spotFormTitle").textContent = "③ 集合場所を編集中";
+      $("spotLabel").value = s.label || "";
+      $("spotNote").value = s.note || "";
+      $("spotFun").value = s.fun || "";
+      $("spotFormTitle").textContent = "③ 行き先の候補を編集中";
       $("createSpotBtn").textContent = "この内容で更新する";
       $("cancelSpotEditBtn").classList.remove("hidden");
       set("spotStatus", "編集中：" + s.label, "");
     }
     function endSpotEdit() {
       editingSpotId = null;
-      $("spotFormTitle").textContent = "③ 集合場所を登録";
+      $("spotFormTitle").textContent = "③ 行き先の候補を登録";
+      $("spotLabel").value = ""; $("spotNote").value = ""; $("spotFun").value = "";
       $("createSpotBtn").textContent = "登録する";
       $("cancelSpotEditBtn").classList.add("hidden");
       set("spotStatus", "", "");
@@ -1312,8 +1498,8 @@
     $("cancelSpotEditBtn").addEventListener("click", endSpotEdit);
     async function deleteSpot(s) {
       const ok = await dangerConfirm({
-        title: "集合場所を削除",
-        body: "この集合場所を削除します。よろしいですか？",
+        title: "行き先の候補を削除",
+        body: "この行き先の候補を削除します（マッチング済みのパーティには残ります）。よろしいですか？",
         target: s.label,
         confirmText: "削除する"
       });
@@ -1327,11 +1513,13 @@
       const r = await api("getMeetingSpots", {}, false);
       const list = $("spotList"); list.innerHTML = "";
       const spots = r.spots || [];
-      if (!spots.length) { list.innerHTML = '<div class="meta">登録済みの集合場所はありません</div>'; return; }
+      if (!spots.length) { list.innerHTML = '<div class="meta">登録済みの行き先の候補はありません</div>'; return; }
+      const FUN_NAME = { stage: "🎤ステージ", booth: "🎪ブース巡り", food: "🍽グルメ", meet: "🤝仲間との交流", learn: "📚学び" };
       spots.forEach((s) => {
         const div = document.createElement("div");
         div.className = "slot-row";
-        div.innerHTML = '<span class="title">' + esc(s.label) + '</span>';
+        div.innerHTML = '<span class="title">' + esc(s.label) + '</span>'
+          + (s.note || s.fun ? '<span class="meta">' + esc(s.note || "") + (s.fun ? '（' + esc(FUN_NAME[s.fun] || "") + '）' : '') + '</span>' : '');
         const e = document.createElement("button"); e.className = "sub-btn"; e.textContent = "編集"; e.onclick = () => editSpot(s);
         const d = document.createElement("button"); d.className = "sub-btn danger"; d.textContent = "削除"; d.onclick = () => deleteSpot(s);
         div.appendChild(e); div.appendChild(d);
@@ -1761,7 +1949,7 @@
       if (firstNeed && tutTotal !== firstNeed) {
         line += '<span class="qs-line ng">⚠️ チュートリアルの合計⭐' + tutTotal +
           ' が最初の姫の条件（' + firstNeed + '）と違います。' +
-          (tutTotal > firstNeed ? '移動する前に救出されてしまいます' : 'チュートリアルを終えても救出されません') + '</span>';
+          (tutTotal > firstNeed ? 'チュートリアルを終える前に救出されてしまいます' : 'チュートリアルを終えても救出されません') + '</span>';
       }
       $("questSummary").innerHTML =
         '<span class="qs-main">チュートリアル ' + questTutorial.length + '件（⭐' + tutTotal + '）／ ' +

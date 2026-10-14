@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="robots" content="noindex, nofollow">
   <title>100 Quest</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- 手書きフォント（動物の鳴き声だけに使用。使う文字のみ配信される） -->
@@ -175,6 +176,20 @@
     .action-banner .ab-pay.done { background:#f3faf5; border-color:var(--green); color:var(--green); }
     .action-banner .ab-mark { width:100%; margin-top:8px; padding:9px; font-size:13px; font-weight:800; color:var(--green);
       background:#fff; border:1.5px solid var(--green); border-radius:10px; cursor:pointer; font-family:inherit; }
+    /* 最初の行き先を選ぶ（スタート前・ブースで） */
+    .dest-pick { margin-top:12px; padding-top:12px; border-top:1px dashed rgba(59,109,79,.35); }
+    .dest-pick .dp-title { font-size:15px; font-weight:900; color:var(--ink); }
+    .dest-pick .dp-sub { font-size:12px; color:#6b6b6b; margin:4px 0 8px; line-height:1.5; }
+    .dest-pick .dp-opt { display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; margin-top:8px; padding:10px 12px;
+      text-align:left; background:#fff; border:1.5px solid #d9d4c7; border-radius:12px; cursor:pointer; font-family:inherit; color:var(--ink); }
+    .dest-pick .dp-opt.on { border-color:var(--green); background:#f3faf5; box-shadow:0 0 0 2px rgba(59,109,79,.15); }
+    .dest-pick .dp-opt:disabled { opacity:.6; }
+    .dest-pick .dp-name { font-size:15px; font-weight:800; }
+    .dest-pick .dp-reco { display:inline-block; margin-left:6px; padding:1px 8px; font-size:11px; font-weight:800; color:#fff;
+      background:var(--accent); border-radius:99px; vertical-align:2px; }
+    .dest-pick .dp-note { font-size:12px; color:#555; line-height:1.45; }
+    .dest-pick .dp-fans { font-size:11.5px; font-weight:700; color:var(--green); }
+    .dest-pick .dp-help { font-size:11.5px; color:#6b6b6b; margin-top:8px; }
     .group-box .gmark { display:inline-block; margin-top:6px; padding:3px 12px; border-radius:99px; font-size:13px; font-weight:800;
       background:rgba(255,255,255,.92); color:var(--ink); cursor:pointer; border:none; font-family:inherit; }
     .gmember .gm-badge { font-size:11px; font-weight:700; margin-left:6px; color:var(--green); }
@@ -665,10 +680,10 @@
         <div class="quest-box" id="missionPane">
           <div class="q-party" id="qParty">—<small id="qPartySub"></small></div>
 
-          <!-- ⑫チュートリアル：救出前のペンペン姫はシルエットで声だけ -->
+          <!-- ⑫チュートリアル：救出前の最初の姫はシルエットで声だけ（絵文字はサーバーの姫の定義から入れる） -->
           <div class="tut-box hidden" id="tutBox">
             <div class="tut-head">
-              <div class="tut-face" id="tutFace">🐧</div>
+              <div class="tut-face" id="tutFace"></div>
               <div class="tut-voice" id="tutVoice"></div>
             </div>
             <div class="tut-step" id="tutStep"></div>
@@ -942,8 +957,8 @@
   <div id="rescueOverlay" class="hidden">
     <div class="rescue-burst" id="rescueBurst"></div>
     <button class="rescue-skip" id="rescueSkip">スキップ ▶</button>
-    <div class="rescue-face" id="rescueFace">🐧</div>
-    <div class="rescue-title" id="rescueTitle">ペンペン姫を救出した！</div>
+    <div class="rescue-face" id="rescueFace"></div>
+    <div class="rescue-title" id="rescueTitle"></div>
     <div class="rescue-say" id="rescueSay"></div>
     <button class="rescue-btn" id="rescueNext">つづける</button>
   </div>
@@ -952,7 +967,7 @@
   <div id="shareOverlay" class="hidden">
     <div class="share-card" id="shareCard">
       <div class="sc-head" id="scHead">クエスト達成！</div>
-      <div class="sc-animal" id="scAnimal">🐧🐬🐼🐯</div>
+      <div class="sc-animal" id="scAnimal"></div>
       <div class="sc-grown" id="scGrown">4人の姫を救出した！</div>
       <div class="sc-pers" id="scPers"></div>
       <div class="sc-line">━ 一緒に旅した仲間 ━</div>
@@ -1364,7 +1379,8 @@
             + '<div class="ab-sub">' + ((g.arrived || 0) < need ? need + '人以上そろうと押せます。'
               : unpaidHere.length ? 'まだお支払いが済んでいない人：' + esc(unpaidHere.join("・")) + '。' : '')
             + (bth.autoStartAt ? '押さなくても ' + fmtHM(Date.parse(bth.autoStartAt)) + ' に' + need + '人以上いれば自動でスタートします' : '') + '</div>'
-            + markButtonHtml(g);
+            + markButtonHtml(g)
+            + destinationPickerHtml(g);
         }
       } else if (g.status === "started" && bth.lateJoin) {
         // スタート後にまだ合流していない人
@@ -1388,16 +1404,28 @@
               ? '<div class="ab-title">🚶 ' + esc(t.destination) + ' でパーティと合流しよう</div>'
               : '<div class="ab-title">ブースでパーティと合流してください</div>')
             + '<div class="ab-sub">合流したら、まだクリアしていないミッションを一緒にチェックしてね</div>' + markButtonHtml(g);
+        } else if (questData && questData.phase === "tutorial" && (questData.tutorial || {}).flow === "moveFirst") {
+          // チュートリアル中（新しい流れ）→ まず移動先へ。着いたらアイスブレイク
+          const t = questData.tutorial || {};
+          const left = (questData.missions || []).filter((m) => !m.cleared).length;
+          html = t.arrived
+            ? '<div class="ab-label">移動先に到着</div>'
+              + '<div class="ab-title">🧊 みんなのことを知ろう（あと' + left + 'つ）</div>'
+              + '<div class="ab-sub">全員でクリアすると、' + esc(firstPrincessName(questData)) + 'を救い出せるよ</div>'
+            : '<div class="ab-label">まずは移動</div>'
+              + '<div class="ab-title">🚶 ' + esc(t.destination || "移動先") + ' へ全員で移動しよう</div>'
+              + '<div class="ab-sub">' + (t.walkHint ? esc(t.walkHint) + "。" : "") + '着いたら「移動」を全員でチェックしてね</div>'
+              + '<div class="ab-sub">迷ったら、ブースに戻ってきてOK</div>';
         } else if (questData && questData.phase === "tutorial") {
-          // チュートリアル中 → 「今やること」は姫の救出ではなく目の前の4つ
+          // チュートリアル中（作り替え前にマッチングしたパーティ）→ 目の前の4つ
           const t = questData.tutorial || {};
           const left = (questData.missions || []).filter((m) => !m.cleared).length;
           html = '<div class="ab-label">まずはチュートリアル</div>'
             + (t.destination
               ? '<div class="ab-title">🚶 ' + esc(t.destination) + ' へ全員で移動しよう</div>'
-                + '<div class="ab-sub">ペンペン姫はそこにいる。着いたらチェックしてね</div>'
+                + '<div class="ab-sub">' + esc(firstPrincessName(questData)) + 'はそこにいる。着いたらチェックしてね</div>'
               : '<div class="ab-title">ブース前で ' + left + ' つのミッション</div>'
-                + '<div class="ab-sub">3つ終えると、ペンペン姫が行き先を教えてくれるよ</div>');
+                + '<div class="ab-sub">3つ終えると、' + esc(firstPrincessName(questData)) + 'が行き先を教えてくれるよ</div>');
         } else if (questData && questData.next) {
           // クエスト中 → いまのレベルと、次のレベルアップ（＝次の姫の救出）まであといくつか＋ゲージ
           const n = questData.next;
@@ -1418,6 +1446,49 @@
       const sb = $("abShareBtn"); if (sb) sb.onclick = openShareCard;
       const st = $("abStartBtn"); if (st) st.onclick = doStartParty;
       box.querySelectorAll(".ab-mark").forEach((b) => { b.onclick = () => showMark(currentGroup); });
+      box.querySelectorAll(".dp-opt").forEach((b) => { b.onclick = () => doChooseDestination(b.dataset.spot); });
+    }
+
+    // ----- 最初の行き先：ブースでスタッフが候補を紹介し、パーティで選ぶ（だれが選んでもOK・出発までは変えられる） -----
+    function destinationPickerHtml(g) {
+      if (!g || !g.canChooseDestination) return "";
+      const cur = g.destination ? g.destination.spotId : null;
+      return '<div class="dest-pick">'
+        + '<div class="dp-title">🧭 最初の行き先をパーティで選ぼう</div>'
+        + '<div class="dp-sub">スタッフが候補を紹介します。だれが選んでもOK・出発までは変えられます'
+        + (g.destinationChosen ? '' : '（選ばなければ「おすすめ」で出発します）') + '</div>'
+        + (g.destinationChoices || []).map((c) => {
+          const on = c.spotId === cur;
+          return '<button class="dp-opt' + (on ? ' on' : '') + '" type="button" data-spot="' + esc(c.spotId) + '">'
+            + '<span class="dp-name">' + (on ? '✅ ' : '') + esc(c.label) + (c.recommended ? '<span class="dp-reco">おすすめ</span>' : '') + '</span>'
+            + (c.note ? '<span class="dp-note">' + esc(c.note) + '</span>' : '')
+            + (c.fans && c.fans.length ? '<span class="dp-fans">' + esc(c.funLabel) + 'が楽しみ：' + esc(c.fans.map((n) => n + 'さん').join('・')) + '</span>' : '')
+            + '</button>';
+        }).join('')
+        + '<div class="dp-help">着いた場所で、まずは全員で自己紹介。迷ったらブースに戻ってきてOK</div>'
+        + '</div>';
+    }
+    let destBusy = false;
+    async function doChooseDestination(spotId) {
+      const g = currentGroup;
+      if (!g || destBusy || (g.destination && g.destination.spotId === spotId && g.destinationChosen)) return;
+      destBusy = true;
+      $("actionBanner").querySelectorAll(".dp-opt").forEach((b) => { b.disabled = true; });
+      try {
+        const r = await api("chooseDestination", { lineUserId: profile.userId, slotId: currentGroupSlotId, spotId: spotId });
+        if (r.ok) {
+          // すぐ画面に反映し、ほかのメンバーの画面は自動更新（10秒ごと）で追いつく
+          g.destination = r.destination; g.destinationChosen = true;
+          renderActionBanner();
+          await loadQuest(currentGroupSlotId);   // チュートリアルの「移動」の行き先も差し替わる
+        } else {
+          setStatus("groupStatus", "⚠️ " + (r.error || "行き先を選べませんでした"), "ng");
+          await refreshGroupQuiet();
+        }
+      } finally {
+        destBusy = false;
+        $("actionBanner").querySelectorAll(".dp-opt").forEach((b) => { b.disabled = false; });
+      }
     }
 
     // ----- 目印（🐰 うさぎ組）：画面いっぱいに出して、ブースで掲げて集まる -----
@@ -1446,8 +1517,8 @@
       const ok = await dangerConfirm({
         title: "🚩 パーティが集まった",
         body: absent.length
-          ? "まだ来ていない人がいます。スタートすると100分のクエストが始まります。来ていない人は、あとから途中で合流できます。"
-          : "全員そろいました。スタートすると100分のクエストが始まります。",
+          ? "まだ来ていない人がいます。スタートすると、最大100分のクエストが始まります。来ていない人は、あとから途中で合流できます。"
+          : "全員そろいました。スタートすると、最大100分のクエストが始まります。",
         target: absent.length ? "まだ来ていない人：" + absent.join("・") : "",
         confirmText: "スタートする", single: true, safe: true
       });
@@ -1494,6 +1565,20 @@
     function stopGroupPoll() {
       if (groupPollInterval) { clearInterval(groupPollInterval); groupPollInterval = null; }
     }
+    // 画面が裏に回ったら（画面オフ・トークや別のアプリへ切り替え）自動更新を止め、戻ったらすぐ1回更新して再開する。
+    // しまっている間の読み取りを減らすため（遊び心地は変わらない）
+    let groupPollPaused = false;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        if (groupPollInterval) { stopGroupPoll(); groupPollPaused = true; }
+      } else if (groupPollPaused) {
+        groupPollPaused = false;
+        if (!$("screen-group").classList.contains("hidden") && !$("groupDetail").classList.contains("hidden")) {
+          refreshGroupQuiet();
+          startGroupPoll();
+        }
+      }
+    });
     async function refreshGroupQuiet() {
       // 画面を離れた・不成立・終了済みなら止める
       if ($("screen-group").classList.contains("hidden") || $("groupDetail").classList.contains("hidden")) { stopGroupPoll(); return; }
@@ -1551,6 +1636,10 @@
     let myResvList = []; // 自分の予約（新規予約時の時間重複チェックに使う）
     let slotsCache = []; // 枠の一覧（締切を過ぎたか＝キャンセル可否の判定に使う）
     let paymentsInfo = null; // 料金の案内（サーバーが決めた金額。enabled が false の間は金額を出さない）
+    let earlyInfo = null;    // 早割の状況（受付中か・残り何名か・いつまでか）
+    // 早割の予約をすでに持っているか（早割は1人1回まで。不成立になった予約は数えない）
+    const holdsEarly = () => (myResvList || []).some((r) => r.priceKind === "early" && !r.unmatched);
+    const jpDate = (d) => { const m = String(d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[1] + "年" + Number(m[2]) + "月" + Number(m[3]) + "日" : ""; };
     const yen = (n) => Number(n || 0).toLocaleString("ja-JP") + "円";
 
     // ===== ⑭ 18歳未満：お子さまを招待（保護者）=====
@@ -1828,6 +1917,7 @@
       ]);
       slotsCache = slotsRes.slots || [];  // 締切を過ぎたかの判定に使う
       paymentsInfo = slotsRes.payments || paymentsInfo;
+      earlyInfo = slotsRes.earlyBird || earlyInfo;
       const resvs = mine.reservations || [];
       myResvList = resvs;
       const list = $("reserveList");
@@ -1993,6 +2083,7 @@
       setStatus("homeStatus", "", "");
       const slotsRes = await api("getSlots");
       paymentsInfo = slotsRes.payments || paymentsInfo;
+      earlyInfo = slotsRes.earlyBird || earlyInfo;
       renderSlots(slotsRes.slots || []);
     });
     $("chooseBackBtn").addEventListener("click", renderReserve);
@@ -2107,13 +2198,9 @@
     }
 
     // ----- 姫たちタブ：救出した姫たちの庭（以前のたまごっち画面を流用。イラストができたら差し替える）-----
-    // 鳴き声（ひとこと）。姫ごとに口ぐせを変える。手書き風の文字でふわっと浮かんで消える
-    const PRINCESS_CRIES = {
-      penpen:  ["ペンッ", "ぺんぺん！", "ぺたぺた"],
-      mairuka: ["キュイッ", "きゅいきゅい", "ぱしゃっ"],
-      pannu:   ["もぐもぐ…", "ふわぁ", "のんびり〜"],
-      amutora: ["ガオッ", "ふふっ", "がんばれ！"]
-    };
+    // 鳴き声（ひとこと）。姫ごとの口ぐせはサーバーの姫の定義（cries）から来る。手書き風の文字でふわっと浮かんで消える
+    // 姫の名前・絵文字・セリフもすべてサーバーの定義から読む（差し替えはサーバーの1か所で済む）
+    const firstPrincessName = (q) => (((q && q.princesses) || [])[0] || {}).name || "最初の姫";
     let gardenKey = "";
     function renderGarden(q) {
       const got = (q.princesses || []).filter((p) => p.rescued);
@@ -2138,7 +2225,8 @@
       const box = $("princessCry");
       const tr = $("terrarium");
       if (!el || !box || !tr || $("progressPane").classList.contains("hidden")) return;
-      const words = PRINCESS_CRIES[el.dataset.id] || ["♪"];
+      const p = ((questData && questData.princesses) || []).find((x) => x.id === el.dataset.id);
+      const words = (p && p.cries && p.cries.length) ? p.cries : ["♪"];
       box.textContent = words[Math.floor(Math.random() * words.length)];
       const r = el.getBoundingClientRect(), t = tr.getBoundingClientRect();
       box.style.left = Math.min(85, Math.max(15, ((r.left + r.width * 0.75 - t.left) / t.width) * 100)) + "%";
@@ -2159,14 +2247,22 @@
     }
     function stopPrincessCry() { if (princessCryInterval) { clearInterval(princessCryInterval); princessCryInterval = null; } }
 
-    // ----- チュートリアル（ペンペン姫の声＋進み具合）-----
+    // ----- チュートリアル（最初の姫の声＋進み具合）-----
     function renderTutorial(q) {
       const box = $("tutBox");
       const t = q.tutorial || {};
       if (q.phase !== "tutorial") { box.classList.add("hidden"); return; }
       box.classList.remove("hidden");
       $("tutVoice").textContent = t.voice || "";
+      $("tutFace").textContent = ((q.princesses || [])[0] || {}).emoji || "❔";   // 救出前はシルエット（CSS）
       const ms = q.missions || [];
+      if (t.flow === "moveFirst") {
+        const done = ms.filter((m) => m.cleared).length;
+        $("tutStep").textContent = t.arrived
+          ? "🧊 みんなのことを知ろう（" + done + "/" + ms.length + "）"
+          : "🚶 " + (t.destination || "移動先") + "へ向かおう（" + done + "/" + ms.length + "）";
+        return;
+      }
       // 行き先が出るまではロック中の移動を数に入れない（「3つ」と「0/4」が食い違わないように）
       const target = t.destination ? ms : ms.filter((m) => !m.locked);
       const done = target.filter((m) => m.cleared).length;
@@ -2227,18 +2323,24 @@
           '<span class="box">' + (m.cleared ? "✓" : (m.mine ? "・" : (m.locked ? "🔒" : ""))) + '</span>'
           + '<span class="m-body"><span class="m-name">' + esc(m.name) + '</span>'
           + '<span class="m-meta">' + stars(m.stars) + " チカラ＋" + m.stars
-          + (m.locked ? "　🐧 3つ終えると行き先が分かる"
+          + (m.locked ? ((q.tutorial || {}).flow === "moveFirst" ? "　🚶 移動先に着いたら押せる" : "　🔒 3つ終えると行き先が分かる")
              : (m.cleared ? "　✅クリア！" : "　" + m.checkedCount + "/" + m.memberCount + "人がチェック"))
           + '</span></span>';
 
         // 「パーティの名前を決めよう」には名前の入力欄、「スタート宣言」には文例を添える
-        if (m.kind === "partyName" && !m.cleared && !notStarted && !notJoined) row.appendChild(buildPartyNameEditor(q));
+        if (m.kind === "partyName" && !m.cleared && !m.locked && !notStarted && !notJoined) row.appendChild(buildPartyNameEditor(q));
         if (m.kind === "declare" && !m.cleared) {
           const d = document.createElement("div");
           d.className = "m-declare"; d.textContent = (q.tutorial || {}).declare || "";
           row.appendChild(d);
         }
-        if (m.kind === "partyName" || m.kind === "declare") row.style.flexWrap = "wrap";
+        // 自己紹介にはプロフィールの話題をヒントに添える（着いてから）
+        if (m.kind === "intro" && !m.cleared && !m.locked && (q.tutorial || {}).introHint) {
+          const d = document.createElement("div");
+          d.className = "m-declare"; d.textContent = "💡 " + q.tutorial.introHint;
+          row.appendChild(d);
+        }
+        if (m.kind === "partyName" || m.kind === "declare" || m.kind === "intro") row.style.flexWrap = "wrap";
 
         // クリア済み・ロック中は押せない（取り消すとチカラが減り、救出済みの姫が戻ってしまうため）
         if (notStarted || notJoined) row.style.opacity = ".55";
@@ -2288,8 +2390,11 @@
       if (rowEl) rowEl.style.pointerEvents = "none";
       const r = await api("toggleQuestMission", {
         lineUserId: profile.userId, slotId: currentGroupSlotId, missionId: missionId, done: mine });
-      if (r.ok && r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
-      else if (rowEl) rowEl.style.pointerEvents = "";
+      if (r.ok && r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); return; }
+      if (rowEl) rowEl.style.pointerEvents = "";
+      // 断られた（スタート前・移動先に着く前など）→ 最新の状態に描き直して理由を見せる
+      if (r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
+      if (r.error) alert(r.error);
     }
 
     // ----- 姫の救出演出 -----
@@ -2583,6 +2688,15 @@
     let slotDay = null;        // 選んでいる日付
     const todayJst = () => new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
     const startHM = (time) => { const m = String(time || "").match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, "0") + ":" + m[2] : ""; };
+    // いま予約できる残り（当日来場の方のための席が開くまでは、その席を除いた数）
+    const bookableLeft = (s) => (typeof s.bookableRemaining === "number" ? s.bookableRemaining : s.remaining);
+    // 当日来場の方のための席が開く時刻（開始の◯分前）。今日なら「13:20」、別の日なら「7/2 13:20」
+    const dayOpenLabel = (s) => {
+      if (!s.dayOpenAt) return "";
+      const d = new Date(s.dayOpenAt), n = new Date();
+      const hm = d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+      return d.toDateString() === n.toDateString() ? hm : (d.getMonth() + 1) + "/" + d.getDate() + " " + hm;
+    };
     // 枠の状態：○空きあり／△残りわずか／×予約できない（理由つき）
     function slotState(s) {
       const minorMode = $("minorBorrowed").checked;
@@ -2590,10 +2704,11 @@
       if (myResvList.some((r) => r.slotId === s.slotId)) reason = "予約済みです";
       else if (s.closed) reason = "予約の締切を過ぎています";
       else if (s.isFull) reason = "満席です";
+      else if (s.advanceFull) reason = "先に予約できる分はいっぱいです（当日来場の方のために " + s.heldForDay + "席を残しています。" + (dayOpenLabel(s) ? dayOpenLabel(s) + " から予約できます" : "開始が近づくと予約できます") + "）";
       else if (conflictsWithMine(s)) reason = "予約済みの時間と重なる（または続いている）ため選べません";
       else if (minorMode && s.adultsOnly) reason = "お子さまは参加できない枠です";
       if (reason) return { cls: "ng", mark: "×", reason };
-      return s.remaining <= FEW_SEATS ? { cls: "few", mark: "△" } : { cls: "ok", mark: "○" };
+      return bookableLeft(s) <= FEW_SEATS ? { cls: "few", mark: "△" } : { cls: "ok", mark: "○" };
     }
     // 最初に開く日：フェス当日ならその日、フェス前なら初日（過ぎた日しか無ければ最後の日）
     function defaultSlotDay(dates) {
@@ -2698,14 +2813,20 @@
       if (paymentsInfo && (paymentsInfo.enabled || paymentsInfo.booth)) {
         if ($("minorBorrowed").checked) price = "無料（18歳未満）";
         else if (!s.priceNow) price = "無料";
-        else if (s.priceNow === paymentsInfo.sameDay) price = yen(s.priceNow) + "（当日予約）";
-        else price = yen(s.priceNow) + "（事前予約）"
-          + (paymentsInfo.sameDay ? '<br><small>枠の当日に予約すると ' + yen(paymentsInfo.sameDay) + '</small>' : "");
+        else if (earlyInfo && earlyInfo.open && s.priceNow === paymentsInfo.early && !holdsEarly()) {
+          // 早割を使える：金額・残りの人数・期限・終了後の金額を出す
+          price = yen(paymentsInfo.early) + "（早割・残り" + earlyInfo.remaining + "名）"
+            + '<br><small>早割は' + jpDate(earlyInfo.until) + 'までのご予約・先着' + earlyInfo.limit + '名・お一人1回まで。終了後は ' + yen(paymentsInfo.regular) + '</small>';
+        } else {
+          price = yen(paymentsInfo.regular || s.priceNow) + "（通常）"
+            + (earlyInfo && earlyInfo.open && holdsEarly() ? '<br><small>早割はお一人1回までです（早割のご予約をお持ちのため、通常料金になります）</small>' : "");
+        }
         // 予約は無料。参加費は当日ブースで、スタートの前にお支払い（クーポンもそのとき使う）
         if (paymentsInfo.booth && price && price.indexOf("無料") !== 0) price += '<br><small>予約は無料。参加費はスタート前に当日ブースでお支払いください（クーポンもそのとき使えます）</small>';
       }
       sd.innerHTML = '<div class="slot-detail">' + when
-        + '<div class="sd-row">残り <b>' + s.remaining + '席</b>' + (st.cls === "few" ? "（残りわずか）" : "") + '</div>'
+        + '<div class="sd-row">残り <b>' + bookableLeft(s) + '席</b>' + (st.cls === "few" ? "（残りわずか）" : "")
+          + (s.heldForDay ? '<br><small>このほかに、当日来場の方のための席が ' + s.heldForDay + '席あります（' + (dayOpenLabel(s) ? dayOpenLabel(s) + ' から予約できます' : '開始が近づくと予約できます') + '）</small>' : "") + '</div>'
         + (price ? '<div class="sd-row">料金 <b>' + price + '</b></div>' : "")
         + kids
         + '<button type="button" class="sd-go">この時間で予約へ進む ↓</button></div>';
