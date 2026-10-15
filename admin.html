@@ -162,7 +162,8 @@
         <h2>🏰 クエスト設定</h2>
         <div class="sub" style="margin-bottom:12px">
           パーティ<b>全員がチェックするとミッションクリア</b>。⭐の数だけそのチカラが貯まり、
-          合計が条件に届くと姫を救出します。
+          合計が条件に届くと姫を救出します。本編のお題は<b>3種類のタブ</b>に分かれます。
+          <b>☕ ひと休み</b>は2人目の姫を救出すると開き、開いている間は本編のお題を押せません。ひと休みのお題を全部終えるか、時間がたつと3人目の姫を救出します。
         </div>
 
         <!-- 現在のバランス（チカラの満点と、最後の姫に届くか）-->
@@ -172,6 +173,21 @@
           <div class="q-sec-h">👑 姫の救出条件<span class="q-note">保存すると進行中のパーティにもすぐ反映</span></div>
           <div id="questPrincessList"></div>
           <div id="questPrincessMsg" class="status"></div>
+        </div>
+
+        <div class="q-sec">
+          <div class="q-sec-h">🗂 お題の種類の名前<span class="q-note">アプリのタブに出る名前（絵文字も入れられる・16文字まで）</span></div>
+          <div class="row" id="questCatNames"></div>
+        </div>
+
+        <div class="q-sec">
+          <div class="q-sec-h">☕ ひと休みの時間<span class="q-note">次に開くひと休みから反映</span></div>
+          <div class="row">
+            <div><label>ひと休みの長さ（分・5〜60）</label><input type="number" id="qr_minutes" min="5" max="60" /></div>
+            <div><label>遅く開いたときの長さ（分・3〜30）</label><input type="number" id="qr_lateMinutes" min="3" max="30" /></div>
+            <div><label>遅いとみなす：終了の何分前を過ぎたら（10〜90）</label><input type="number" id="qr_lateWithinMin" min="10" max="90" /></div>
+          </div>
+          <div class="sub" style="font-size:12px; margin-top:4px">ひと休みのお題を全部終えれば、時間より前でも終わります。時間がたったことはLINEでは知らせず、アプリに終わりの時刻を出します。</div>
         </div>
 
         <div class="q-sec">
@@ -186,7 +202,12 @@
         </div>
 
         <div class="q-sec">
-          <div class="q-sec-h">🗒 ミッション<span class="q-note">反映は次にマッチングした枠から（進行中には影響なし）</span></div>
+          <div class="q-sec-h">🗒 ミッション<span class="q-note">反映は次にマッチングした枠から（進行中には影響なし）／ひと休みを含めて20件まで</span></div>
+          <div class="sub" style="font-size:12px; margin:-4px 0 10px">
+            行ごとに<b>種類</b>（タブ）と<b>おすすめの時期</b>を選びます。「序盤向け」は最初の30%の時間に、「終盤向け」は残り20%になってから「次のおすすめ」に出します。
+            ☕ ひと休みのお題は⭐なし（チカラにも「全部クリアの演出」にも数えません）。並び順は、タブの中の並びと「次のおすすめ」の順になります。
+            各行の下の欄は<b>💡説明</b>（アプリで💡を押すと出る。空なら💡を出さない）。残り時間を意識させないよう、<b>目安の時間は書かない</b>でください（クリアより、相手との会話を楽しむのが一番の目的）。
+          </div>
           <div class="q-filter" id="missionFilter"></div>
           <div id="questMissionList"></div>
           <button class="sub-btn" id="addMissionBtn">＋ ミッションを追加</button>
@@ -1912,7 +1933,14 @@
       questDirty  = false;
       questPrincesses = r.princesses || [];
       questPowers     = r.powers || [];
-      questMissions   = (r.missions || []).map((m) => ({ id: m.id, name: m.name, power: m.power, stars: m.stars }));
+      questMissions   = (r.missions || []).map((m) => ({ id: m.id, name: m.name, power: m.power, stars: m.stars, cat: m.cat || "talk", when: m.when || "any", hint: m.hint || "" }));
+      questHintMax    = r.hintMax || 100;
+      questCats       = r.categories || {};
+      questCatKeys    = r.categoryKeys || ["talk", "play", "fes", "rest"];
+      questRest       = r.rest || { minutes: 30, lateMinutes: 10, lateWithinMin: 40 };
+      questMissionMax = r.missionMax || 20;
+      renderCatNameEditor();
+      ["minutes", "lateMinutes", "lateWithinMin"].forEach((k) => { $("qr_" + k).value = questRest[k]; });
       questTutorial   = (r.tutorial || []).map((m) => ({ id: m.id, name: m.name, power: m.power, stars: m.stars, kind: m.kind }));
       renderPrincessEditor();
       renderTutorialEditor();
@@ -1933,18 +1961,24 @@
     // 現在のバランス。チカラの満点（⭐の合計）と、最後の姫に届くかを表示する
     //   チカラは1種類（2026-10-01〜。フェスの二次創作ガイドラインで「5つの力」を想起させる作りをやめた）
     function renderQuestSummary() {
-      const total = questTutorial.concat(questMissions).reduce((s, m) => s + (Number(m.stars) || 0), 0);
+      const mainOnly = questMissions.filter((m) => m.cat !== "rest");
+      const restCount = questMissions.length - mainOnly.length;
+      const total = questTutorial.concat(mainOnly).reduce((s, m) => s + (Number(m.stars) || 0), 0);
       const tutTotal = questTutorial.reduce((s, m) => s + (Number(m.stars) || 0), 0);
-      const maxNeed = questPrincesses.length
-        ? Math.max(...questPrincesses.map((p) => Number(p.need) || 0)) : 0;
+      const byPower = questPrincesses.filter((p) => p.kind !== "rest");
+      const maxNeed = byPower.length
+        ? Math.max(...byPower.map((p) => Number(p.need) || 0)) : 0;
       // 最初の姫＝チュートリアル完了で救出される想定。ズレていると本編開始と救出がちぐはぐになる
-      const firstNeed = questPrincesses.length
-        ? Math.min(...questPrincesses.map((p) => Number(p.need) || 0)) : 0;
+      const firstNeed = byPower.length
+        ? Math.min(...byPower.map((p) => Number(p.need) || 0)) : 0;
       let line = "";
       if (maxNeed) {
         line = total >= maxNeed
-          ? '<span class="qs-line ok">✅ 全部クリアすれば最後の姫の条件（' + maxNeed + '）に届きます</span>'
+          ? '<span class="qs-line ok">✅ 全部クリアすれば最後の姫の条件（' + maxNeed + '）に届きます（⭐' + (total - maxNeed) + 'ぶん残しても届く）</span>'
           : '<span class="qs-line ng">⚠️ 全部クリアしても⭐' + total + '。最後の姫の条件（' + maxNeed + '）に届きません</span>';
+      }
+      if (questPrincesses.some((p) => p.kind === "rest") && !restCount) {
+        line += '<span class="qs-line ng">⚠️ ひと休みのお題がありません。ひと休みは開いてすぐ終わります</span>';
       }
       if (firstNeed && tutTotal !== firstNeed) {
         line += '<span class="qs-line ng">⚠️ チュートリアルの合計⭐' + tutTotal +
@@ -1953,9 +1987,20 @@
       }
       $("questSummary").innerHTML =
         '<span class="qs-main">チュートリアル ' + questTutorial.length + '件（⭐' + tutTotal + '）／ ' +
-        'ミッション ' + questMissions.length + '件 ／ 満点 ⭐' + total + '</span>' +
+        'ミッション ' + mainOnly.length + '件 ＋ ☕ひと休み ' + restCount + '件（' + questMissions.length + '/' + questMissionMax + '）／ 満点 ⭐' + total + '</span>' +
         line;
     }
+
+    // ----- お題の種類の名前・ひと休みの時間 -----
+    let questCats = {}, questCatKeys = ["talk", "play", "fes", "rest"], questRest = {}, questMissionMax = 20, questHintMax = 100;
+    function renderCatNameEditor() {
+      const box = $("questCatNames");
+      box.innerHTML = questCatKeys.map((k) =>
+        '<div><label>' + ({ talk: "種類1", play: "種類2", fes: "種類3", rest: "ひと休み" }[k] || k) + '</label>' +
+        '<input type="text" maxlength="16" id="qc_' + k + '" value="' + esc(questCats[k] || "") + '" /></div>').join("");
+    }
+    $("questCatNames").addEventListener("input", markQuestDirty);
+    ["qr_minutes", "qr_lateMinutes", "qr_lateWithinMin"].forEach((id) => $(id).addEventListener("input", markQuestDirty));
 
     // ----- 姫の救出条件（1人1行）-----
     function renderPrincessEditor() {
@@ -1964,10 +2009,12 @@
       questPrincesses.forEach((p, i) => {
         const d = document.createElement("div");
         d.className = "q-prow";
-        d.innerHTML =
-          '<span class="qp-name">' + esc(p.emoji) + " " + esc(p.name) + '</span>' +
-          '<input type="number" min="1" id="qp_need_' + i + '" value="' + esc(p.need) + '" />' +
-          '<span class="qp-unit">チカラで救出（レベル' + (i + 1) + '→' + (i + 2) + '）</span>';
+        d.innerHTML = p.kind === "rest"
+          ? '<span class="qp-name">' + esc(p.emoji) + " " + esc(p.name) + '</span>' +
+            '<span class="qp-unit">☕ ひと休みが終わると救出（レベル' + (i + 1) + '→' + (i + 2) + '・チカラの条件なし）</span>'
+          : '<span class="qp-name">' + esc(p.emoji) + " " + esc(p.name) + '</span>' +
+            '<input type="number" min="1" id="qp_need_' + i + '" value="' + esc(p.need) + '" />' +
+            '<span class="qp-unit">チカラで救出（レベル' + (i + 1) + '→' + (i + 2) + '）</span>';
         box.appendChild(d);
       });
       renderQuestSummary();
@@ -2042,26 +2089,47 @@
         const m = x.m, i = x.i;
         const d = document.createElement("div");
         d.className = "q-mrow";
+        const isRest = m.cat === "rest";
         d.innerHTML =
           '<input type="text" class="qm-name" maxlength="60" placeholder="ミッション名" ' +
             'id="qm_name_' + i + '" value="' + esc(m.name) + '" />' +
-          '<select class="qm-stars" id="qm_stars_' + i + '">' +
-            [1, 2, 3].map((n) => '<option value="' + n + '"' + (n === m.stars ? ' selected' : '') + '>' +
-              "⭐".repeat(n) + '</option>').join("") +
+          '<select class="qm-stars" id="qm_cat_' + i + '" title="種類（タブ）">' +
+            questCatKeys.map((k) => '<option value="' + k + '"' + (k === m.cat ? ' selected' : '') + '>' + esc(questCats[k] || k) + '</option>').join("") +
           '</select>' +
-          '<button class="qm-del" data-i="' + i + '" title="この行を削除">✕</button>';
+          '<select class="qm-stars" id="qm_when_' + i + '" title="おすすめの時期">' +
+            [["any", "いつでも"], ["early", "序盤向け"], ["late", "終盤向け"]].map((w) => '<option value="' + w[0] + '"' + (w[0] === m.when ? ' selected' : '') + '>' + w[1] + '</option>').join("") +
+          '</select>' +
+          (isRest ? '<span class="qm-stars" style="display:inline-flex;align-items:center;color:var(--sub);font-size:12px">⭐なし</span>'
+            : '<select class="qm-stars" id="qm_stars_' + i + '">' +
+              [1, 2, 3].map((n) => '<option value="' + n + '"' + (n === m.stars ? ' selected' : '') + '>' +
+                "⭐".repeat(n) + '</option>').join("") +
+              '</select>') +
+          '<button class="qm-del" data-i="' + i + '" title="この行を削除">✕</button>' +
+          '<input type="text" class="qm-name qm-hint" maxlength="' + questHintMax + '" style="flex-basis:100%;font-size:12.5px;margin-top:4px" ' +
+            'placeholder="💡説明（遊び方の例・話が広がるきっかけ。時間は書かない。空なら💡を出さない・' + questHintMax + '文字まで）" ' +
+            'id="qm_hint_' + i + '" value="' + esc(m.hint || "") + '" />';
+        d.style.flexWrap = "wrap";
         ml.appendChild(d);
       });
     }
     // 画面の入力値を配列へ取り込む（追加・削除・絞り込み・保存の前に必ず呼ぶ）
     // 絞り込みで表示されていない行は入力欄が無いので、元の値をそのまま残す
     function syncMissionInputs() {
-      questMissions = questMissions.map((m, i) => ({
-        id:    m.id,
-        name:  ($("qm_name_"  + i) ? $("qm_name_"  + i).value.trim() : m.name),
-        power: m.power,   // 種類は使わない（保存されている値をそのまま残す）
-        stars: ($("qm_stars_" + i) ? parseInt($("qm_stars_" + i).value, 10) : m.stars)
-      }));
+      questMissions = questMissions.map((m, i) => {
+        const cat = $("qm_cat_" + i) ? $("qm_cat_" + i).value : m.cat;
+        let stars = $("qm_stars_" + i) ? parseInt($("qm_stars_" + i).value, 10) : m.stars;
+        if (cat === "rest") stars = 0;                                   // ひと休みは⭐なし
+        else if (![1, 2, 3].includes(stars)) stars = 2;                  // ひと休みから本編に移したときは⭐2から
+        return {
+          id:    m.id,
+          name:  ($("qm_name_"  + i) ? $("qm_name_"  + i).value.trim() : m.name),
+          power: m.power,   // チカラの種類は使わない（保存されている値をそのまま残す）
+          stars: stars,
+          cat:   cat,
+          when:  $("qm_when_" + i) ? $("qm_when_" + i).value : m.when,
+          hint:  $("qm_hint_" + i) ? $("qm_hint_" + i).value.trim() : (m.hint || "")
+        };
+      });
     }
 
     // 絞り込みボタン
@@ -2087,7 +2155,8 @@
 
     $("addMissionBtn").addEventListener("click", () => {
       syncMissionInputs();
-      questMissions.push({ id: "", name: "", power: "earn", stars: 1 });   // 種類は使わない（内部の既定値）
+      if (questMissions.length >= questMissionMax) { set("questStatus", "ミッションは" + questMissionMax + "件までです（ひと休みのお題を含む）", "ng"); return; }
+      questMissions.push({ id: "", name: "", power: "earn", stars: 2, cat: "talk", when: "any", hint: "" });   // チカラの種類は使わない（内部の既定値）
       markQuestDirty();
       renderMissionEditor();
       const el = $("qm_name_" + (questMissions.length - 1));
@@ -2104,11 +2173,12 @@
       if (badTut >= 0) { set("questStatus", "チュートリアル" + (badTut + 1) + "件目の名前が空です", "ng"); return; }
       const noDest = questTutorial.find((m) => m.kind === "move" && !m.name.includes("{destination}"));
       if (noDest) { set("questStatus", "移動のミッション名には {destination} を残してください", "ng"); return; }
+      // ひと休みで救出する姫はチカラの条件がないので送らない
       const princesses = questPrincesses.map((p, i) => ({
-        id: p.id,
+        id: p.id, idx: i, name: p.name, kind: p.kind || "",
         need: ($("qp_need_" + i) ? parseInt($("qp_need_" + i).value, 10) : p.need),
         requireAllPowers: false
-      }));
+      })).filter((p) => p.kind !== "rest");
       if (princesses.some((p) => !Number.isFinite(p.need) || p.need < 1)) {
         set("questStatus", "姫の「必要なチカラ」は1以上の数値で入力してください", "ng"); return;
       }
@@ -2116,15 +2186,24 @@
       set("questPrincessMsg", "", "");
       for (let i = 1; i < princesses.length; i++) {
         if (princesses[i].need <= princesses[i - 1].need) {
-          const msg = questPrincesses[i].name + "の必要チカラ（" + princesses[i].need + "）は、前の" +
-            questPrincesses[i - 1].name + "（" + princesses[i - 1].need + "）より大きい数にしてください";
+          const msg = princesses[i].name + "の必要チカラ（" + princesses[i].need + "）は、前の" +
+            princesses[i - 1].name + "（" + princesses[i - 1].need + "）より大きい数にしてください";
           // 入力欄の位置まで画面が戻るので、下の保存ボタン横だけでなく姫の欄の下にも出す
           set("questPrincessMsg", "⚠️ " + msg, "ng");
           set("questStatus", msg, "ng");
-          const el = $("qp_need_" + i); if (el) { el.focus(); el.scrollIntoView({ block: "center" }); }
+          const el = $("qp_need_" + princesses[i].idx); if (el) { el.focus(); el.scrollIntoView({ block: "center" }); }
           return;
         }
       }
+      const cats = {};
+      for (const k of questCatKeys) {
+        const v = ($("qc_" + k) ? $("qc_" + k).value.trim() : (questCats[k] || ""));
+        if (!v) { set("questStatus", "お題の種類の名前が空です", "ng"); return; }
+        cats[k] = v;
+      }
+      const rest = {};
+      for (const k of ["minutes", "lateMinutes", "lateWithinMin"]) rest[k] = parseInt($("qr_" + k).value, 10);
+      if (questMissions.length > questMissionMax) { set("questStatus", "ミッションは" + questMissionMax + "件までです（ひと休みのお題を含む）", "ng"); return; }
       if (!questMissions.length) { set("questStatus", "ミッションは1つ以上必要です", "ng"); return; }
       const empty = questMissions.findIndex((m) => !m.name);
       if (empty >= 0) {
@@ -2134,9 +2213,11 @@
       }
       set("questStatus", "保存中…", "");
       const r = await api("updateQuestSettings", {
-        princesses: JSON.stringify(princesses),
+        princesses: JSON.stringify(princesses.map((p) => ({ id: p.id, need: p.need, requireAllPowers: false }))),
         missions:   JSON.stringify(questMissions),
-        tutorial:   JSON.stringify(questTutorial)
+        tutorial:   JSON.stringify(questTutorial),
+        categories: JSON.stringify(cats),
+        rest:       JSON.stringify(rest)
       });
       if (r.ok) {
         await loadQuestSettings();

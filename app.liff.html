@@ -279,6 +279,53 @@
     /* ミッション一覧 */
     .missions { margin-top:16px; }
     .missions-title { font-size:13px; font-weight:700; text-align:center; color:var(--sub); margin-bottom:10px; }
+    /* お題の種類（タブ）・次のおすすめ・☕ ひと休み（2026-10-15） */
+    .cat-tabs { display:flex; gap:6px; margin:0 0 10px; }
+    .cat-tab { flex:1; min-width:0; padding:8px 2px; border-radius:10px; border:1.5px solid #d9d4c6; background:#fff;
+      font-size:12.5px; font-weight:800; color:var(--ink); cursor:pointer; line-height:1.3; }
+    .cat-tab small { display:block; font-size:10.5px; font-weight:600; color:var(--sub); margin-top:1px; }
+    .cat-tab.active { background:var(--green); border-color:var(--green); color:#fff; }
+    .cat-tab.active small { color:#e6f2ea; }
+    .cat-tab.zero small { color:var(--green); }
+    .cat-tab:disabled { opacity:.45; cursor:default; }
+    .reco { background:#fff6df; border:1.5px solid rgba(230,168,23,.6); border-radius:12px; padding:10px 12px; margin:0 0 10px; cursor:pointer; }
+    .reco .rc-label { font-size:11px; font-weight:800; color:#b07d00; }
+    .reco .rc-name { font-size:14.5px; font-weight:800; color:var(--ink); line-height:1.45; margin-top:2px; }
+    .reco .rc-sub { font-size:11px; color:var(--sub); margin-top:3px; }
+    .mission-item .rc-badge { display:inline-block; font-size:10px; font-weight:800; color:#fff; background:var(--accent);
+      border-radius:6px; padding:1px 6px; margin-left:6px; vertical-align:1px; }
+    .mission-item.reco-row { border-color:var(--accent); box-shadow:0 0 0 2px rgba(230,168,23,.25); }
+    .m-cleared-toggle { width:100%; margin:12px 0 6px; padding:9px 12px; border-radius:10px; border:1.5px dashed #cfc8b4;
+      background:#faf8f2; color:var(--sub); font-size:12.5px; font-weight:700; text-align:left; cursor:pointer; }
+    /* 💡説明ボタン（行のチェックとは別の場所。押し間違いでチェックが付かないよう大きめに）・説明の窓・ひと休みの説明スライド */
+    .m-hint-btn { flex:0 0 auto; width:36px; height:36px; margin:-6px -4px -6px 2px; border:none; border-radius:10px;
+      background:#fff6df; font-size:17px; line-height:36px; text-align:center; cursor:pointer; }
+    .m-hint-btn:active { background:#ffe9b0; }
+    .reco .rc-hint { float:right; width:34px; height:34px; margin:-4px -4px 0 6px; border:none; border-radius:10px; background:#fff; font-size:16px; cursor:pointer; }
+    #hintOverlay, #restIntroOverlay { position:fixed; inset:0; background:rgba(20,16,8,.55); z-index:140; display:flex; align-items:center; justify-content:center; padding:18px; }
+    #hintOverlay.hidden, #restIntroOverlay.hidden { display:none; }
+    .hint-card { background:#fff; border-radius:16px; max-width:380px; width:100%; padding:18px 18px 14px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+    .hint-card .hc-name { font-size:16px; font-weight:800; color:var(--ink); line-height:1.5; }
+    .hint-card .hc-meta { font-size:12px; color:var(--sub); margin-top:4px; }
+    .hint-card .hc-body { font-size:14px; line-height:1.8; color:var(--ink); background:#fffaf0; border-radius:10px; padding:10px 12px; margin-top:10px; }
+    .hint-card .hc-close, .ri-card .ri-next { width:100%; margin-top:14px; padding:12px; border:none; border-radius:10px; background:var(--green); color:#fff; font-size:15px; font-weight:800; cursor:pointer; }
+    .ri-card { position:relative; background:#fff; border-radius:18px; max-width:380px; width:100%; padding:22px 18px 14px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+    .ri-card .ri-skip { position:absolute; top:10px; right:12px; border:none; background:none; color:var(--sub); font-size:13px; font-weight:700; cursor:pointer; }
+    .ri-card .ri-face { font-size:58px; line-height:1.1; }
+    .ri-card .ri-title { font-size:17px; font-weight:800; color:var(--green); margin-top:6px; }
+    .ri-card .ri-say { font-size:14px; line-height:1.7; color:var(--ink); background:#f3f8f4; border-radius:12px; padding:10px 12px; margin-top:10px; text-align:left; }
+    .ri-card .ri-lines { text-align:left; margin:10px 0 0; padding-left:18px; font-size:13.5px; line-height:1.75; color:var(--ink); }
+    .ri-card .ri-dots { margin-top:12px; font-size:10px; letter-spacing:4px; color:#cfc8b4; }
+    .ri-card .ri-dots b { color:var(--green); }
+    .rest-box .rs-replay { margin-top:8px; border:none; background:none; color:var(--green); font-size:12.5px; font-weight:700; text-decoration:underline; cursor:pointer; }
+    .rest-box { background:#f3f8f4; border:2px solid #9cc7ac; border-radius:14px; padding:14px 14px 12px; margin:0 0 12px; text-align:center; }
+    .rest-box .rs-head { font-size:14px; font-weight:800; color:var(--green); }
+    .rest-box .rs-until { font-size:38px; font-weight:900; color:var(--green); line-height:1.2; margin:4px 0 2px; letter-spacing:1px; }
+    .rest-box .rs-until small { font-size:15px; font-weight:800; margin-left:4px; letter-spacing:0; }
+    .rest-box .rs-sub { font-size:12px; color:var(--ink); line-height:1.6; }
+    .rest-box .rs-princess { font-size:12.5px; font-weight:700; color:var(--green); margin-top:8px; }
+    .rest-box .rs-note { font-size:11.5px; color:var(--sub); line-height:1.6; margin-top:8px; text-align:left; white-space:pre-line;
+      background:#fff; border-radius:8px; padding:8px 10px; }
     .m-empty { text-align:center; color:var(--sub); font-size:13px; padding:18px 8px; }
     .mission-item { display:flex; align-items:center; gap:10px; padding:11px 12px;
       border:1.5px solid #e3ddcd; border-radius:10px; margin-bottom:8px; cursor:pointer; font-size:14px; }
@@ -691,6 +738,10 @@
 
           <div class="missions">
             <div class="missions-title" id="missionsTitle">ミッション（パーティ全員のチェックでクリア）</div>
+            <!-- ☕ ひと休み（2人目の姫の救出で開く）・次のおすすめ・お題の種類（タブ） -->
+            <div class="rest-box hidden" id="restBox"></div>
+            <div class="reco hidden" id="recoBox"></div>
+            <div class="cat-tabs hidden" id="catTabs"></div>
             <div id="missionList"></div>
           </div>
         </div>
@@ -961,6 +1012,29 @@
     <div class="rescue-title" id="rescueTitle"></div>
     <div class="rescue-say" id="rescueSay"></div>
     <button class="rescue-btn" id="rescueNext">つづける</button>
+  </div>
+
+  <!-- 💡 お題の説明 -->
+  <div id="hintOverlay" class="hidden">
+    <div class="hint-card" role="dialog" aria-modal="true" aria-labelledby="hcName">
+      <div class="hc-name" id="hcName"></div>
+      <div class="hc-meta" id="hcMeta"></div>
+      <div class="hc-body" id="hcBody"></div>
+      <button type="button" class="hc-close" id="hcClose">閉じる</button>
+    </div>
+  </div>
+
+  <!-- ☕ ひと休みの説明スライド（パンヌ姫が話す形・3枚） -->
+  <div id="restIntroOverlay" class="hidden">
+    <div class="ri-card" role="dialog" aria-modal="true" aria-labelledby="riTitle">
+      <button type="button" class="ri-skip" id="riSkip">スキップ ▶</button>
+      <div class="ri-face" id="riFace"></div>
+      <div class="ri-title" id="riTitle"></div>
+      <div class="ri-say" id="riSay"></div>
+      <ul class="ri-lines" id="riLines"></ul>
+      <div class="ri-dots" id="riDots"></div>
+      <button type="button" class="ri-next" id="riNext">次へ</button>
+    </div>
   </div>
 
   <!-- ⑩ クリアカード オーバーレイ -->
@@ -1288,6 +1362,7 @@
       currentGroupSlotId = slotId;
       clearedSeen = null;         // 別のパーティに切り替えたら「今クリアした」判定をやり直す
       groupView = null;           // タブは状況に合わせて選び直す（applyGroupView）
+      missionCat = null; showClearedMissions = false;   // お題のタブも、パーティを開き直したら選び直す
       rescueInitialized = false;  // 救出演出の記録は時間ごと
       deviceFirstOpen = false;
       rescueQueue = [];
@@ -1415,7 +1490,7 @@
             : '<div class="ab-label">まずは移動</div>'
               + '<div class="ab-title">🚶 ' + esc(t.destination || "移動先") + ' へ全員で移動しよう</div>'
               + '<div class="ab-sub">' + (t.walkHint ? esc(t.walkHint) + "。" : "") + '着いたら「移動」を全員でチェックしてね</div>'
-              + '<div class="ab-sub">迷ったら、ブースに戻ってきてOK</div>';
+              + '<div class="ab-sub">困ったときは、メニューの「✉️ 運営に連絡」から知らせてね</div>';
         } else if (questData && questData.phase === "tutorial") {
           // チュートリアル中（作り替え前にマッチングしたパーティ）→ 目の前の4つ
           const t = questData.tutorial || {};
@@ -1426,6 +1501,19 @@
                 + '<div class="ab-sub">' + esc(firstPrincessName(questData)) + 'はそこにいる。着いたらチェックしてね</div>'
               : '<div class="ab-title">ブース前で ' + left + ' つのミッション</div>'
                 + '<div class="ab-sub">3つ終えると、' + esc(firstPrincessName(questData)) + 'が行き先を教えてくれるよ</div>');
+        } else if (questData && questData.rest && questData.rest.state === "open" && questData.phase === "main") {
+          // ☕ ひと休み中 → 終わる時刻を大きく。お題を全部終えると早く進める
+          const rs = questData.rest;
+          const ends = rs.endsAt ? Date.parse(rs.endsAt) : 0;
+          html = '<div class="ab-label">いま レベル' + (questData.level || 1) + '・☕ ひと休み中</div>'
+            + '<div class="ab-title">' + (ends ? fmtHM(ends) + ' までひと休み' : 'ひと休みしよう') + '</div>'
+            + '<div class="ab-sub">ひと休みのお題を全部終えると、その時点で次へ進めます。'
+            + (rs.princess ? esc(rs.princess.name) + 'は、一緒にひと休みすると出てきてくれるよ' : '') + '</div>';
+        } else if (questData && questData.next && questData.next.kind === "rest") {
+          const n = questData.next;
+          html = '<div class="ab-label">いま レベル' + (questData.level || 1) + '</div>'
+            + '<div class="ab-title">☕ ひと休みでレベルアップ！</div>'
+            + '<div class="ab-sub">ひと休みすると ' + n.emoji + esc(n.name) + ' が出てきてくれるよ</div>';
         } else if (questData && questData.next) {
           // クエスト中 → いまのレベルと、次のレベルアップ（＝次の姫の救出）まであといくつか＋ゲージ
           const n = questData.next;
@@ -1465,7 +1553,7 @@
             + (c.fans && c.fans.length ? '<span class="dp-fans">' + esc(c.funLabel) + 'が楽しみ：' + esc(c.fans.map((n) => n + 'さん').join('・')) + '</span>' : '')
             + '</button>';
         }).join('')
-        + '<div class="dp-help">着いた場所で、まずは全員で自己紹介。迷ったらブースに戻ってきてOK</div>'
+        + '<div class="dp-help">着いた場所で、まずは全員で自己紹介。困ったときは、メニューの「✉️ 運営に連絡」から知らせてね</div>'
         + '</div>';
     }
     let destBusy = false;
@@ -1534,6 +1622,7 @@
 
     // チカラのゲージ：レベルごとに0から満タンへ（前のレベルの目標〜次のレベルの目標）。MAXなら満タン
     function powerGaugeHtml(q) {
+      if (q.next && (q.next.need === null || q.next.need === undefined)) return "";
       const from = q.levelFrom || 0;
       const to = q.next ? q.next.need : null;
       const pct = to ? Math.max(0, Math.min(100, Math.round((q.totalPower - from) / Math.max(1, to - from) * 100))) : 100;
@@ -2147,7 +2236,9 @@
       renderViewTabs();
     }
     function renderViewTabs() {
-      const left = (questData.missions || []).filter((m) => !m.cleared).length;
+      // 残りの数：ひと休み中はひと休みのお題、それ以外は本編のお題（チュートリアルと、まだ・終わったひと休みは数えない）
+      const resting = !!(questData.rest && questData.rest.state === "open");
+      const left = (questData.missions || []).filter((m) => !m.cleared && !m.tutorial && (resting ? m.cat === "rest" : m.cat !== "rest")).length;
       const got = (questData.rescued || []).length;
       const all = (questData.princesses || []).length;
       const tab = (view, label, sub) =>
@@ -2156,7 +2247,7 @@
       $("viewTabs").innerHTML =
         tab("party", "👥 パーティ", questData.memberTotal + "人") +
         tab("progress", "👑 姫たち", got + "/" + all + "人") +
-        tab("mission", "🏰 ミッション", left ? "残り " + left + "件" : "すべてクリア！");
+        tab("mission", resting ? "☕ ひと休み" : "🏰 ミッション", left ? "残り " + left + "件" : (resting ? "まもなく終わり" : "すべてクリア！"));
     }
     $("viewTabs").addEventListener("click", (e) => {
       const b = e.target.closest(".vtab"); if (!b) return;
@@ -2186,6 +2277,9 @@
       $("missionsTitle").textContent = tut
         ? "チュートリアル（パーティ全員のチェックでクリア）"
         : "ミッション（パーティ全員のチェックでクリア）";
+      renderRestBox(q);
+      renderRecommend(q);
+      renderCatTabs(q);
       renderMissionList(q);
 
       renderGarden(q);
@@ -2194,6 +2288,7 @@
       startTick(); // 残り時間カウントダウン（未開始なら中で自動停止）
       queueRescues(q); // 新しく救出された姫がいれば演出
       queueFinale(q);  // ミッションを全部クリアしたら、救出の演出のあとに姫たち全員の演出
+      maybeRestIntro(q); // ☕ ひと休みが始まったら、救出の演出のあとに説明スライド
       deviceFirstOpen = false; // 「初めて開いた」扱いは最初の表示だけ。以降に起きたことは演出する
     }
 
@@ -2271,6 +2366,123 @@
         : "まずはこの" + target.length + "つから（" + done + "/" + target.length + "）";
     }
 
+    // ----- お題の種類（タブ）・次のおすすめ・☕ ひと休み（2026-10-15） -----
+    let missionCat = null;               // 選んでいる種類のタブ（talk / play / fes）
+    let showClearedMissions = false;     // クリア済みを開いて見ているか
+    function currentMissionCat(q) {
+      const cats = (q.categories || []).map((c) => c.key);
+      if (missionCat && cats.includes(missionCat)) return missionCat;
+      // はじめは、おすすめの種類 → 残りのある種類 → 最初の種類
+      const rc = q.recommend && cats.includes(q.recommend.cat) ? q.recommend.cat : null;
+      const left = (q.categories || []).find((c) => c.remaining > 0);
+      missionCat = rc || (left && left.key) || cats[0] || null;
+      return missionCat;
+    }
+    function renderCatTabs(q) {
+      const box = $("catTabs");
+      const tabbed = q.phase === "main" && Array.isArray(q.categories) && q.categories.length > 0;
+      if (!tabbed) { box.classList.add("hidden"); return; }
+      const resting = !!(q.rest && q.rest.state === "open");
+      const cur = currentMissionCat(q);
+      box.innerHTML = q.categories.map((c) =>
+        '<button type="button" class="cat-tab' + (!resting && c.key === cur ? " active" : "") + (c.remaining === 0 ? " zero" : "") + '" data-cat="' + esc(c.key) + '"'
+        + (resting ? " disabled" : "") + '>' + esc(c.label)
+        + '<small>' + (resting ? "🔒 ひと休み中" : (c.remaining ? "残り" + c.remaining + "件" : "✅ 全部クリア")) + '</small></button>'
+      ).join("");
+      box.classList.remove("hidden");
+      box.querySelectorAll(".cat-tab").forEach((b) => {
+        b.onclick = () => { if (b.disabled) return; missionCat = b.dataset.cat; showClearedMissions = false; renderCatTabs(questData); renderMissionList(questData); };
+      });
+    }
+    function renderRecommend(q) {
+      const box = $("recoBox");
+      const r = q.recommend;
+      if (!r || q.phase !== "main") { box.classList.add("hidden"); return; }
+      box.innerHTML = (r.hint ? '<button type="button" class="rc-hint" aria-label="このお題の説明を見る">💡</button>' : '')
+        + '<div class="rc-label">👉 次のおすすめ</div>'
+        + '<div class="rc-name">' + esc(r.name) + '</div>'
+        + '<div class="rc-sub">' + esc(r.catLabel || "") + (r.cat === "rest" ? "" : "・" + "⭐".repeat(Math.max(1, r.stars || 1)))
+        + (r.reason ? "　" + esc(r.reason) : "") + '（ほかのお題を選んでもOK）</div>';
+      box.classList.remove("hidden");
+      const rh = box.querySelector(".rc-hint");
+      if (rh) rh.addEventListener("click", (e) => { e.stopPropagation(); openHint(r); });
+      box.onclick = () => {
+        if (r.cat !== "rest") { missionCat = r.cat; showClearedMissions = false; }
+        renderCatTabs(questData); renderMissionList(questData);
+        const row = document.querySelector('#missionList [data-mid="' + (window.CSS && CSS.escape ? CSS.escape(r.id) : r.id) + '"]');
+        if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+    }
+    function renderRestBox(q) {
+      const box = $("restBox");
+      const rest = q.rest;
+      if (!rest || rest.state !== "open" || q.phase !== "main") { box.classList.add("hidden"); return; }
+      const ends = rest.endsAt ? Date.parse(rest.endsAt) : 0;
+      const over = ends && Date.now() >= ends;
+      box.innerHTML = '<div class="rs-head">' + esc(rest.label || "☕ ひと休み") + ' 中（' + (rest.minutes || "") + '分）</div>'
+        + (ends ? '<div class="rs-until">' + fmtHM(ends) + '<small>まで</small></div>' : '')
+        + '<div class="rs-sub">' + (over ? "時間になりました。まもなく、ほかのお題に進めます"
+          : "ひと休みのお題を全部終えると、その時点で次へ進めます（あと" + (rest.remaining || 0) + "件）")
+        + '<br>休んでいる間、ほかのタブのお題は押せません</div>'
+        + (rest.princess ? '<div class="rs-princess">' + esc(rest.princess.emoji) + ' ' + esc(rest.princess.name) + 'は、一緒にひと休みすると出てきてくれるよ</div>' : '')
+        + '<div class="rs-note">📍 休む場所はパーティで決めてね。\n' + esc(rest.note || "") + '</div>'
+        + (rest.intro ? '<button type="button" class="rs-replay" id="rsReplay">ひと休みの説明をもう一度見る</button>' : '');
+      box.classList.remove("hidden");
+      const rp = $("rsReplay");
+      if (rp) rp.onclick = () => openRestIntro(rest.intro);
+    }
+
+    // ----- 💡 お題の説明（窓） -----
+    function openHint(m) {
+      $("hcName").textContent = m.name || "";
+      $("hcMeta").textContent = m.cat === "rest" ? "☕ ひと休みのお題（⭐なし）" : "⭐".repeat(Math.max(1, m.stars || 1)) + " チカラ＋" + (m.stars || 1) + "・パーティ全員のチェックでクリア";
+      $("hcBody").textContent = m.hint || "";
+      $("hintOverlay").classList.remove("hidden");
+    }
+    function closeHint() { $("hintOverlay").classList.add("hidden"); }
+    $("hcClose").addEventListener("click", closeHint);
+    $("hintOverlay").addEventListener("click", (e) => { if (e.target === $("hintOverlay")) closeHint(); });
+
+    // ----- ☕ ひと休みの説明スライド -----
+    // スマホごとに1回（救出の演出と同じく端末に覚える）。マイルカ姫の救出の演出が終わってから出す。
+    // その端末で初めて開いたとき（途中から合流した人など）も、ひと休み中なら出す（タブが押せない理由を伝えるため）
+    let restIntroPending = false, restIntroData = null, restIntroIndex = 0;
+    function restIntroKey() { return "bocchi_restintro_" + (currentGroupSlotId || ""); }
+    function maybeRestIntro(q) {
+      const r = q && q.rest;
+      if (!r || r.state !== "open" || !r.intro) return;
+      let seen = false;
+      try { seen = localStorage.getItem(restIntroKey()) === "1"; } catch (e) {}
+      if (seen || !$("restIntroOverlay").classList.contains("hidden")) return;
+      if (rescuePlaying || rescueQueue.length) { restIntroPending = true; return; }   // 救出の演出のあとに出す
+      openRestIntro(r.intro);
+    }
+    function openRestIntro(intro) {
+      if (!intro || !intro.slides || !intro.slides.length) return;
+      restIntroData = intro; restIntroIndex = 0;
+      showRestIntroSlide();
+      $("restIntroOverlay").classList.remove("hidden");
+    }
+    function showRestIntroSlide() {
+      const d = restIntroData, sl = d.slides[restIntroIndex], lastOne = restIntroIndex === d.slides.length - 1;
+      $("riFace").textContent = d.face || "☕";
+      $("riTitle").textContent = sl.title || "";
+      $("riSay").textContent = sl.say ? "「" + sl.say + "」" : "";
+      $("riSay").classList.toggle("hidden", !sl.say);
+      $("riLines").innerHTML = (sl.lines || []).map((x) => "<li>" + esc(x) + "</li>").join("");
+      $("riDots").innerHTML = d.slides.map((_, i) => i === restIntroIndex ? "<b>●</b>" : "●").join("");
+      $("riNext").textContent = lastOne ? (d.done || "OK") : "次へ";
+    }
+    function closeRestIntro() {
+      $("restIntroOverlay").classList.add("hidden");
+      try { localStorage.setItem(restIntroKey(), "1"); } catch (e) {}
+    }
+    $("riNext").addEventListener("click", () => {
+      if (restIntroIndex < restIntroData.slides.length - 1) { restIntroIndex++; showRestIntroSlide(); }
+      else closeRestIntro();
+    });
+    $("riSkip").addEventListener("click", closeRestIntro);
+
     // クリア済みと分かったミッションのID。次の描画で「今クリアした1件」を光らせるために使う
     let clearedSeen = null;
     function renderMissionList(q) {
@@ -2298,31 +2510,51 @@
           : "チェックインしてパーティに合流すると、チェックできるようになります";
         list.appendChild(w);
       }
-      const shown = all.map((m) => ({ m }))
+      // 本編（新しい流れ）は種類のタブで分ける。ひと休み中は、ひと休みのお題だけ。クリア済みは1行に畳む
+      const tabbed = q.phase === "main" && Array.isArray(q.categories) && q.categories.length > 0;
+      const resting = !!(q.rest && q.rest.state === "open");
+      let pool = all;
+      if (tabbed) {
+        const cat = resting ? "rest" : currentMissionCat(q);
+        pool = all.filter((m) => !m.tutorial && (m.cat || "talk") === cat);
+      }
+      const shown = pool.map((m) => ({ m }))
         .sort((a, b) => (a.m.cleared ? 1 : 0) - (b.m.cleared ? 1 : 0));
       if (!shown.length) { list.innerHTML = '<div class="m-empty">ミッションはありません</div>'; return; }
 
       const doneCount = shown.filter((x) => x.m.cleared).length;
-      let dividerDone = false;
+      const recoId = q.recommend ? q.recommend.id : null;
+      let dividerDone = false, collapsed = false;
       shown.forEach(({ m }) => {
-        // 未クリアとクリア済みの境目に区切りを入れる（両方あるときだけ）
+        // 未クリアとクリア済みの境目。タブのある本編では「✅ クリア済み◯件」の1行に畳む（押すと開く）
         if (m.cleared && !dividerDone) {
           dividerDone = true;
-          if (doneCount < shown.length) {
+          if (tabbed) {
+            const tg = document.createElement("button");
+            tg.type = "button";
+            tg.className = "m-cleared-toggle";
+            tg.textContent = "✅ クリア済み " + doneCount + "件" + (showClearedMissions ? "（たたむ ▴）" : "（見る ▾）");
+            tg.addEventListener("click", () => { showClearedMissions = !showClearedMissions; renderMissionList(questData); });
+            list.appendChild(tg);
+            if (!showClearedMissions) collapsed = true;
+          } else if (doneCount < shown.length) {
             const dv = document.createElement("div");
             dv.className = "m-divider";
             dv.textContent = "クリア済み " + doneCount + "件";
             list.appendChild(dv);
           }
         }
+        if (collapsed) return;
         const row = document.createElement("div");
         row.className = "mission-item"
           + (m.locked ? " locked" : (m.cleared ? " done" : (m.mine ? " mine" : "")))
-          + (justDone.has(m.id) ? " just-done" : "");
+          + (justDone.has(m.id) ? " just-done" : "")
+          + (m.id === recoId && !m.cleared ? " reco-row" : "");
+        row.dataset.mid = m.id;
         row.innerHTML =
           '<span class="box">' + (m.cleared ? "✓" : (m.mine ? "・" : (m.locked ? "🔒" : ""))) + '</span>'
-          + '<span class="m-body"><span class="m-name">' + esc(m.name) + '</span>'
-          + '<span class="m-meta">' + stars(m.stars) + " チカラ＋" + m.stars
+          + '<span class="m-body"><span class="m-name">' + esc(m.name) + (m.id === recoId && !m.cleared ? '<span class="rc-badge">おすすめ</span>' : '') + '</span>'
+          + '<span class="m-meta">' + (m.cat === "rest" ? "☕ ひと休みのお題（⭐なし）" : stars(m.stars) + " チカラ＋" + m.stars)
           + (m.locked ? ((q.tutorial || {}).flow === "moveFirst" ? "　🚶 移動先に着いたら押せる" : "　🔒 3つ終えると行き先が分かる")
              : (m.cleared ? "　✅クリア！" : "　" + m.checkedCount + "/" + m.memberCount + "人がチェック"))
           + '</span></span>';
@@ -2342,11 +2574,22 @@
         }
         if (m.kind === "partyName" || m.kind === "declare" || m.kind === "intro") row.style.flexWrap = "wrap";
 
+        // 💡説明（本編とひと休みのお題・説明があるときだけ）。押してもチェックは付かない
+        if (m.hint && !m.tutorial) {
+          const hb = document.createElement("button");
+          hb.type = "button";
+          hb.className = "m-hint-btn";
+          hb.textContent = "💡";
+          hb.setAttribute("aria-label", "このお題の説明を見る");
+          hb.addEventListener("click", (e) => { e.stopPropagation(); openHint(m); });
+          row.appendChild(hb);
+        }
         // クリア済み・ロック中は押せない（取り消すとチカラが減り、救出済みの姫が戻ってしまうため）
         if (notStarted || notJoined) row.style.opacity = ".55";
         if (!m.cleared && !m.locked && !notStarted && !notJoined) {
           row.addEventListener("click", (e) => {
             if (e.target.closest(".m-name-edit")) return; // 名前の入力欄はチェックに反応させない
+            if (e.target.closest(".m-hint-btn")) return;  // 💡も反応させない（念のため）
             toggleQuestMission(m.id, !m.mine, row);
           });
         }
@@ -2441,8 +2684,10 @@
     // 端末ごとに1回だけ（閉じている間にクリアしても、次に開いたときに見られる）
     function finaleMemoryKey() { return "bocchi_finale_" + (currentGroupSlotId || ""); }
     function queueFinale(q) {
-      const main = (q.missions || []).filter((m) => !m.tutorial);
-      const allCleared = q.phase === "main" && main.length > 0 && main.every((m) => m.cleared);
+      const main = (q.missions || []).filter((m) => !m.tutorial && m.cat !== "rest");
+      const allCleared = typeof q.allMainCleared === "boolean"
+        ? (q.phase === "main" && q.allMainCleared)
+        : (q.phase === "main" && main.length > 0 && main.every((m) => m.cleared));
       if (!allCleared) return;
       let seen = false;
       try { seen = localStorage.getItem(finaleMemoryKey()) === "1"; } catch (e) {}
@@ -2483,6 +2728,7 @@
       $("rescueBurst").innerHTML = "";
       rescuePlaying = false;
       if (rescueQueue.length) setTimeout(playNextRescue, 300);
+      else if (restIntroPending) { restIntroPending = false; setTimeout(() => maybeRestIntro(questData), 300); }
     }
     $("rescueNext").addEventListener("click", closeRescue);
     // スキップは救出の演出を待ち行列ごと閉じる（4回とも長いと飽きるため）。
