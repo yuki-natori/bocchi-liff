@@ -446,6 +446,7 @@
     .slot-detail .sd-ng { font-size:13px; font-weight:700; color:var(--err); margin-top:3px; }
     .slot-detail .sd-go { width:100%; margin-top:10px; padding:11px; font-size:14px; font-weight:800; color:#fff;
       background:var(--green); border:none; border-radius:10px; cursor:pointer; font-family:inherit; }
+    .one-resv-note { margin:10px 0 4px; padding:10px 12px; border-radius:12px; background:#f3efe4; color:var(--sub); font-size:13px; line-height:1.6; }
     .resv-kids-note { flex:1 0 100%; order:4; font-size:11.5px; color:var(--sub); margin-top:6px; }
     /* 予約一覧の「支払い待ち」 */
     .resv-pay { flex:1 0 100%; order:3; margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -796,7 +797,10 @@
     <div id="myReserveBox">
       <div class="section-title">予約中の時間帯</div>
       <div id="reserveList"></div>
-      <button class="add-resv-btn" id="addReserveBtn">＋ 別の時間帯を予約する</button>
+      <!-- 予約は同時に1件まで（2026-10-16）。いまの予約が終わると次を予約できる -->
+      <div class="one-resv-note hidden" id="oneResvNote"></div>
+      <button class="add-resv-btn" id="addReserveBtn">＋ 予約する</button>
+      <button class="back-link hidden" id="addKidResvBtn" style="display:block;margin:10px auto 0;font-size:13px">👧 お子さまが保護者のスマホで参加する予約はこちら</button>
       <button class="back-link" id="inviteCodeLink" style="display:block;margin:12px auto 0;font-size:13px">👧 保護者から招待コードを受け取った方はこちら</button>
     </div>
 
@@ -1752,6 +1756,7 @@
       showScreen("screen-reserve");
     }
     let myResvList = []; // 自分の予約（新規予約時の時間重複チェックに使う）
+    let openResv = null; // まだ終わっていない予約（予約は同時に1件まで。保護者のスマホで子どもが参加する予約は別）
     let slotsCache = []; // 枠の一覧（締切を過ぎたか＝キャンセル可否の判定に使う）
     let paymentsInfo = null; // 料金の案内（サーバーが決めた金額。enabled が false の間は金額を出さない）
     let earlyInfo = null;    // 早割の状況（受付中か・残り何名か・いつまでか）
@@ -2015,6 +2020,7 @@
       const nr = timeRangeOf(s.time);
       if (!nr) return false;
       return myResvList.some((r) => {
+        if (r.finished) return false;   // 終わった予約とは重なってもよい
         if (r.date !== s.date || r.slotId === s.slotId) return false;
         const er = timeRangeOf(r.time);
         return er && nr.start <= er.end && nr.end >= er.start;
@@ -2038,6 +2044,13 @@
       earlyInfo = slotsRes.earlyBird || earlyInfo;
       const resvs = mine.reservations || [];
       myResvList = resvs;
+      openResv = mine.openReservation || null;
+      // 予約は同時に1件まで：いまの予約があれば「＋ 予約する」の代わりに案内を出す
+      $("oneResvNote").classList.toggle("hidden", !openResv);
+      $("oneResvNote").textContent = openResv ? "📌 予約は1件までです。いまの予約が終わると（クエスト終了・不成立・キャンセル）、次の時間を予約できます" : "";
+      $("addReserveBtn").classList.toggle("hidden", !!openResv);
+      $("addKidResvBtn").classList.toggle("hidden", !openResv);
+      $("addReserveBtn").textContent = resvs.some((r) => r.finished && r.minor !== "borrowed") ? "＋ 次の時間を予約する" : "＋ 予約する";
       const list = $("reserveList");
       list.innerHTML = "";
       if (!resvs.length) {
@@ -2187,13 +2200,13 @@
         setStatus("homeStatus", "キャンセルできませんでした：" + (r.error || ""), "ng");
       }
     }
-    // 「＋別の時間帯を予約する」→ 日時選択を表示
-    $("addReserveBtn").addEventListener("click", async () => {
+    // 「＋ 予約する」→ 日時選択を表示。kid＝お子さまが保護者のスマホで参加する予約（いまの予約があってもできる）
+    async function openChoose(kid) {
       $("myReserveBox").classList.add("hidden");
       $("chooseBox").classList.remove("hidden");
       // 「だれと参加する？」は毎回ソロに戻す（前回の選択が残っていると事故のもと）
       partyMode = "solo"; $("joinCode").value = "";
-      $("minorBorrowed").checked = false; $("participantNickname").value = ""; $("minorBox").classList.add("hidden");
+      $("minorBorrowed").checked = !!kid; $("participantNickname").value = ""; $("minorBox").classList.toggle("hidden", !kid);
       document.querySelectorAll("#partyMode .pm-opt").forEach((x) =>
         x.classList.toggle("active", x.dataset.mode === "solo"));
       $("joinCodeBox").classList.add("hidden");
@@ -2203,7 +2216,9 @@
       paymentsInfo = slotsRes.payments || paymentsInfo;
       earlyInfo = slotsRes.earlyBird || earlyInfo;
       renderSlots(slotsRes.slots || []);
-    });
+    }
+    $("addReserveBtn").addEventListener("click", () => openChoose(false));
+    $("addKidResvBtn").addEventListener("click", () => openChoose(true));
     $("chooseBackBtn").addEventListener("click", renderReserve);
 
     // ===== クーポン画面 =====
@@ -3012,6 +3027,7 @@
       else if (s.closed) reason = "予約の締切を過ぎています";
       else if (s.isFull) reason = "満席です";
       else if (s.advanceFull) reason = "先に予約できる分はいっぱいです（当日来場の方のために " + s.heldForDay + "席を残しています。" + (dayOpenLabel(s) ? dayOpenLabel(s) + " から予約できます" : "開始が近づくと予約できます") + "）";
+      else if (openResv && !minorMode) reason = "予約は1件までです（いまの予約が終わると予約できます）";
       else if (conflictsWithMine(s)) reason = "予約済みの時間と重なる（または続いている）ため選べません";
       else if (minorMode && s.adultsOnly) reason = "お子さまは参加できない枠です";
       if (reason) return { cls: "ng", mark: "×", reason };
