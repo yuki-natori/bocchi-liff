@@ -54,6 +54,30 @@
     .atab { flex-shrink:0; padding:9px 16px; border-radius:99px; border:1.5px solid #d9d4c6;
       background:#fff; cursor:pointer; font-size:13.5px; font-weight:700; color:var(--sub); margin:0; }
     .atab.active { background:var(--green); color:#fff; border-color:var(--green); }
+    @media (max-width:480px) { .admin-tabs { gap:4px; } .atab { padding:8px 7px; font-size:12px; } }
+    /* たためる設定（2026-10-16）：閉じているときは見出しと今の状態だけ */
+    details.set { padding:13px 18px; }
+    details.set > summary { cursor:pointer; list-style:none; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; }
+    details.set > summary::-webkit-details-marker { display:none; }
+    details.set > summary .st { font-size:15.5px; font-weight:800; color:var(--green); }
+    details.set > summary .st::before { content:"▸ "; color:var(--sub); }
+    details.set[open] > summary .st::before { content:"▾ "; }
+    details.set > summary .sv { font-size:13px; color:var(--sub); font-weight:600; }
+    details.set[open] > summary { margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #f0ece1; }
+    details.set.test { border-style:dashed; background:#fcfbf7; }
+    details.set.test > summary .st { color:var(--sub); }
+    .fold-row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
+    .fold-row > details.mini { flex:1 1 240px; padding:10px 14px; margin-bottom:12px; }
+    .fold-row > details.mini[open] { flex:1 1 100%; }
+    .grp-h { font-size:12.5px; font-weight:800; color:var(--sub); margin:18px 2px 8px; letter-spacing:.04em; }
+    .grp-h:first-child { margin-top:0; }
+    .todo { border-radius:8px; padding:9px 12px; margin:6px 0; font-size:14px; }
+    .todo.red { background:#fdf1f0; border:1px solid #f0c9c5; }
+    .todo.ok { background:#eef5f0; color:var(--green); }
+    .todo .sub-btn { margin:6px 0 0; }
+    #todoBox { font-size:14px; }
+    #todoBox .note { margin-top:10px; font-size:13px; color:var(--sub); }
+    details.set { margin-bottom:10px; }
     /* 日付タブ */
     .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0; }
     .tab { padding:7px 14px; border-radius:99px; border:1.5px solid #d9d4c6; background:#fff;
@@ -146,90 +170,78 @@
     <h1>100 Quest 管理画面</h1>
     <div class="sub">当日の運用操作はここから行います</div>
 
-    <!-- 画面切り替えタブ -->
+    <!-- 画面切り替えタブ（2026-10-16：いつ使うかで4つに分けた） -->
     <div class="admin-tabs">
+      <button class="atab" data-tab="tab-ops">🚩 当日</button>
       <button class="atab active" data-tab="tab-slots">📅 予約枠</button>
-      <button class="atab" data-tab="tab-ops">🎪 当日運用</button>
-      <button class="atab" data-tab="tab-coupons">🎟 クーポン</button>
-      <button class="atab" data-tab="tab-spots">📍 行き先</button>
-      <button class="atab" data-tab="tab-users">👤 ユーザー</button>
-      <button class="atab" data-tab="tab-quest">🏰 クエスト</button>
+      <button class="atab" data-tab="tab-users">👤 ユーザー・お金</button>
+      <button class="atab" data-tab="tab-settings">⚙️ 設定</button>
     </div>
 
-    <!-- ===== タブ: クエスト設定 ===== -->
-    <div id="tab-quest" class="tab-page hidden">
-      <div class="card">
-        <h2>🏰 クエスト設定</h2>
-        <div class="sub" style="margin-bottom:12px">
-          パーティ<b>全員がチェックするとミッションクリア</b>。⭐の数だけそのチカラが貯まり、
-          合計が条件に届くと姫を救出します。本編のお題は<b>3種類のタブ</b>に分かれます。
-          <b>☕ ひと休み</b>は2人目の姫を救出すると開き、開いている間は本編のお題を押せません。ひと休みのお題を全部終えるか、時間がたつと3人目の姫を救出します。
-        </div>
-
-        <!-- 現在のバランス（チカラの満点と、最後の姫に届くか）-->
-        <div id="questSummary" class="q-summary"></div>
-
-        <div class="q-sec">
-          <div class="q-sec-h">👑 姫の救出条件<span class="q-note">保存すると進行中のパーティにもすぐ反映</span></div>
-          <div id="questPrincessList"></div>
-          <div id="questPrincessMsg" class="status"></div>
-        </div>
-
-        <div class="q-sec">
-          <div class="q-sec-h">🗂 お題の種類の名前<span class="q-note">アプリのタブに出る名前（絵文字も入れられる・16文字まで）</span></div>
-          <div class="row" id="questCatNames"></div>
-        </div>
-
-        <div class="q-sec">
-          <div class="q-sec-h">☕ ひと休みの時間<span class="q-note">次に開くひと休みから反映</span></div>
-          <div class="row">
-            <div><label>ひと休みの長さ（分・5〜60）</label><input type="number" id="qr_minutes" min="5" max="60" /></div>
-            <div><label>遅く開いたときの長さ（分・3〜30）</label><input type="number" id="qr_lateMinutes" min="3" max="30" /></div>
-            <div><label>遅いとみなす：終了の何分前を過ぎたら（10〜90）</label><input type="number" id="qr_lateWithinMin" min="10" max="90" /></div>
-          </div>
-          <div class="sub" style="font-size:12px; margin-top:4px">ひと休みのお題を全部終えれば、時間より前でも終わります。時間がたったことはLINEでは知らせず、アプリに終わりの時刻を出します。</div>
-        </div>
-
-        <div class="q-sec">
-          <div class="q-sec-h">🧭 チュートリアル<span class="q-note">移動1つ＋移動先でのアイスブレイク3つ／合計＝最初の姫の条件になるように</span></div>
-          <div class="sub" style="font-size:12px; margin:-4px 0 10px">
-            行の追加・削除・並べ替えはできません（名前の入力欄や目的地の仕掛けが各行に紐づいているため）。
-            スタートした時点で移動先を出し、<b>移動を全員でチェックするまで残りの3つは押せません</b>（ブースではチュートリアルをしない）。
-            移動の行には <b>{destination}</b> を必ず残してください（パーティが選んだ行き先＝📍行き先タブの候補が入ります）。
-          </div>
-          <div id="questTutorialList"></div>
-          <button class="sub-btn danger" id="resetTutorialBtn">チュートリアルを既定に戻す</button>
-        </div>
-
-        <div class="q-sec">
-          <div class="q-sec-h">🗒 ミッション<span class="q-note">反映は次にマッチングした枠から（進行中には影響なし）／ひと休みを含めて20件まで</span></div>
-          <div class="sub" style="font-size:12px; margin:-4px 0 10px">
-            行ごとに<b>種類</b>（タブ）と<b>おすすめの時期</b>を選びます。「序盤向け」は最初の30%の時間に、「終盤向け」は残り20%になってから「次のおすすめ」に出します。
-            ☕ ひと休みのお題は⭐なし（チカラにも「全部クリアの演出」にも数えません）。並び順は、タブの中の並びと「次のおすすめ」の順になります。
-            各行の下の欄は<b>💡説明</b>（アプリで💡を押すと出る。空なら💡を出さない）。残り時間を意識させないよう、<b>目安の時間は書かない</b>でください（クリアより、相手との会話を楽しむのが一番の目的）。
-          </div>
-          <div class="q-filter" id="missionFilter"></div>
-          <div id="questMissionList"></div>
-          <button class="sub-btn" id="addMissionBtn">＋ ミッションを追加</button>
-          <button class="sub-btn danger" id="resetMissionBtn">ミッションを既定に戻す</button>
-        </div>
-
-        <!-- 保存バー（下に固定。未保存のまま離れるのを防ぐ）-->
-        <div class="q-bar">
-          <div class="q-dirty" id="questDirty"></div>
-          <button class="sub-btn" id="reloadQuestBtn">読み込み直す</button>
-          <button id="saveAllQuestBtn">保存する</button>
-        </div>
-        <div class="status" id="questStatus"></div>
+    <!-- ===== タブ: 当日 ===== -->
+    <div id="tab-ops" class="tab-page hidden">
+    <!-- 要対応のまとめ（当日タブを開くたびに読み込む） -->
+    <div class="card" id="todoCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <h2 style="margin:0">📌 いま対応が必要なこと</h2>
+        <button class="sub-btn" id="todoReload" style="margin:0">更新</button>
       </div>
+      <div id="todoBox" style="margin-top:10px">読み込み中…</div>
     </div>
 
-    <!-- ===== タブ: 予約枠 ===== -->
-    <div id="tab-slots" class="tab-page">
-
-    <!-- スロット作成／編集 -->
+    <!-- ブースの様子（スタッフ用ページと同じ画面を埋め込む。管理者キーでそのまま使える） -->
     <div class="card">
-      <h2 id="slotFormTitle">① 予約枠（スロット）を作成</h2>
+      <h2>🚩 ブースの様子</h2>
+      <div class="sub" style="margin-bottom:8px">今の時刻の前後の枠の組（仮名・到着・スタート状況）。チェックインと「パーティが集まった」の代行ができます。
+        スタッフには、⚙️ 設定のスタッフキーで <b>スタッフ用ページ</b>（<a href="staff.html" target="_blank">staff.html</a>）を使ってもらいます。</div>
+      <button class="sub-btn" id="boothToggle">表示する</button>
+      <a class="sub-btn" href="staff.html" target="_blank" style="display:inline-block;text-decoration:none">別のタブで開く ↗</a>
+      <iframe id="boothFrame" class="hidden" style="width:100%;height:640px;border:1px solid #ece8dc;border-radius:8px;margin-top:8px"></iframe>
+    </div>
+
+    <!-- 一斉お知らせ配信 -->
+    <div class="card">
+      <h2>📢 一斉お知らせ配信</h2>
+      <div class="sub" style="margin-bottom:10px">
+        対象の予約者全員にLINEでメッセージを送ります（開始遅れ・集合場所変更・雨天案内など）。<br>
+        枠IDと日付の両方を入れた場合は<b>枠IDを優先</b>します。日付指定は同じ人が複数予約していても1通だけ届きます。
+      </div>
+      <div class="row">
+        <div><label>枠ID（この枠の予約者へ）</label><input type="text" id="bcSlot" placeholder="slotId（予約枠の一覧でコピー）" /></div>
+        <div><label>または日付（この日の予約者全員へ）</label><input type="date" id="bcDate" /></div>
+      </div>
+      <label>メッセージ</label>
+      <textarea id="bcMsg" rows="4" placeholder="例：雨のため集合場所を屋内（〇〇前）に変更します。気をつけてお越しください。"></textarea>
+      <button class="sub-btn" id="bcPreviewBtn">対象人数とプレビューを確認</button>
+      <button class="warn" id="bcSendBtn">送信する</button>
+      <div class="status" id="bcStatus"></div>
+    </div>
+
+    <!-- 売上の記録（個人情報なし） -->
+    <div class="card">
+      <h2>📄 売上の記録</h2>
+      <div class="sub" style="margin-bottom:8px">ブースで受け取った参加費の記録です。<b>名前・ニックネーム・LINEのIDは入りません</b>。
+        フェス後にデータを消す<b>前に</b>CSV（Excelで開けます）を保存して、確定申告などの根拠として手元に残してください。
+        「現金」の合計は、閉店後のお金の箱の中身と突き合わせに使えます。</div>
+      <div class="row">
+        <div><label>この日から（空ならすべて）</label><input type="date" id="salesFrom" /></div>
+        <div><label>この日まで</label><input type="date" id="salesTo" /></div>
+      </div>
+      <button id="salesView">集計を見る</button>
+      <button class="sub-btn" id="salesCsvRows">CSVで保存（1件ずつの明細）</button>
+      <button class="sub-btn" id="salesCsvDays">CSVで保存（日ごとの合計）</button>
+      <div class="status" id="salesStatus"></div>
+      <div id="salesBox" style="margin-top:8px;overflow-x:auto"></div>
+    </div>
+
+    </div><!-- /tab-ops -->
+
+    <!-- ===== タブ: 予約枠（一覧が主役。作るフォームはたたんでおく） ===== -->
+    <div id="tab-slots" class="tab-page">
+    <div class="fold-row">
+    <!-- スロット作成／編集 -->
+    <details class="card set mini" id="sec_slotForm"><summary><span class="st">＋ 枠を1つ作る／編集する</span></summary>
+      <h2 id="slotFormTitle">予約枠を作成</h2>
       <div class="row">
         <div><label>日付</label><input type="date" id="slotDate" /></div>
         <div><label>時間帯</label><input type="text" id="slotTime" placeholder="13:00〜14:50" />
@@ -264,10 +276,10 @@
       </div>
       <div class="meta ng" id="adultsWarn" style="margin:4px 0 0 22px"></div>
       <div class="sub" style="margin-top:6px">
-        <b>締切時刻に自動でマッチングされます</b>。パーティの発表（LINE）は、下の「📣 パーティ発表の自動配信」が
+        <b>締切時刻に自動でマッチングされます</b>。パーティの発表（LINE）は、⚙️ 設定の「📣 パーティ発表の自動配信」が
         <b>ONなら自動で</b>、OFFなら内容を確認してから「結果を一斉通知」を押して送ります。締切後は参加者がキャンセルできなくなります。<br>
-締切の基本は<b>開始45分前</b>です（会場内の移動時間を見て、30〜45分で調整）。チェックインの受付開始は🎪当日運用の「ブースの流れの設定」で決めます。<br>
-        締切を<b>当日用の席が開く時刻（下の🎫）より前</b>にすると、その枠は当日用の席を残しません（残しても、開く前に締め切られて誰も予約できないため）。
+締切の基本は<b>開始45分前</b>です（会場内の移動時間を見て、30〜45分で調整）。チェックインの受付開始は⚙️ 設定の「⏱ ブースの流れ」で決めます。<br>
+        締切を<b>当日用の席が開く時刻（⚙️ 設定の🎫）より前</b>にすると、その枠は当日用の席を残しません（残しても、開く前に締め切られて誰も予約できないため）。
       </div>
       <label style="margin-top:10px; font-weight:400; cursor:pointer;">
         <input type="checkbox" id="slotTest" style="width:auto; margin-right:6px; vertical-align:middle;" />
@@ -279,11 +291,11 @@
       <button id="createSlotBtn">この枠を作成</button>
       <button id="cancelEditBtn" class="sub-btn hidden">編集をやめる</button>
       <div class="status" id="slotStatus"></div>
-    </div>
+    </details>
 
     <!-- 枠をまとめて作成（フェスの細かい間隔の枠を一度に） -->
-    <div class="card">
-      <h2>①+ 予約枠をまとめて作成</h2>
+    <details class="card set mini" id="sec_bulk"><summary><span class="st">＋ 枠をまとめて作る</span></summary>
+      
       <div class="sub" style="margin-bottom:6px">日付と「最初〜最後の開始時刻・間隔」から枠を並べて作ります。作る前に一覧で確認できます。同じ日付・同じ開始時刻の枠がすでにあれば作りません。作った枠は、あとから1枠ずつ編集・削除できます。</div>
       <label>日付（複数選べます）</label>
       <div class="row" style="align-items:center">
@@ -325,62 +337,12 @@
       <div class="status" id="bStatus"></div>
       <div class="hidden" id="bPreview" style="max-height:340px;overflow:auto;border:1px solid #ece8dc;border-radius:8px;margin-top:8px"></div>
       <button id="bCreateBtn" class="hidden">この内容で作成する</button>
-    </div>
+    </details>
 
-    <!-- 当日来場者のための席 -->
-    <div class="card">
-      <h2>🎫 当日来場者のための席</h2>
-      <div class="sub" style="margin-bottom:8px">出店要項「事前予約が満席で、当日の来場者が体験できない状況を避ける」への対応です。
-        各枠で、<b>先に予約できるのは定員のこの割合まで</b>。残りの席は<b>開始の◯分前になると</b>開き、だれでも予約できます（会場に来ている人のための席）。
-        先に予約できる分の空きや、キャンセルで戻った席は、締切までいつでも予約できます。
-        テスト枠と、18歳未満の招待（保護者と同じパーティ）は対象外。<b>締切が「席の開く時刻」以前の枠</b>は、席を残しません。変えると、そのあとの予約から効きます（入っている予約はそのまま）。</div>
-      <div class="row" style="align-items:flex-end">
-        <div><label>先に予約できる割合（%・50〜100）</label><input type="number" id="advPercent" min="50" max="100" step="5" /></div>
-        <div><label>残りの席を開く時間（開始の何分前・15〜720）</label><input type="number" id="dayOpenMin" min="15" max="720" step="15" /></div>
-        <div style="flex:0 0 auto;min-width:0"><button id="advSave" style="margin:0">保存する</button></div>
-      </div>
-      <div class="meta" id="advExample"></div>
-      <div class="status" id="advStatus"></div>
     </div>
-
-    <!-- パーティ発表の自動配信・リーダーへの通知 -->
-    <div class="card">
-      <h2>📣 パーティ発表の自動配信</h2>
-      <div class="sub" style="margin-bottom:8px">ONにすると、締切で自動マッチングした枠のパーティ発表（LINE）を、<b>その場で自動で送ります</b>（締切から5分以内）。
-        送るのは、<b>⚠️要確認が付いていない・全員がパーティに入っている枠だけ</b>です。
-        要確認の枠・手動で組み直した枠・OFFの間にマッチングだけ済んだ枠は、今までどおり「結果を一斉通知」で送ってください。
-        LINEがエラーを返したときは、あと2回まで自動でやり直し、それでも送れなければ枠に「⚠️届いていません」と出ます。<br>
-        ※相手が公式アカウントをブロックしていると、LINEは「成功」を返すため、ここでは分かりません。</div>
-      <label style="font-weight:700; cursor:pointer;"><input type="checkbox" id="autoNotify" style="width:auto; margin-right:8px; vertical-align:middle;" />自動で送る</label>
-      <div class="status" id="autoNotifyStatus"></div>
-      <h2 style="margin-top:18px">🔔 リーダーへのお知らせ（LINE）</h2>
-      <div class="sub" style="margin-bottom:8px">⚠️要確認の枠が出たときと、パーティの発表を送れなかったときに、ここに登録した人のLINEへ知らせます（3人まで）。
-        登録できるのは、アプリでプロフィールを登録している人です。ニックネームで探して追加してください。</div>
-      <div id="leaderList" class="meta">読み込み中…</div>
-      <div class="row" style="align-items:flex-end; margin-top:8px">
-        <div><label>ニックネームで探す</label><input type="text" id="leaderQuery" placeholder="ニックネームの最初の数文字" /></div>
-        <div style="flex:0 0 auto;min-width:0"><button type="button" class="sub-btn" id="leaderSearch" style="margin:0">探す</button></div>
-      </div>
-      <div id="leaderFound"></div>
-      <button type="button" class="sub-btn" id="leaderTest" style="margin-top:8px">テストのLINEを送る</button>
-      <div class="status" id="leaderStatus"></div>
-    </div>
-
-    <!-- 早割の状況 -->
-    <div class="card">
-      <h2>🏷 早割</h2>
-      <div class="sub" style="margin-bottom:8px">早割は<b>期限までの予約・先着の人数まで・1人1回</b>。早割の予約がキャンセルされると、その分は次の人が早割で予約できます。
-        ただし、<b>一度上限の人数に達したら終了</b>し、そのあとキャンセルが出ても再開しません。無料の枠と18歳未満は数えません。
-        金額・人数・期限は、特定商取引法のページと同じ内容をコードで決めています（変えるときはClaudeに依頼）。</div>
-      <div id="earlyInfo" class="meta">読み込み中…</div>
-      <button type="button" class="sub-btn" id="earlyRecount" style="margin-top:8px">人数を数え直す</button>
-      <div class="meta">テストの予約を消したあとなど、記録の人数が実際とずれたときに使います。</div>
-      <div class="status" id="earlyStatus"></div>
-    </div>
-
     <!-- スロット一覧＋マッチング／通知 -->
     <div class="card">
-      <h2>② 予約枠の一覧・マッチング・通知</h2>
+      <h2>📅 予約枠の一覧・マッチング・通知</h2>
       <button class="sub-btn" id="reloadSlots">一覧を更新</button>
       <div class="tabs" id="dateTabs"></div>
       <!-- 締切必須化の移行用。締切が入っていない枠が残っていると自動マッチングが走らない -->
@@ -395,46 +357,40 @@
 
     </div><!-- /tab-slots -->
 
-    <!-- ===== タブ: 集合場所 ===== -->
-    <div id="tab-spots" class="tab-page hidden">
-
-    <!-- 集合場所 -->
+    <!-- ===== タブ: ユーザー・お金 ===== -->
+    <div id="tab-users" class="tab-page hidden">
+    <!-- ユーザー検索 -->
     <div class="card">
-      <h2 id="spotFormTitle">③ 行き先の候補を登録</h2>
+      <h2>🔍 ユーザー検索</h2>
       <div class="sub" style="margin-bottom:10px">
-        ここに登録したエリアが<b>最初の行き先の候補</b>になります。マッチング時に、パーティごとに<b>候補3つ</b>（先頭が「おすすめ」）を
-        登録順からずらして割り当てます（同じ枠・隣の枠でおすすめが重ならないように）。
-        ブースでスタッフが候補を紹介し、パーティがアプリで1つ選びます（だれが選んでもOK・出発までは変更可。選ばなければおすすめ）。<br>
-        候補は<b>フェスの見どころのエリア</b>にします（例：フードエリア、ブースが並ぶ通り）。
-        <b>つながるエリア・公式ブースエリア・ステージの前と客席・フォトスポット・こどもエリアは候補にしない</b>（企画書の約束）。
-        目安は<b>5〜8件</b>。<b>0件のときは全パーティ「スタート地点」と表示</b>されます。
+        ニックネーム（前方一致）または LINEユーザーID（U…）で検索します。<br>
+        「予約できていますか？」などの問い合わせ対応用。予約・グループ・クーポンの状況をまとめて確認できます。
       </div>
       <div class="row">
-        <div><label>エリアの名前（20文字まで）</label><input id="spotLabel" maxlength="20" placeholder="例：フードエリア" /></div>
-        <div><label>楽しみと結びつける（任意）</label>
-          <select id="spotFun">
-            <option value="">なし</option><option value="stage">🎤 ステージ</option><option value="booth">🎪 ブース巡り</option>
-            <option value="food">🍽 グルメ</option><option value="meet">🤝 仲間との交流</option><option value="learn">📚 学び</option>
-          </select>
-        </div>
+        <div style="flex:2"><input type="text" id="usQuery" placeholder="ニックネーム or U…" /></div>
+        <div style="flex:0"><button id="usBtn" style="margin-top:0">検索</button></div>
       </div>
-      <div><label>ひとこと説明（40文字まで・任意）</label><input id="spotNote" maxlength="40" placeholder="例：キッチンカーや屋台が並ぶエリア" /></div>
-      <div class="sub" style="margin:6px 0 10px">「楽しみ」を選んでおくと、その楽しみを選んだメンバーの名前が候補に添えられます（選ぶきっかけ）。</div>
-      <button id="createSpotBtn">登録する</button>
-      <button id="cancelSpotEditBtn" class="sub-btn hidden">編集をやめる</button>
-      <button class="sub-btn" id="reloadSpots">一覧を更新</button>
-      <div class="status" id="spotStatus"></div>
-      <div id="spotList" style="margin-top:10px"></div>
+      <div class="status" id="usStatus"></div>
+      <div id="usResults" style="margin-top:10px"></div>
     </div>
 
-    </div><!-- /tab-spots -->
-
-    <!-- ===== タブ: クーポン ===== -->
-    <div id="tab-coupons" class="tab-page hidden">
+    <!-- 返金対応リスト -->
+    <div class="card">
+      <h2>💰 返金対応リスト</h2>
+      <div class="sub" style="margin-bottom:10px">
+        <b>ブースで受け取ったあとに不成立</b>になった人がここに出ます。現金はその場でお返し、SquareはSquareのアプリで返金して「対応済みにする」。<br>
+        （以下はアプリ決済を使っていたときの分）キャンセル・当日の不成立の返金は<b>自動</b>で行います。ここに出るのは、人の判断や対応が必要なものだけです。<br>
+        ・<b>マッチング不成立</b>：組み直しで入れる可能性があるので自動では返金しません。返すと決めたら「Stripeで返金」<br>
+        ・<b>返金に失敗</b>（PayPayでStripeの残高不足など）：残高が戻ってから「Stripeで返金」でやり直し<br>
+        ・Stripeの管理画面など別の方法で返した場合は「対応済みにする」
+      </div>
+      <button class="sub-btn" id="reloadRefunds">一覧を更新</button>
+      <div id="refundList" style="margin-top:10px"></div>
+    </div>
 
     <!-- クーポンコード -->
     <div class="card">
-      <h2>④ クーポンコードを作る（仲間内に配る・1回限り）</h2>
+      <h2>🎟 クーポンコードを作る（仲間内に配る・1回限り）</h2>
       <div class="sub" style="margin-bottom:10px">
         作ったコードを相手に伝えると、相手がアプリの「クーポン」画面で入力して自分のクーポンにできます。1つのコードは1人・1回だけ使えます。
       </div>
@@ -465,7 +421,7 @@
 
     <!-- クーポン手動発行 -->
     <div class="card">
-      <h2>⑤ クーポンを手動発行（割引額）</h2>
+      <h2>🎟 クーポンを手動発行（割引額）</h2>
       <label>送り先 LINEユーザーID（Uから始まる）</label>
       <input type="text" id="cpUid" placeholder="U..." />
       <div class="row">
@@ -476,24 +432,75 @@
       <div class="status" id="cpStatus"></div>
     </div>
 
-    </div><!-- /tab-coupons -->
+    </div><!-- /tab-users -->
 
-    <!-- ===== タブ: 当日運用 ===== -->
-    <div id="tab-ops" class="tab-page hidden">
+    <!-- ===== タブ: 設定（ふだんは閉じておき、右に今の状態を1行で出す） ===== -->
+    <div id="tab-settings" class="tab-page hidden">
+    <div class="grp-h">配信と予約</div>
+    <!-- パーティ発表の自動配信・リーダーへの通知 -->
+    <details class="card set" id="sec_notify"><summary><span class="st">📣 パーティ発表の自動配信・🔔 リーダーへのお知らせ</span><span class="sv" id="sv_notify">読み込み中…</span></summary>
+      <div class="sub" style="margin-bottom:8px">ONにすると、締切で自動マッチングした枠のパーティ発表（LINE）を、<b>その場で自動で送ります</b>（締切から5分以内）。
+        送るのは、<b>⚠️要確認が付いていない・全員がパーティに入っている枠だけ</b>です。
+        要確認の枠・手動で組み直した枠・OFFの間にマッチングだけ済んだ枠は、今までどおり「結果を一斉通知」で送ってください。
+        LINEがエラーを返したときは、あと2回まで自動でやり直し、それでも送れなければ枠に「⚠️届いていません」と出ます。<br>
+        ※相手が公式アカウントをブロックしていると、LINEは「成功」を返すため、ここでは分かりません。</div>
+      <label style="font-weight:700; cursor:pointer;"><input type="checkbox" id="autoNotify" style="width:auto; margin-right:8px; vertical-align:middle;" />自動で送る</label>
+      <div class="status" id="autoNotifyStatus"></div>
+      <h2 style="margin-top:18px">🔔 リーダーへのお知らせ（LINE）</h2>
+      <div class="sub" style="margin-bottom:8px">⚠️要確認の枠が出たときと、パーティの発表を送れなかったときに、ここに登録した人のLINEへ知らせます（3人まで）。
+        登録できるのは、アプリでプロフィールを登録している人です。ニックネームで探して追加してください。</div>
+      <div id="leaderList" class="meta">読み込み中…</div>
+      <div class="row" style="align-items:flex-end; margin-top:8px">
+        <div><label>ニックネームで探す</label><input type="text" id="leaderQuery" placeholder="ニックネームの最初の数文字" /></div>
+        <div style="flex:0 0 auto;min-width:0"><button type="button" class="sub-btn" id="leaderSearch" style="margin:0">探す</button></div>
+      </div>
+      <div id="leaderFound"></div>
+      <button type="button" class="sub-btn" id="leaderTest" style="margin-top:8px">テストのLINEを送る</button>
+      <div class="status" id="leaderStatus"></div>
+    </details>
 
-    <!-- ブースの様子（スタッフ用ページと同じ画面を埋め込む。管理者キーでそのまま使える） -->
-    <div class="card">
-      <h2>🚩 ブースの様子</h2>
-      <div class="sub" style="margin-bottom:8px">今の時刻の前後の枠の組（仮名・到着・スタート状況）。チェックインと「パーティが集まった」の代行ができます。
-        スタッフには、下のスタッフキーで <b>スタッフ用ページ</b>（<a href="staff.html" target="_blank">staff.html</a>）を使ってもらいます。</div>
-      <button class="sub-btn" id="boothToggle">表示する</button>
-      <a class="sub-btn" href="staff.html" target="_blank" style="display:inline-block;text-decoration:none">別のタブで開く ↗</a>
-      <iframe id="boothFrame" class="hidden" style="width:100%;height:640px;border:1px solid #ece8dc;border-radius:8px;margin-top:8px"></iframe>
-    </div>
+    <!-- 当日来場者のための席 -->
+    <details class="card set" id="sec_dayseat"><summary><span class="st">🎫 当日来場者のための席</span><span class="sv" id="sv_dayseat">読み込み中…</span></summary>
+      <div class="sub" style="margin-bottom:8px">出店要項「事前予約が満席で、当日の来場者が体験できない状況を避ける」への対応です。
+        各枠で、<b>先に予約できるのは定員のこの割合まで</b>。残りの席は<b>開始の◯分前になると</b>開き、だれでも予約できます（会場に来ている人のための席）。
+        先に予約できる分の空きや、キャンセルで戻った席は、締切までいつでも予約できます。
+        テスト枠と、18歳未満の招待（保護者と同じパーティ）は対象外。<b>締切が「席の開く時刻」以前の枠</b>は、席を残しません。変えると、そのあとの予約から効きます（入っている予約はそのまま）。</div>
+      <div class="row" style="align-items:flex-end">
+        <div><label>先に予約できる割合（%・50〜100）</label><input type="number" id="advPercent" min="50" max="100" step="5" /></div>
+        <div><label>残りの席を開く時間（開始の何分前・15〜720）</label><input type="number" id="dayOpenMin" min="15" max="720" step="15" /></div>
+        <div style="flex:0 0 auto;min-width:0"><button id="advSave" style="margin:0">保存する</button></div>
+      </div>
+      <div class="meta" id="advExample"></div>
+      <div class="status" id="advStatus"></div>
+    </details>
+
+    <!-- 早割の状況 -->
+    <details class="card set" id="sec_early"><summary><span class="st">🏷 早割</span><span class="sv" id="sv_early">読み込み中…</span></summary>
+      <div class="sub" style="margin-bottom:8px">早割は<b>期限までの予約・先着の人数まで・1人1回</b>。早割の予約がキャンセルされると、その分は次の人が早割で予約できます。
+        ただし、<b>一度上限の人数に達したら終了</b>し、そのあとキャンセルが出ても再開しません。無料の枠と18歳未満は数えません。
+        金額・人数・期限は、特定商取引法のページと同じ内容をコードで決めています（変えるときはClaudeに依頼）。</div>
+      <div id="earlyInfo" class="meta">読み込み中…</div>
+      <button type="button" class="sub-btn" id="earlyRecount" style="margin-top:8px">人数を数え直す</button>
+      <div class="meta">テストの予約を消したあとなど、記録の人数が実際とずれたときに使います。</div>
+      <div class="status" id="earlyStatus"></div>
+    </details>
+
+    <div class="grp-h">当日のブース</div>
+    <!-- ブースの流れの設定値 -->
+    <details class="card set" id="sec_timing"><summary><span class="st">⏱ ブースの流れ</span><span class="sv" id="sv_timing">読み込み中…</span></summary>
+      <div class="sub" style="margin-bottom:6px">チェックインの受付開始・「パーティが集まった」が押されないときの自動スタート・途中合流の受付時間。LINEの案内文にもこの値が入ります。</div>
+      <table class="b-table" style="max-width:520px">
+        <tr><th></th><th>通常の枠</th><th>テスト枠（30分）</th></tr>
+        <tr><td>受付開始（開始◯分前から）</td><td><input type="number" id="tm_normal_checkinOpenMin" min="0" max="60" /></td><td><input type="number" id="tm_test_checkinOpenMin" min="0" max="60" /></td></tr>
+        <tr><td>待機猶予（開始◯分後に自動スタート）</td><td><input type="number" id="tm_normal_graceMin" min="0" max="30" /></td><td><input type="number" id="tm_test_graceMin" min="0" max="30" /></td></tr>
+        <tr><td>途中合流（スタート後◯分まで）</td><td><input type="number" id="tm_normal_lateJoinMin" min="0" max="60" /></td><td><input type="number" id="tm_test_lateJoinMin" min="0" max="60" /></td></tr>
+      </table>
+      <button id="timingSave">保存する</button>
+      <div class="status" id="timingStatus"></div>
+    </details>
 
     <!-- スタッフキー -->
-    <div class="card">
-      <h2>🔑 スタッフキー</h2>
+    <details class="card set" id="sec_staffkey"><summary><span class="st">🔑 スタッフキー</span><span class="sv" id="sv_staffkey">読み込み中…</span></summary>
       <div class="sub" style="margin-bottom:8px">スタッフ用ページだけで使うキーです（管理者キーとは別）。できるのは「ブースの様子を見る・チェックインの代行・パーティが集まったの代行・参加費の受け取り（クーポンを使う）」だけで、枠・マッチング・通知・クーポンの発行・返金・売上の記録・ユーザー検索などはできません。
         開催日ごとに発行し直したり、すぐ無効にしたりできます。キーは発行したときに<b>1回だけ</b>表示します。</div>
       <div class="meta" id="staffKeyState">—</div>
@@ -505,48 +512,110 @@
       <button class="sub-btn" id="staffKeyOn">有効に戻す</button>
       <div class="result hidden" id="staffKeyShow"></div>
       <div class="status" id="staffKeyStatus"></div>
-    </div>
+    </details>
 
-    <!-- ブースの流れの設定値 -->
-    <div class="card">
-      <h2>⏱ ブースの流れの設定</h2>
-      <div class="sub" style="margin-bottom:6px">チェックインの受付開始・「パーティが集まった」が押されないときの自動スタート・途中合流の受付時間。LINEの案内文にもこの値が入ります。</div>
-      <table class="b-table" style="max-width:520px">
-        <tr><th></th><th>通常の枠</th><th>テスト枠（30分）</th></tr>
-        <tr><td>受付開始（開始◯分前から）</td><td><input type="number" id="tm_normal_checkinOpenMin" min="0" max="60" /></td><td><input type="number" id="tm_test_checkinOpenMin" min="0" max="60" /></td></tr>
-        <tr><td>待機猶予（開始◯分後に自動スタート）</td><td><input type="number" id="tm_normal_graceMin" min="0" max="30" /></td><td><input type="number" id="tm_test_graceMin" min="0" max="30" /></td></tr>
-        <tr><td>途中合流（スタート後◯分まで）</td><td><input type="number" id="tm_normal_lateJoinMin" min="0" max="60" /></td><td><input type="number" id="tm_test_lateJoinMin" min="0" max="60" /></td></tr>
-      </table>
-      <button id="timingSave">保存する</button>
-      <div class="status" id="timingStatus"></div>
-    </div>
-
-    <!-- 売上の記録（個人情報なし） -->
-    <div class="card">
-      <h2>📄 売上の記録</h2>
-      <div class="sub" style="margin-bottom:8px">ブースで受け取った参加費の記録です。<b>名前・ニックネーム・LINEのIDは入りません</b>。
-        フェス後にデータを消す<b>前に</b>CSV（Excelで開けます）を保存して、確定申告などの根拠として手元に残してください。
-        「現金」の合計は、閉店後のお金の箱の中身と突き合わせに使えます。</div>
-      <div class="row">
-        <div><label>この日から（空ならすべて）</label><input type="date" id="salesFrom" /></div>
-        <div><label>この日まで</label><input type="date" id="salesTo" /></div>
+    <div class="grp-h">クエスト</div>
+    <!-- 集合場所 -->
+    <details class="card set" id="sec_spots"><summary><span class="st">📍 行き先の候補</span><span class="sv" id="sv_spots">読み込み中…</span></summary>
+      <h2 id="spotFormTitle" style="font-size:14px">行き先の候補を登録</h2>
+      <div class="sub" style="margin-bottom:10px">
+        ここに登録したエリアが<b>最初の行き先の候補</b>になります。マッチング時に、パーティごとに<b>候補3つ</b>（先頭が「おすすめ」）を
+        登録順からずらして割り当てます（同じ枠・隣の枠でおすすめが重ならないように）。
+        ブースでスタッフが候補を紹介し、パーティがアプリで1つ選びます（だれが選んでもOK・出発までは変更可。選ばなければおすすめ）。<br>
+        候補は<b>フェスの見どころのエリア</b>にします（例：フードエリア、ブースが並ぶ通り）。
+        <b>つながるエリア・公式ブースエリア・ステージの前と客席・フォトスポット・こどもエリアは候補にしない</b>（企画書の約束）。
+        目安は<b>5〜8件</b>。<b>0件のときは全パーティ「スタート地点」と表示</b>されます。
       </div>
-      <button id="salesView">集計を見る</button>
-      <button class="sub-btn" id="salesCsvRows">CSVで保存（1件ずつの明細）</button>
-      <button class="sub-btn" id="salesCsvDays">CSVで保存（日ごとの合計）</button>
-      <div class="status" id="salesStatus"></div>
-      <div id="salesBox" style="margin-top:8px;overflow-x:auto"></div>
-    </div>
+      <div class="row">
+        <div><label>エリアの名前（20文字まで）</label><input id="spotLabel" maxlength="20" placeholder="例：フードエリア" /></div>
+        <div><label>楽しみと結びつける（任意）</label>
+          <select id="spotFun">
+            <option value="">なし</option><option value="stage">🎤 ステージ</option><option value="booth">🎪 ブース巡り</option>
+            <option value="food">🍽 グルメ</option><option value="meet">🤝 仲間との交流</option><option value="learn">📚 学び</option>
+          </select>
+        </div>
+      </div>
+      <div><label>ひとこと説明（40文字まで・任意）</label><input id="spotNote" maxlength="40" placeholder="例：キッチンカーや屋台が並ぶエリア" /></div>
+      <div class="sub" style="margin:6px 0 10px">「楽しみ」を選んでおくと、その楽しみを選んだメンバーの名前が候補に添えられます（選ぶきっかけ）。</div>
+      <button id="createSpotBtn">登録する</button>
+      <button id="cancelSpotEditBtn" class="sub-btn hidden">編集をやめる</button>
+      <button class="sub-btn" id="reloadSpots">一覧を更新</button>
+      <div class="status" id="spotStatus"></div>
+      <div id="spotList" style="margin-top:10px"></div>
+    </details>
 
+      <details class="card set" id="sec_quest"><summary><span class="st">🏰 クエスト（姫の条件・お題・ひと休み）</span><span class="sv" id="sv_quest">読み込み中…</span></summary>
+        <div class="sub" style="margin-bottom:12px">
+          パーティ<b>全員がチェックするとミッションクリア</b>。⭐の数だけそのチカラが貯まり、
+          合計が条件に届くと姫を救出します。本編のお題は<b>3種類のタブ</b>に分かれます。
+          <b>☕ ひと休み</b>は2人目の姫を救出すると開き、開いている間は本編のお題を押せません。ひと休みのお題を全部終えるか、時間がたつと3人目の姫を救出します。
+        </div>
+
+        <!-- 現在のバランス（チカラの満点と、最後の姫に届くか）-->
+        <div id="questSummary" class="q-summary"></div>
+
+        <div class="q-sec">
+          <div class="q-sec-h">👑 姫の救出条件<span class="q-note">保存すると進行中のパーティにもすぐ反映</span></div>
+          <div id="questPrincessList"></div>
+          <div id="questPrincessMsg" class="status"></div>
+        </div>
+
+        <div class="q-sec">
+          <div class="q-sec-h">🗂 お題の種類の名前<span class="q-note">アプリのタブに出る名前（絵文字も入れられる・16文字まで）</span></div>
+          <div class="row" id="questCatNames"></div>
+        </div>
+
+        <div class="q-sec">
+          <div class="q-sec-h">☕ ひと休みの時間<span class="q-note">次に開くひと休みから反映</span></div>
+          <div class="row">
+            <div><label>ひと休みの長さ（分・5〜60）</label><input type="number" id="qr_minutes" min="5" max="60" /></div>
+            <div><label>遅く開いたときの長さ（分・3〜30）</label><input type="number" id="qr_lateMinutes" min="3" max="30" /></div>
+            <div><label>遅いとみなす：終了の何分前を過ぎたら（10〜90）</label><input type="number" id="qr_lateWithinMin" min="10" max="90" /></div>
+          </div>
+          <div class="sub" style="font-size:12px; margin-top:4px">ひと休みのお題を全部終えれば、時間より前でも終わります。時間がたったことはLINEでは知らせず、アプリに終わりの時刻を出します。</div>
+        </div>
+
+        <div class="q-sec">
+          <div class="q-sec-h">🧭 チュートリアル<span class="q-note">移動1つ＋移動先でのアイスブレイク3つ／合計＝最初の姫の条件になるように</span></div>
+          <div class="sub" style="font-size:12px; margin:-4px 0 10px">
+            行の追加・削除・並べ替えはできません（名前の入力欄や目的地の仕掛けが各行に紐づいているため）。
+            スタートした時点で移動先を出し、<b>移動を全員でチェックするまで残りの3つは押せません</b>（ブースではチュートリアルをしない）。
+            移動の行には <b>{destination}</b> を必ず残してください（パーティが選んだ行き先＝この画面の「📍 行き先の候補」が入ります）。
+          </div>
+          <div id="questTutorialList"></div>
+          <button class="sub-btn danger" id="resetTutorialBtn">チュートリアルを既定に戻す</button>
+        </div>
+
+        <div class="q-sec">
+          <div class="q-sec-h">🗒 ミッション<span class="q-note">反映は次にマッチングした枠から（進行中には影響なし）／ひと休みを含めて20件まで</span></div>
+          <div class="sub" style="font-size:12px; margin:-4px 0 10px">
+            行ごとに<b>種類</b>（タブ）と<b>おすすめの時期</b>を選びます。「序盤向け」は最初の30%の時間に、「終盤向け」は残り20%になってから「次のおすすめ」に出します。
+            ☕ ひと休みのお題は⭐なし（チカラにも「全部クリアの演出」にも数えません）。並び順は、タブの中の並びと「次のおすすめ」の順になります。
+            各行の下の欄は<b>💡説明</b>（アプリで💡を押すと出る。空なら💡を出さない）。残り時間を意識させないよう、<b>目安の時間は書かない</b>でください（クリアより、相手との会話を楽しむのが一番の目的）。
+          </div>
+          <div class="q-filter" id="missionFilter"></div>
+          <div id="questMissionList"></div>
+          <button class="sub-btn" id="addMissionBtn">＋ ミッションを追加</button>
+          <button class="sub-btn danger" id="resetMissionBtn">ミッションを既定に戻す</button>
+        </div>
+
+        <!-- 保存バー（下に固定。未保存のまま離れるのを防ぐ）-->
+        <div class="q-bar">
+          <div class="q-dirty" id="questDirty"></div>
+          <button class="sub-btn" id="reloadQuestBtn">読み込み直す</button>
+          <button id="saveAllQuestBtn">保存する</button>
+        </div>
+        <div class="status" id="questStatus"></div>
+      </details>
+    <div class="grp-h">テスト用</div>
     <!-- イベント進行（自動アナウンス／不在対応）-->
-    <div class="card">
-      <h2>⑥ イベント進行（自動アナウンス・不在対応）</h2>
+    <details class="card set test" id="sec_tick"><summary><span class="st">🧪 テスト用の道具（進行処理・リマインダー・自動マッチングを手で動かす）</span><span class="sv">動作確認用・ふだんは使いません</span></summary>
       <div class="sub" style="margin-bottom:10px">
         当日は<b>1分ごとに自動</b>で「締切→開始/不成立／終了予告／終了」を処理します。<br>
         下は手動実行・動作テスト用です（時刻を指定すると、その時刻だと仮定して処理します）。
       </div>
       <label>対象スロットID</label>
-      <input type="text" id="tickSlot" placeholder="slotId（②の一覧でコピー）" />
+      <input type="text" id="tickSlot" placeholder="slotId（予約枠の一覧でコピー）" />
 
       <label style="margin-top:14px">テスト用チェックイン（LINEユーザーIDを入れて押す）</label>
       <div class="row">
@@ -569,61 +638,9 @@
         「枠の前日20時以降」や「開始60分前」にして実行。スロットIDを入れておくと、その枠の送信済みフラグをリセットしてから実行します（再テスト用）。
       </div>
       <div class="status" id="tickStatus"></div>
-    </div>
+    </details>
 
-    <!-- 一斉お知らせ配信 -->
-    <div class="card">
-      <h2>⑦ 一斉お知らせ配信</h2>
-      <div class="sub" style="margin-bottom:10px">
-        対象の予約者全員にLINEでメッセージを送ります（開始遅れ・集合場所変更・雨天案内など）。<br>
-        枠IDと日付の両方を入れた場合は<b>枠IDを優先</b>します。日付指定は同じ人が複数予約していても1通だけ届きます。
-      </div>
-      <div class="row">
-        <div><label>枠ID（この枠の予約者へ）</label><input type="text" id="bcSlot" placeholder="slotId（②の一覧でコピー）" /></div>
-        <div><label>または日付（この日の予約者全員へ）</label><input type="date" id="bcDate" /></div>
-      </div>
-      <label>メッセージ</label>
-      <textarea id="bcMsg" rows="4" placeholder="例：雨のため集合場所を屋内（〇〇前）に変更します。気をつけてお越しください。"></textarea>
-      <button class="sub-btn" id="bcPreviewBtn">対象人数とプレビューを確認</button>
-      <button class="warn" id="bcSendBtn">送信する</button>
-      <div class="status" id="bcStatus"></div>
-    </div>
-
-    </div><!-- /tab-ops -->
-
-    <!-- ===== タブ: ユーザー ===== -->
-    <div id="tab-users" class="tab-page hidden">
-
-    <!-- ユーザー検索 -->
-    <div class="card">
-      <h2>⑨ ユーザー検索</h2>
-      <div class="sub" style="margin-bottom:10px">
-        ニックネーム（前方一致）または LINEユーザーID（U…）で検索します。<br>
-        「予約できていますか？」などの問い合わせ対応用。予約・グループ・クーポンの状況をまとめて確認できます。
-      </div>
-      <div class="row">
-        <div style="flex:2"><input type="text" id="usQuery" placeholder="ニックネーム or U…" /></div>
-        <div style="flex:0"><button id="usBtn" style="margin-top:0">検索</button></div>
-      </div>
-      <div class="status" id="usStatus"></div>
-      <div id="usResults" style="margin-top:10px"></div>
-    </div>
-
-    <!-- 返金対応リスト -->
-    <div class="card">
-      <h2>⑧ 返金対応リスト</h2>
-      <div class="sub" style="margin-bottom:10px">
-        <b>ブースで受け取ったあとに不成立</b>になった人がここに出ます。現金はその場でお返し、SquareはSquareのアプリで返金して「対応済みにする」。<br>
-        （以下はアプリ決済を使っていたときの分）キャンセル・当日の不成立の返金は<b>自動</b>で行います。ここに出るのは、人の判断や対応が必要なものだけです。<br>
-        ・<b>マッチング不成立</b>：組み直しで入れる可能性があるので自動では返金しません。返すと決めたら「Stripeで返金」<br>
-        ・<b>返金に失敗</b>（PayPayでStripeの残高不足など）：残高が戻ってから「Stripeで返金」でやり直し<br>
-        ・Stripeの管理画面など別の方法で返した場合は「対応済みにする」
-      </div>
-      <button class="sub-btn" id="reloadRefunds">一覧を更新</button>
-      <div id="refundList" style="margin-top:10px"></div>
-    </div>
-
-    </div><!-- /tab-users -->
+    </div><!-- /tab-settings -->
   </div>
 
   <!-- 危険操作の2段階確認モーダル -->
@@ -720,21 +737,24 @@
     // ----- ログイン -----
     // ----- 画面切り替えタブ -----
     const TAB_STORE = "bocchi_admin_tab";
+    // 2026-10-16 にタブを4つにまとめた。前に開いていたタブの名前は、新しい置き場所に読み替える
+    const OLD_TAB = { "tab-coupons": "tab-users", "tab-spots": "tab-settings", "tab-quest": "tab-settings" };
     function showTab(id) {
+      id = OLD_TAB[id] || id;
       if (!document.getElementById(id)) id = "tab-slots";
       // クエスト設定を未保存のまま他のタブへ移るのを引き止める
-      if (id !== "tab-quest" && questDirty &&
-          !document.getElementById("tab-quest").classList.contains("hidden")) {
+      if (id !== "tab-settings" && questDirty &&
+          !document.getElementById("tab-settings").classList.contains("hidden")) {
         if (!confirm("クエスト設定に未保存の変更があります。保存せずに移動しますか？")) return;
       }
       document.querySelectorAll(".tab-page").forEach((p) => p.classList.toggle("hidden", p.id !== id));
       document.querySelectorAll(".atab").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
       localStorage.setItem(TAB_STORE, id);
-      // クエストタブは開いたときに初回だけ読み込む（読み込まないと姫・ミッション・チカラが空になる）
-      if (id === "tab-quest" && !questLoaded) loadQuestSettings();
-      if (id === "tab-coupons") loadCodes();
-      if (id === "tab-ops") { loadTiming(); loadStaffKey(); }
-      if (id === "tab-slots") { loadBooking(); loadEarly(); loadNotifySettings(); }
+      if (id === "tab-ops") loadTodo();
+      if (id === "tab-users") loadCodes();
+      // 設定は閉じたままでも右に今の状態を出すので、開いたときにまとめて読む。
+      // クエストは初回だけ（読み込まないと姫・ミッション・チカラが空になる。未保存の変更を消さないため2回目以降は読まない）
+      if (id === "tab-settings") { loadNotifySettings(); loadBooking(); loadEarly(); loadTiming(); loadStaffKey(); if (!questLoaded) loadQuestSettings(); }
     }
     document.querySelectorAll(".atab").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
@@ -756,7 +776,7 @@
     });
     $("logoutBtn").addEventListener("click", () => logout(""));
 
-    // ----- ① スロット作成／編集 -----
+    // ----- 予約枠の作成／編集 -----
     let editingSlotId = null; // 編集中の枠（nullなら新規作成）
 
     // ISO(UTC) → datetime-local用の文字列（ブラウザのローカル=JST）
@@ -785,7 +805,8 @@
       $("slotAdults").checked = !!s.adultsOnly;
       $("adultsWarn").textContent = "";
       updateTimeHint(); updateCapHint(); // テスト枠かどうかで基準（30分/100分・組数）が変わるので最後に計算
-      $("slotFormTitle").textContent = "① 予約枠を編集中";
+      $("sec_slotForm").open = true;
+      $("slotFormTitle").textContent = "予約枠を編集中";
       $("createSlotBtn").textContent = "この内容で更新する";
       $("cancelEditBtn").classList.remove("hidden");
       set("slotStatus", "編集中：" + fmtDate(s.date) + " " + s.time, "");
@@ -794,7 +815,7 @@
 
     function endEdit() {
       editingSlotId = null;
-      $("slotFormTitle").textContent = "① 予約枠（スロット）を作成";
+      $("slotFormTitle").textContent = "予約枠を作成";
       $("createSlotBtn").textContent = "この枠を作成";
       $("cancelEditBtn").classList.add("hidden");
       $("slotDate").value = ""; $("slotTime").value = ""; $("slotCap").value = "50"; $("slotDeadline").value = "";
@@ -826,7 +847,7 @@
       const label = "有料（早割" + yen(p.early) + "／通常" + yen(p.regular) + "）";
       $("slotPrice").options[0].textContent = label;
       if ($("bPrice")) $("bPrice").options[0].textContent = label;
-      $("priceHint").textContent = "早割か通常かは、予約した時点で決まります（早割の状況は下の「🏷 早割」）。"
+      $("priceHint").textContent = "早割か通常かは、予約した時点で決まります（早割の状況は⚙️ 設定の「🏷 早割」）。"
         + (p.booth ? "参加費は当日ブースで受け取ります" : "");
     }
 
@@ -940,6 +961,32 @@
       $("boothToggle").textContent = show ? "隠す" : "表示する";
     });
 
+    // 設定の右に出す1行の要約（閉じていても今の状態が分かるように）
+    const sv = (id, text) => { const e = $(id); if (e) e.textContent = text; };
+    // ----- 📌 いま対応が必要なこと（当日タブ）-----
+    //   リーダーに知らせる枠（要確認・発表が届いていない・送り忘れ）／終わったのに未払い／返金の未対応／自動配信のON・OFF
+    async function loadTodo() {
+      const box = $("todoBox");
+      try {
+        const [b, f, n] = await Promise.all([api("boothStatus", {}), api("listRefunds"), api("notifySettings", {})]);
+        const items = [];
+        (b.attention || []).forEach((x) => items.push('<div class="todo red">⚠️ <b>' + esc(x.time) + '</b>　' + esc(x.note) + '</div>'));
+        const fu = (b.board && b.board.followUp) || [];
+        if (fu.length) items.push('<div class="todo red">💴 クエストが終わったのに<b>未払いが残っている組 ' + fu.length + '組</b>（' + fu.map((g) => esc(g.slotTime + " " + g.label)).join("・") + '）<br><button class="sub-btn" data-go="booth">ブースの様子を開く</button></div>');
+        const pend = (f.pending || []).length;
+        if (pend) items.push('<div class="todo red">💰 <b>返金の未対応 ' + pend + '件</b><br><button class="sub-btn" data-go="refund">返金対応リストへ</button></div>');
+        if (!items.length) items.push('<div class="todo ok">✅ いま対応が必要なものはありません</div>');
+        if (n.ok) items.push('<div class="note">📣 パーティ発表の自動配信：<b>' + (n.auto ? "ON" : "OFF（発表は予約枠の一覧の「結果を一斉通知」で送る）") + '</b>・リーダー ' + n.leaders.length + '人</div>');
+        box.innerHTML = items.join("");
+      } catch (e) { if (String(e.message) !== "401") box.textContent = "⚠️ 読み込めませんでした"; }
+    }
+    $("todoReload").addEventListener("click", loadTodo);
+    $("todoBox").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-go]"); if (!b) return;
+      if (b.dataset.go === "booth") { if ($("boothFrame").classList.contains("hidden")) $("boothToggle").click(); $("boothFrame").scrollIntoView({ behavior: "smooth", block: "start" }); }
+      if (b.dataset.go === "refund") { showTab("tab-users"); loadRefunds(); $("refundList").scrollIntoView({ behavior: "smooth", block: "start" }); }
+    });
+
     // ----- 🔑 スタッフキー -----
     async function loadStaffKey(params) {
       const r = await api("staffKeyStatus", params || {});
@@ -947,6 +994,7 @@
       $("staffKeyState").innerHTML = !r.issued ? "まだ発行していません"
         : (r.enabled ? '<span class="ok">✅ 有効</span>' : '<span class="ng">⛔ 無効</span>')
           + "（" + esc(r.label || "メモなし") + "・" + esc(fmtDateTime(r.issuedAt)) + " 発行）";
+      sv("sv_staffkey", !r.issued ? "まだ発行していません" : (r.enabled ? "✅ 有効" : "⛔ 無効") + "（" + (r.label || "メモなし") + "）");
     }
     $("staffKeyIssue").addEventListener("click", async () => {
       const ok = await dangerConfirm({ title: "スタッフキーを発行", body: "新しいスタッフキーを発行します。前のキーは使えなくなります（スタッフ用ページから自動でログアウトされます）。",
@@ -973,12 +1021,15 @@
       const r = await api("timingSettings", {});
       if (!r.ok) { set("timingStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
       for (const kind of ["normal", "test"]) for (const k of TM_KEYS) $("tm_" + kind + "_" + k).value = r.timing[kind][k];
+      timingSummary(r.timing.normal);
     }
+    const timingSummary = (t) => sv("sv_timing", "受付 開始" + t.checkinOpenMin + "分前から・自動スタート " + t.graceMin + "分後・途中合流 " + t.lateJoinMin + "分まで");
     $("timingSave").addEventListener("click", async () => {
       const p = { save: "1" };
       for (const kind of ["normal", "test"]) for (const k of TM_KEYS) p[kind + "_" + k] = String($("tm_" + kind + "_" + k).value);
       const r = await api("timingSettings", p);
       if (!r.ok) { set("timingStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
+      timingSummary(r.timing.normal);
       set("timingStatus", "✅ 保存しました（受付は開始" + r.timing.normal.checkinOpenMin + "分前から・自動スタートは開始" + r.timing.normal.graceMin + "分後・途中合流はスタートから" + r.timing.normal.lateJoinMin + "分まで）", "ok");
     });
 
@@ -997,17 +1048,21 @@
       const r = await api("bookingSettings", {});
       if (!r.ok) { set("advStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
       $("advPercent").value = r.booking.advancePercent; $("dayOpenMin").value = r.booking.dayOpenMin; advExample();
+      bookingSummary(r.booking);
     }
+    const bookingSummary = (b) => sv("sv_dayseat", "先に予約できるのは定員の" + b.advancePercent + "%まで・残りは開始" + b.dayOpenMin + "分前に開く");
     $("advSave").addEventListener("click", async () => {
       const r = await api("bookingSettings", { save: "1", advancePercent: String($("advPercent").value), dayOpenMin: String($("dayOpenMin").value) });
       if (!r.ok) { set("advStatus", "⚠️ " + (r.error || "失敗"), "ng"); return; }
       $("advPercent").value = r.booking.advancePercent; $("dayOpenMin").value = r.booking.dayOpenMin; advExample();
+      bookingSummary(r.booking);
       set("advStatus", "✅ 保存しました（先に予約できるのは定員の" + r.booking.advancePercent + "%まで・残りは開始の" + r.booking.dayOpenMin + "分前に開く）", "ok");
     });
 
     // ----- 📣 パーティ発表の自動配信・🔔 リーダーへのお知らせ -----
     function renderNotifySettings(r) {
       $("autoNotify").checked = !!r.auto;
+      sv("sv_notify", "自動配信 " + (r.auto ? "ON" : "OFF") + "・リーダー " + r.leaders.length + "人");
       const box = $("leaderList");
       if (!r.leaders.length) { box.textContent = "通知先はまだ登録されていません"; return; }
       box.innerHTML = "";
@@ -1075,6 +1130,7 @@
       const until = m ? m[1] + "年" + Number(m[2]) + "月" + Number(m[3]) + "日" : r.until;
       const state = r.open ? "✅ 受付中（残り " + r.remaining + "名）"
         : (r.ended === "full" ? "⛔ 終了（上限の" + r.limit + "名に達しました）" : "⛔ 終了（期限の" + until + "を過ぎました）");
+      sv("sv_early", state + "・予約中 " + r.count + "名／" + r.limit + "名" + (r.count !== r.actual ? "・⚠️ 数がずれています" : ""));
       $("earlyInfo").innerHTML = "<b>" + esc(state) + "</b><br>"
         + "早割で予約中：<b>" + esc(r.count) + "名</b>／" + esc(r.limit) + "名　・　期限：" + esc(until) + "まで　・　早割 " + yen(r.price) + "／通常 " + yen(r.regularPrice)
         + (r.count !== r.actual ? '<br><span style="color:#c0392b">⚠️ 記録は' + esc(r.count) + "名ですが、予約を数えると" + esc(r.actual) + "名です。「人数を数え直す」で合わせられます</span>" : "");
@@ -1091,7 +1147,7 @@
       set("earlyStatus", "✅ 数え直しました（早割で予約中：" + r.count + "名）", "ok");
     });
 
-    // ----- ①+ 予約枠をまとめて作成 -----
+    // ----- 予約枠をまとめて作成 -----
     let bDates = [];          // 選んだ日付（YYYY-MM-DD・昇順）
     let bPlan = null;         // 確認した内容（入力を変えたら作り直す）
     const pad2 = (n) => String(n).padStart(2, "0");
@@ -1189,7 +1245,7 @@
       loadSlots();
     });
 
-    // ----- ② スロット一覧 -----
+    // ----- 予約枠の一覧 -----
     function fmtDate(d) {
       const [y, m, day] = d.split("-").map(Number);
       const w = ["日","月","火","水","木","金","土"][new Date(Date.UTC(y, m-1, day)).getUTCDay()];
@@ -1480,7 +1536,7 @@
       }
     }
 
-    // ----- ③ 集合場所（登録・編集・削除）-----
+    // ----- 📍 行き先の候補（登録・編集・削除）-----
     let editingSpotId = null;
 
     $("createSpotBtn").addEventListener("click", async () => {
@@ -1503,14 +1559,14 @@
       $("spotLabel").value = s.label || "";
       $("spotNote").value = s.note || "";
       $("spotFun").value = s.fun || "";
-      $("spotFormTitle").textContent = "③ 行き先の候補を編集中";
+      $("spotFormTitle").textContent = "行き先の候補を編集中";
       $("createSpotBtn").textContent = "この内容で更新する";
       $("cancelSpotEditBtn").classList.remove("hidden");
       set("spotStatus", "編集中：" + s.label, "");
     }
     function endSpotEdit() {
       editingSpotId = null;
-      $("spotFormTitle").textContent = "③ 行き先の候補を登録";
+      $("spotFormTitle").textContent = "行き先の候補を登録";
       $("spotLabel").value = ""; $("spotNote").value = ""; $("spotFun").value = "";
       $("createSpotBtn").textContent = "登録する";
       $("cancelSpotEditBtn").classList.add("hidden");
@@ -1534,6 +1590,7 @@
       const r = await api("getMeetingSpots", {}, false);
       const list = $("spotList"); list.innerHTML = "";
       const spots = r.spots || [];
+      sv("sv_spots", spots.length ? spots.length + "件（" + spots.slice(0, 3).map((x) => x.label).join("・") + (spots.length > 3 ? "…" : "") + "）" : "⚠️ 0件（全パーティ「スタート地点」になります）");
       if (!spots.length) { list.innerHTML = '<div class="meta">登録済みの行き先の候補はありません</div>'; return; }
       const FUN_NAME = { stage: "🎤ステージ", booth: "🎪ブース巡り", food: "🍽グルメ", meet: "🤝仲間との交流", learn: "📚学び" };
       spots.forEach((s) => {
@@ -1548,7 +1605,7 @@
       });
     }
 
-    // ----- ④ クーポンコード -----
+    // ----- 🎟 クーポンコード -----
     $("ccType").addEventListener("change", () => { $("ccAmount").disabled = $("ccType").value !== "discount"; });
     $("createCodesBtn").addEventListener("click", async () => {
       const type = $("ccType").value, amount = $("ccAmount").value, count = $("ccCount").value;
@@ -1612,7 +1669,7 @@
     }
     $("reloadCodesBtn").addEventListener("click", loadCodes);
 
-    // ----- ⑤ クーポン手動発行 -----
+    // ----- 🎟 クーポン手動発行 -----
     $("issueCouponBtn").addEventListener("click", async () => {
       const lineUserId = $("cpUid").value.trim(), amount = $("cpAmount").value, reason = $("cpReason").value.trim();
       if (!lineUserId) { set("cpStatus", "LINEユーザーIDを入力してください", "ng"); return; }
@@ -1622,7 +1679,7 @@
       else set("cpStatus", "⚠️ " + (r.error || "失敗"), "ng");
     });
 
-    // ----- ⑥ イベント進行 -----
+    // ----- 🧪 テスト用の道具（イベント進行）-----
     $("tickCheckinBtn").addEventListener("click", async () => {
       const slotId = $("tickSlot").value.trim();
       const lineUserId = $("tickCheckinUid").value.trim();
@@ -1680,7 +1737,7 @@
       } else set("tickStatus", "⚠️ " + (r.error || "失敗"), "ng");
     });
 
-    // ----- ⑦ 一斉お知らせ配信 -----
+    // ----- 📢 一斉お知らせ配信 -----
     function bcParams() {
       const slotId = $("bcSlot").value.trim();
       const date = $("bcDate").value;
@@ -1768,7 +1825,7 @@
       set("salesStatus", "✅ 日ごとの合計を保存しました", "ok");
     });
 
-    // ----- ⑧ 返金対応リスト -----
+    // ----- 💰 返金対応リスト -----
     async function loadRefunds() {
       const box = $("refundList");
       box.innerHTML = '<div class="meta">読み込み中…</div>';
@@ -1856,7 +1913,7 @@
     }
     $("reloadRefunds").addEventListener("click", loadRefunds);
 
-    // ----- ⑨ ユーザー検索 -----
+    // ----- 🔍 ユーザー検索 -----
     // プロフィールの「フェスでいちばん楽しみなこと」（アプリの FUN_META と同じ）。名前は旧来のまま
     const PROFILE_POWER = { stage: "🎤ステージ", booth: "🎪ブース巡り", food: "🍽グルメ", meet: "🤝仲間との交流", learn: "📚学び" };
     async function searchUsers() {
@@ -1945,6 +2002,7 @@
       renderPrincessEditor();
       renderTutorialEditor();
       renderMissionEditor();
+      sv("sv_quest", "姫の条件 " + questPrincesses.map((p) => p.kind === "rest" ? "☕" : p.need).join("／") + "・お題 " + questMissions.length + "件");
       set("questStatus", "現在の設定を読み込みました" +
         (r.isCustomMissions ? "（ミッションは編集済みのものが保存されています）" : "（ミッションは既定値のままです）"), "ok");
     }

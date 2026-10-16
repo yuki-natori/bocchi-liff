@@ -31,7 +31,7 @@
     .slot-head { font-size:20px; font-weight:900; color:var(--green); display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
     .slot-head small { font-size:13px; font-weight:700; color:var(--sub); }
     .slot-head .now { background:var(--accent); color:#fff; font-size:12px; padding:2px 8px; border-radius:99px; }
-    .groups { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; margin-top:8px; }
+    .groups { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(330px, 100%), 1fr)); gap:10px; margin-top:8px; }
     .grp { background:#fff; border:1.5px solid #e3ddcd; border-radius:14px; overflow:hidden; }
     .grp-head { display:flex; align-items:center; gap:10px; padding:10px 12px; flex-wrap:wrap; }
     .grp-head .nm { white-space:nowrap; }
@@ -43,13 +43,13 @@
     .st.go { background:#eaf6ef; color:var(--green); }
     .st.ng { background:#fdf1f0; color:var(--err); }
     .arr { padding:0 12px 6px; font-size:15px; font-weight:800; }
-    .mem { display:flex; align-items:center; gap:8px; padding:9px 12px; border-top:1px solid #f0ece1; font-size:16px; }
-    .mem .who { flex:1; font-weight:700; }
-    .mem .tag { font-size:12px; font-weight:800; }
+    .mem { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:9px 12px; border-top:1px solid #f0ece1; font-size:16px; }
+    .mem .who { flex:1; min-width:3.5em; font-weight:700; }
+    .mem .tag { font-size:12px; font-weight:800; white-space:nowrap; }
     .mem .tag.in { color:var(--green); }
     .mem .tag.no { color:#a9a393; }
     .mem .tag.run { color:var(--accent); }
-    .mem button { padding:8px 10px; font-size:13px; font-weight:800; border-radius:9px; border:1.5px solid var(--green); background:#fff; color:var(--green); }
+    .mem button { white-space:nowrap; padding:8px 10px; font-size:13px; font-weight:800; border-radius:9px; border:1.5px solid var(--green); background:#fff; color:var(--green); }
     .mem .pay { font-size:12px; font-weight:800; padding:2px 7px; border-radius:99px; white-space:nowrap; }
     .mem .pay.no { background:#fff6df; color:#8a5e00; }
     .mem .pay.ok { background:#eaf6ef; color:var(--green); }
@@ -77,6 +77,28 @@
     .cbtns button { flex:1; padding:15px; font-size:17px; font-weight:800; border:none; border-radius:12px; }
     .cbtns .no { background:#eee7d6; color:var(--ink); }
     .cbtns .yes { background:var(--green); color:#fff; }
+    /* 2026-10-16：組の状態で分けるタブ・上の1行・一言のお知らせ・管理者用の一覧 */
+    .questline { background:#eaf6ef; border:1.5px solid #bcd9c6; border-radius:12px; padding:9px 12px; font-size:15px; font-weight:800; color:var(--green); margin-bottom:10px; }
+    .questline small { font-weight:600; color:var(--sub); font-size:12.5px; }
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 12px; }
+    .tabs button { position:relative; padding:9px 14px; border-radius:12px; border:1.5px solid #d9d4c6; background:#fff; font-size:15px; font-weight:800; color:var(--ink); }
+    .tabs button.on { background:var(--green); border-color:var(--green); color:#fff; }
+    .tabs button .cnt { display:inline-block; min-width:20px; margin-left:6px; padding:0 6px; border-radius:99px; background:#eee7d6; color:var(--ink); font-size:12px; }
+    .tabs button.on .cnt { background:#fff; color:var(--green); }
+    .tabs button .red { position:absolute; top:-5px; right:-5px; width:14px; height:14px; border-radius:50%; background:var(--err); border:2px solid #fff; }
+    .tabs button.adm { border-style:dashed; }
+    @media (max-width:480px) { .tabs { gap:5px; } .tabs button { padding:8px 9px; font-size:13.5px; } .tabs button .cnt { margin-left:4px; } }
+    .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:60; background:#2b2b28; color:#fff; font-size:15px; font-weight:700; padding:11px 18px; border-radius:99px; box-shadow:0 6px 18px rgba(0,0,0,.25); max-width:92%; }
+    .sec-h { font-size:15px; font-weight:900; margin:4px 0 8px; }
+    .sec-h.red { color:var(--err); }
+    .stay { margin:0 12px 8px; padding:6px 10px; border-radius:9px; background:#fff6df; color:#8a5e00; font-size:13px; font-weight:800; }
+    .stay.red { background:#fdf1f0; color:var(--err); }
+    .grp .when { padding:8px 12px 0; font-size:13px; font-weight:800; color:var(--sub); }
+    .uprow, .qrow { background:#fff; border:1.5px solid #e3ddcd; border-radius:12px; padding:10px 12px; margin-bottom:8px; font-size:15px; }
+    .uprow b, .qrow b { font-size:16px; }
+    .uprow small, .qrow small { display:block; color:var(--sub); font-size:12.5px; margin-top:2px; }
+    .qrow .unp { color:var(--err); font-weight:800; }
+    .search { width:100%; font-size:16px; padding:10px 12px; border:1.5px solid #d9d4c6; border-radius:10px; margin-bottom:10px; }
     body.embed .wrap { padding-top:8px; }
     body.embed .logout, body.embed h1 { display:none; }
   </style>
@@ -99,15 +121,35 @@
       <button class="logout" id="logoutBtn">ログアウト</button>
     </div>
     <div class="note">10秒ごとに自動で更新します。チェックインと「パーティが集まった」は、操作に困っている人の代わりに押すときだけ使ってください。</div>
-    <div class="range" id="range">
-      <button data-b="20" data-a="20">前後20分</button>
-      <button data-b="40" data-a="30" class="on">前40分〜後30分</button>
-      <button data-b="90" data-a="60">前90分〜後60分</button>
-    </div>
+    <div class="questline hidden" id="questLine"></div>
     <div class="err" id="mainErr"></div>
     <div id="attention" class="hidden" style="background:#fdf1f0;border:2px solid var(--err);border-radius:12px;padding:12px 14px;margin:8px 0 14px"></div>
-    <div id="slots"></div>
+    <div class="tabs" id="tabs"></div>
+    <!-- 受付中：チェックインの開始から、その組がスタートするまで（スタート後も、未払い・途中合流待ちが残る組はここ） -->
+    <div id="pane-reception"></div>
+    <!-- このあと：まだ受付が始まっていない枠（1時間先まで） -->
+    <div id="pane-upcoming" class="hidden"></div>
+    <!-- すべて（時間順）：今までの画面。探しもの・確認・困ったときの逃げ道 -->
+    <div id="pane-all" class="hidden">
+      <div class="range" id="range">
+        <button data-b="20" data-a="20">前後20分</button>
+        <button data-b="40" data-a="30" class="on">前40分〜後30分</button>
+        <button data-b="90" data-a="60">前90分〜後60分</button>
+      </div>
+      <input class="search" id="searchAll" placeholder="ニックネーム・動物の名前・開始時刻（例 13:10）で探す" />
+      <div id="slots"></div>
+    </div>
+    <!-- 管理者だけ：クエスト中・終了 -->
+    <div id="pane-questing" class="hidden">
+      <input class="search" id="searchQ" placeholder="ニックネーム・動物の名前・パーティ名・行き先で探す" />
+      <div id="qlist"></div>
+    </div>
+    <div id="pane-ended" class="hidden">
+      <button class="logout" id="endedReload" style="margin-bottom:10px">読み込み直す</button>
+      <div id="elist"></div>
+    </div>
   </div>
+  <div class="toast hidden" id="toast"></div>
 
   <!-- 確認 -->
   <div id="confirm" class="hidden">
@@ -189,7 +231,58 @@
 
     const hm = (iso) => { const d = new Date(iso); return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); };
     const BY = { party: "パーティ", staff: "スタッフ", admin: "管理者", auto: "自動" };
+    const PANES = ["reception", "upcoming", "all", "questing", "ended"];
+    let tab = store.get("bocchi_staff_tab") || "reception";   // 開いているタブ（自動では切り替えない）
+    let last = null;          // 最後に受け取った内容
+    let pending = null;       // 確認の画面を開いている間に届いた内容（閉じてから描く＝組を動かさない）
+    let prevPhases = null, prevLabels = {};
+    let endedRows = null;     // 管理者：終了の一覧（開いたときだけ読み込む）
+
+    // 1組のカード（受付中・すべて で共通）。slotId と、カードの上に出す時刻・残っている理由を受け取る
+    function groupCard(g, slotId, r, now, opts) {
+      opts = opts || {};
+      const color = (g.mark && g.mark.color) || "#2f6d4f";
+      const st = g.status === "started" ? '<span class="st go">スタート済み ' + (g.startedAt ? hm(g.startedAt) : "") + '（' + (BY[g.startedBy] || "") + '）</span>'
+        : g.status === "failed" ? '<span class="st ng">不成立</span>' : '<span class="st wait">集合待ち</span>';
+      const mem = g.members.map((m) => {
+        let tag;
+        if (m.lateJoined) tag = '<span class="tag run">🏃 途中合流</span>';
+        else if (m.checkedIn) tag = '<span class="tag in">✅ 到着</span>';
+        else if (m.noShow) tag = '<span class="tag no">不在</span>';
+        else tag = '<span class="tag no">まだ</span>';
+        const canCk = !m.checkedIn && g.status !== "failed" && !(g.status === "started" && g.lateJoinUntil && now > Date.parse(g.lateJoinUntil));
+        // 当日ブースでの支払い（スタート直前に受け取る）。無料・18歳未満は出さない
+        const pay = !r.payAtBooth || !m.needPay ? ""
+          : m.paid ? '<span class="pay ok">💴 済</span>'
+          : '<span class="pay no">💴 未払い' + (m.price ? " " + yen(m.price) : "") + '</span>';
+        const canPay = r.payAtBooth && m.needPay && g.status !== "failed";
+        const data = ' data-s="' + slotId + '" data-g="' + g.groupId + '" data-i="' + m.idx + '" data-n="' + esc(m.nickname) + '" data-l="' + esc(g.label) + '"';
+        return '<div class="mem"><span class="who">' + esc(m.nickname) + (m.minor ? " 👧" : "") + '</span>' + pay + tag
+          + (canCk ? '<button data-act="ck"' + data + '>代わりにチェックイン</button>' : "")
+          + (canPay ? '<button class="paybtn" data-act="pay"' + data + '>' + (m.paid ? "内容" : "受け取る") + '</button>' : "")
+          + '</div>';
+      }).join("");
+      const absent = g.members.filter((m) => !m.checkedIn).map((m) => m.nickname + "さん").join("・");
+      const unpaid = g.members.filter((m) => m.checkedIn && m.needPay && !m.paid).map((m) => m.nickname + "さん").join("・");
+      const startBtn = g.status === "waiting"
+        ? '<button class="start" data-act="go" data-s="' + slotId + '" data-g="' + g.groupId + '" data-l="' + esc(g.label) + '" data-a="' + esc(absent) + '" data-u="' + esc(unpaid) + '"' + (g.canStart ? "" : " disabled") + '>'
+          + (!g.canStart ? r.minToStart + "人以上の到着でスタートできます"
+             : unpaid ? "💴 未払い " + g.unpaidHere + "人（受け取ってからスタート）" : "🚩 パーティが集まった（代わりに押す）") + '</button>' : "";
+      const stay = (opts.stay || []).length
+        ? '<div class="stay' + (opts.red ? " red" : "") + '">' + esc(opts.stay.join("・")) + (opts.red ? "" : "のため、受付中に残っています") + '</div>' : "";
+      return '<div class="grp" style="border-top:8px solid ' + esc(color) + '">'
+        + (opts.when ? '<div class="when">' + esc(opts.when) + '</div>' : '')
+        + '<div class="grp-head"><span class="emo">' + esc(g.mark ? g.mark.emoji : "🎲") + '</span>'
+        + '<div><div class="nm">' + esc(g.name) + '</div>' + (g.partyName ? '<div class="pn">' + esc(g.partyName) + '</div>' : "") + '</div>' + st + '</div>'
+        + stay
+        + '<div class="arr">到着 ' + g.arrived + ' / ' + g.total + '人'
+        + (g.destination ? '　🧭 ' + esc(g.destination) + (g.destinationChosen ? '（選択済み）' : g.status === "waiting" ? '（おすすめのまま）' : '') : '') + '</div>'
+        + mem + startBtn + '</div>';
+    }
+
     function render(r) {
+      last = r;
+      const now = Date.parse(r.now);
       $("clock").textContent = "いま " + hm(r.now);
       $("mainErr").textContent = "";
       // リーダーに知らせてほしい枠（要確認・発表が届いていない・発表がまだ送られていない）
@@ -200,50 +293,139 @@
           + at.map((x) => '<div style="margin-top:6px"><b>' + esc(x.time) + '</b>　' + esc(x.note) + '</div>').join("")
           + '<div style="margin-top:8px;font-size:13px;color:var(--sub)">このままだと、参加者にパーティの発表が届きません。管理画面での対応が必要です。</div>'
         : "";
+      const b = r.board || { reception: [], followUp: [], upcoming: [], questing: { groups: 0, people: 0, byDest: [] }, phases: {} };
+      // 上の1行：いまクエスト中の組
+      const qn = b.questing;
+      $("questLine").classList.toggle("hidden", false);
+      $("questLine").innerHTML = '🧭 いまクエスト中：' + qn.groups + '組・' + qn.people + '人'
+        + (qn.byDest.length ? '<small>　' + qn.byDest.map((x) => esc(x.label) + ' ' + x.groups + '組').join('／') + '</small>' : '');
+      noteMoves(b);
+      renderTabs(r, b);
+      renderReception(r, b, now);
+      renderUpcoming(b);
+      renderAll(r, now);
+      if (r.who === "admin") renderQuesting(r);
+      showPane();
+      if (tab === "ended" && endedRows === null && r.who === "admin") loadEnded();   // 終了のタブを開いたまま読み込み直したとき
+    }
+
+    // 組が動いたら一言（受付中から外れた組）
+    function noteMoves(b) {
+      const ph = b.phases || {};
+      (b.reception || []).concat(b.followUp || []).forEach((g) => { prevLabels[g.groupId] = g.label; });
+      if (prevPhases) {
+        const msgs = [];
+        Object.keys(prevPhases).forEach((id) => {
+          if (prevPhases[id] !== "reception" || ph[id] === "reception" || !ph[id]) return;
+          const nm = prevLabels[id] || "パーティ";
+          msgs.push(ph[id] === "questing" ? nm + "がスタート → クエスト中へ"
+            : ph[id] === "followUp" ? nm + " → 要対応（未払い）へ"
+            : ph[id] === "failed" ? nm + "は不成立になりました" : nm + "は終了しました");
+        });
+        if (msgs.length) toast(msgs.join("　／　"));
+      }
+      prevPhases = ph;
+    }
+    let toastTimer = null;
+    function toast(msg) {
+      $("toast").textContent = msg;
+      $("toast").classList.remove("hidden");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => $("toast").classList.add("hidden"), 4500);
+    }
+
+    function renderTabs(r, b) {
+      const recN = b.reception.length + b.followUp.length;
+      const red = b.followUp.length > 0 || b.reception.some((g) => g.status === "started" && g.unpaidHere > 0) || (r.attention || []).length > 0;
+      const t = (key, label, cnt, opts) => '<button data-tab="' + key + '" class="' + (tab === key ? "on" : "") + (opts && opts.adm ? " adm" : "") + '">'
+        + label + (cnt !== null && cnt !== undefined ? '<span class="cnt">' + cnt + '</span>' : '') + (opts && opts.red ? '<span class="red" title="要対応"></span>' : '') + '</button>';
+      let html = t("reception", "受付中", recN, { red }) + t("upcoming", "このあと", b.upcoming.length) + t("all", "すべて（時間順）", null);
+      if (r.who === "admin") html += t("questing", "クエスト中", (r.questingList || []).length, { adm: true }) + t("ended", "終了", null, { adm: true });
+      else if (tab === "questing" || tab === "ended") tab = "reception";
+      $("tabs").innerHTML = html;
+    }
+    $("tabs").addEventListener("click", (e) => {
+      const bt = e.target.closest("button[data-tab]"); if (!bt) return;
+      tab = bt.dataset.tab; store.set("bocchi_staff_tab", tab);
+      if (last) { renderTabs(last, last.board || { reception: [], followUp: [], upcoming: [] }); }
+      if (tab === "ended") loadEnded();
+      showPane();
+    });
+    function showPane() { PANES.forEach((p) => $("pane-" + p).classList.toggle("hidden", p !== tab)); }
+
+    function renderReception(r, b, now) {
+      const box = $("pane-reception");
+      let html = "";
+      if (b.followUp.length) {
+        html += '<div class="sec-h red">⚠️ 要対応：未払い（クエストは終わっています）</div><div class="groups">'
+          + b.followUp.map((g) => groupCard(g, g.slotId, r, now, { when: g.slotTime + (g.isTest ? " ⏩" : ""), stay: ["未払い" + g.unpaidHere + "人。受け取ってください"], red: true })).join("")
+          + '</div><div style="height:14px"></div>';
+      }
+      if (!b.reception.length) html += '<div class="empty">いま受付中の組はありません</div>';
+      else html += '<div class="groups">' + b.reception.map((g) => groupCard(g, g.slotId, r, now, {
+        when: g.slotTime + (g.isTest ? " ⏩" : "") + "　受付 " + (g.checkinOpenAt ? hm(g.checkinOpenAt) : "—") + "〜／自動スタート " + (g.autoStartAt ? hm(g.autoStartAt) : "—"),
+        stay: g.stay })).join("") + '</div>';
+      box.innerHTML = html;
+    }
+
+    function renderUpcoming(b) {
+      const box = $("pane-upcoming");
+      if (!b.upcoming.length) { box.innerHTML = '<div class="empty">1時間先までに始まる枠はありません</div>'; return; }
+      box.innerHTML = b.upcoming.map((u) => '<div class="uprow"><b>' + esc(u.time) + (u.isTest ? " ⏩" : "") + '</b>　予約 ' + u.reservedCount + ' / ' + u.capacity + '人'
+        + '<small>受付 ' + (u.checkinOpenAt ? hm(u.checkinOpenAt) : "—") + '〜　' + (u.matched ? "パーティ決定（" + u.groupCount + "組）" : "マッチング前") + '</small></div>').join("");
+    }
+
+    // すべて（時間順）：今までの画面＋検索
+    function renderAll(r, now) {
       const box = $("slots");
-      if (!r.slots.length) { box.innerHTML = '<div class="empty">この時間帯の枠はありません</div>'; return; }
-      const now = Date.parse(r.now);
-      box.innerHTML = r.slots.map((s) => {
+      const q = $("searchAll").value.trim().toLowerCase();
+      const hit = (g) => !q || [g.name, g.partyName || "", g.label || ""].concat(g.members.map((m) => m.nickname)).some((x) => String(x).toLowerCase().includes(q));
+      const slots = r.slots.map((s) => {
+        const slotHit = q && s.time.includes(q);
+        return { s, groups: slotHit ? s.groups : s.groups.filter(hit), show: !q || slotHit || s.groups.some(hit) };
+      }).filter((x) => x.show);
+      if (!slots.length) { box.innerHTML = '<div class="empty">' + (q ? "見つかりませんでした（時間の幅を広げると見つかるかもしれません）" : "この時間帯の枠はありません") + '</div>'; return; }
+      box.innerHTML = slots.map(({ s, groups }) => {
         const open = s.checkinOpenAt && now >= Date.parse(s.checkinOpenAt) && now < Date.parse(s.autoStartAt);
         const head = '<div class="slot-head">' + esc(s.time) + (s.isTest ? " ⏩" : "") + (open ? '<span class="now">受付中</span>' : "")
           + '<small>受付 ' + (s.checkinOpenAt ? hm(s.checkinOpenAt) : "—") + '〜／自動スタート ' + (s.autoStartAt ? hm(s.autoStartAt) : "—") + '</small></div>';
         if (!s.matched) return '<div class="slot">' + head + '<div class="empty">まだパーティが決まっていません（マッチング前）</div></div>';
-        return '<div class="slot">' + head + '<div class="groups">' + s.groups.map((g) => {
-          const color = (g.mark && g.mark.color) || "#2f6d4f";
-          const st = g.status === "started" ? '<span class="st go">スタート済み ' + (g.startedAt ? hm(g.startedAt) : "") + '（' + (BY[g.startedBy] || "") + '）</span>'
-            : g.status === "failed" ? '<span class="st ng">不成立</span>' : '<span class="st wait">集合待ち</span>';
-          const mem = g.members.map((m) => {
-            let tag;
-            if (m.lateJoined) tag = '<span class="tag run">🏃 途中合流</span>';
-            else if (m.checkedIn) tag = '<span class="tag in">✅ 到着</span>';
-            else if (m.noShow) tag = '<span class="tag no">不在</span>';
-            else tag = '<span class="tag no">まだ</span>';
-            const canCk = !m.checkedIn && g.status !== "failed" && !(g.status === "started" && g.lateJoinUntil && now > Date.parse(g.lateJoinUntil));
-            // 当日ブースでの支払い（スタート直前に受け取る）。無料・18歳未満は出さない
-            const pay = !r.payAtBooth || !m.needPay ? ""
-              : m.paid ? '<span class="pay ok">💴 済</span>'
-              : '<span class="pay no">💴 未払い' + (m.price ? " " + yen(m.price) : "") + '</span>';
-            const canPay = r.payAtBooth && m.needPay && g.status !== "failed";
-            const data = ' data-s="' + s.slotId + '" data-g="' + g.groupId + '" data-i="' + m.idx + '" data-n="' + esc(m.nickname) + '" data-l="' + esc(g.label) + '"';
-            return '<div class="mem"><span class="who">' + esc(m.nickname) + (m.minor ? " 👧" : "") + '</span>' + pay + tag
-              + (canCk ? '<button data-act="ck"' + data + '>代わりにチェックイン</button>' : "")
-              + (canPay ? '<button class="paybtn" data-act="pay"' + data + '>' + (m.paid ? "内容" : "受け取る") + '</button>' : "")
-              + '</div>';
-          }).join("");
-          const absent = g.members.filter((m) => !m.checkedIn).map((m) => m.nickname + "さん").join("・");
-          const unpaid = g.members.filter((m) => m.checkedIn && m.needPay && !m.paid).map((m) => m.nickname + "さん").join("・");
-          const startBtn = g.status === "waiting"
-            ? '<button class="start" data-act="go" data-s="' + s.slotId + '" data-g="' + g.groupId + '" data-l="' + esc(g.label) + '" data-a="' + esc(absent) + '" data-u="' + esc(unpaid) + '"' + (g.canStart ? "" : " disabled") + '>'
-              + (!g.canStart ? r.minToStart + "人以上の到着でスタートできます"
-                 : unpaid ? "💴 未払い " + g.unpaidHere + "人（受け取ってからスタート）" : "🚩 パーティが集まった（代わりに押す）") + '</button>' : "";
-          return '<div class="grp" style="border-top:8px solid ' + esc(color) + '"><div class="grp-head"><span class="emo">' + esc(g.mark ? g.mark.emoji : "🎲") + '</span>'
-            + '<div><div class="nm">' + esc(g.name) + '</div>' + (g.partyName ? '<div class="pn">' + esc(g.partyName) + '</div>' : "") + '</div>' + st + '</div>'
-            + '<div class="arr">到着 ' + g.arrived + ' / ' + g.total + '人'
-            + (g.destination ? '　🧭 ' + esc(g.destination) + (g.destinationChosen ? '（選択済み）' : g.status === "waiting" ? '（おすすめのまま）' : '') : '') + '</div>'
-            + mem + startBtn + '</div>';
-        }).join("") + '</div></div>';
+        return '<div class="slot">' + head + '<div class="groups">' + groups.map((g) => groupCard(g, s.slotId, r, now)).join("") + '</div></div>';
       }).join("");
     }
+    $("searchAll").addEventListener("input", () => { if (last) renderAll(last, Date.parse(last.now)); });
+
+    // 管理者：クエスト中（1組1行）
+    const leftMin = (iso, now) => Math.max(0, Math.round((Date.parse(iso) - now) / 60000));
+    function qrowHtml(x, now, ended) {
+      return '<div class="qrow"><b>' + esc(x.label) + '</b>' + (x.partyName ? '（' + esc(x.partyName) + '）' : '')
+        + (x.isTest ? ' ⏩' : '')
+        + (x.unpaid ? '　<span class="unp">💴 未払い' + x.unpaid + '人</span>' : '')
+        + '<small>' + esc(x.slotTime)
+        + (ended ? '　' + esc(x.result || "") + (x.endedAt ? '（' + hm(x.endedAt) + '）' : '')
+          : (x.startedAt ? '　' + hm(x.startedAt) + 'スタート' : '') + (x.endsAt ? '・残り' + leftMin(x.endsAt, now) + '分' : '') + '　姫 ' + x.rescued + '/' + x.princessTotal + (x.completed ? '（全員救出）' : ''))
+        + (x.destination ? '　🧭 ' + esc(x.destination) : '')
+        + '<br>' + esc((x.members || []).join('・')) + '</small></div>';
+    }
+    const rowHit = (x, q) => !q || [x.label, x.partyName || "", x.destination || "", x.slotTime].concat(x.members || []).some((v) => String(v).toLowerCase().includes(q));
+    function renderQuesting(r) {
+      const q = $("searchQ").value.trim().toLowerCase();
+      const rows = (r.questingList || []).filter((x) => rowHit(x, q));
+      $("qlist").innerHTML = rows.length ? rows.map((x) => qrowHtml(x, Date.parse(r.now), false)).join("")
+        : '<div class="empty">' + (q ? "見つかりませんでした" : "いまクエスト中の組はありません") + '</div>';
+    }
+    $("searchQ").addEventListener("input", () => { if (last) renderQuesting(last); });
+    // 管理者：終了（新しい順・開いたときだけ読み込む。自動では更新しない）
+    async function loadEnded() {
+      $("elist").innerHTML = '<div class="empty">読み込み中…</div>';
+      try {
+        const r = await api("boothStatus", Object.assign({}, range, { ended: "1" }));
+        endedRows = r.endedList || [];
+        $("elist").innerHTML = endedRows.length ? endedRows.map((x) => qrowHtml(x, Date.parse(r.now), true)).join("")
+          : '<div class="empty">今日、終わった組はまだありません</div>';
+      } catch (e) { $("elist").innerHTML = '<div class="empty">読み込めませんでした</div>'; }
+    }
+    $("endedReload").addEventListener("click", loadEnded);
 
     // 確認（大きいボタン・1回押せば実行）
     function ask(title, body, warn, yes, extraHtml) {
@@ -253,11 +435,15 @@
         $("cExtra").innerHTML = extraHtml || ""; $("cExtra").classList.toggle("hidden", !extraHtml);
         $("cYes").textContent = yes || "OK";
         $("confirm").classList.remove("hidden");
-        const done = (v) => { $("confirm").classList.add("hidden"); $("cYes").onclick = null; $("cNo").onclick = null; resolve(v); };
+        const done = (v) => {
+          $("confirm").classList.add("hidden"); $("cYes").onclick = null; $("cNo").onclick = null;
+          if (pending) { const p = pending; pending = null; render(p); }   // 開いている間に届いた内容を、閉じてから描く
+          resolve(v);
+        };
         $("cYes").onclick = () => done(true); $("cNo").onclick = () => done(false);
       });
     }
-    $("slots").addEventListener("click", async (e) => {
+    $("main").addEventListener("click", async (e) => {
       const b = e.target.closest("button[data-act]"); if (!b) return;
       const d = b.dataset;
       try {
@@ -330,7 +516,12 @@
     async function refresh() {
       if (busy || !auth()) return;
       busy = true;
-      try { const r = await api("boothStatus", range); if (r.ok) render(r); else $("mainErr").textContent = "⚠️ " + (r.error || "読み込めませんでした"); }
+      try {
+        const r = await api("boothStatus", range);
+        if (!r.ok) $("mainErr").textContent = "⚠️ " + (r.error || "読み込めませんでした");
+        else if (!$("confirm").classList.contains("hidden")) pending = r;   // 確認の画面を開いている間は組を動かさない
+        else render(r);
+      }
       catch (e) { if (String(e.message) !== "401") $("mainErr").textContent = "⚠️ 通信できませんでした。電波を確認してください（自動でやり直します）"; }
       finally { busy = false; }
     }

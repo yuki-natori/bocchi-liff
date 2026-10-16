@@ -89,6 +89,10 @@
       border-radius:99px; padding:1px 7px; }
     .back-link { background:none; border:none; color:var(--green); font-size:14px; font-weight:700;
       cursor:pointer; padding:4px 0; margin-bottom:14px; }
+    /* 画面の上の戻るボタン（2026-10-16：押しやすい大きさに。高さ44px以上） */
+    .back-link.back-nav { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:10px 16px;
+      background:#fff; border:1.5px solid var(--green); border-radius:12px; font-size:15px; }
+    .back-link.back-nav:active { background:#eaf6ef; }
     /* 今やることバナー（状態に応じてパーティ画面の上部に表示） */
     .action-banner { background:#fff; border:2px solid var(--green); border-radius:var(--radius);
       padding:14px 16px; margin-bottom:14px; box-shadow:0 2px 10px rgba(47,109,79,.12); }
@@ -318,6 +322,14 @@
     .ri-card .ri-dots { margin-top:12px; font-size:10px; letter-spacing:4px; color:#cfc8b4; }
     .ri-card .ri-dots b { color:var(--green); }
     .rest-box .rs-replay { margin-top:8px; border:none; background:none; color:var(--green); font-size:12.5px; font-weight:700; text-decoration:underline; cursor:pointer; }
+    .finish-box { background:#fffaf0; border:2px solid var(--accent); border-radius:14px; padding:14px; margin:0 0 12px; text-align:center; }
+    .finish-box .fb-title { font-size:16px; font-weight:900; color:#a06c00; }
+    .finish-box .fb-sub { font-size:12.5px; color:var(--ink); line-height:1.6; margin-top:4px; }
+    .finish-box .fb-btns { display:flex; gap:8px; margin-top:10px; }
+    .finish-box .fb-btn { flex:1; padding:12px 6px; border-radius:12px; border:2px solid #d9d4c6; background:#fff; font-size:14.5px; font-weight:800; color:var(--ink); cursor:pointer; line-height:1.35; }
+    .finish-box .fb-btn small { display:block; font-size:11px; font-weight:600; color:var(--sub); margin-top:2px; }
+    .finish-box .fb-btn.on { border-color:var(--green); background:#eaf6ef; color:var(--green); }
+    .finish-box .fb-note { font-size:11.5px; color:var(--sub); margin-top:8px; }
     .rest-box { background:#f3f8f4; border:2px solid #9cc7ac; border-radius:14px; padding:14px 14px 12px; margin:0 0 12px; text-align:center; }
     .rest-box .rs-head { font-size:14px; font-weight:800; color:var(--green); }
     .rest-box .rs-until { font-size:38px; font-weight:900; color:var(--green); line-height:1.2; margin:4px 0 2px; letter-spacing:1px; }
@@ -683,7 +695,7 @@
   <div class="wrap hidden" id="screen-group">
     <!-- ① 予約した時間の選択 -->
     <div id="groupPick">
-      <button class="back-link" data-back>← メニューに戻る</button>
+      <button class="back-link back-nav" data-back>← メニューに戻る</button>
       <div class="screen-title">⚔️ パーティ</div>
       <div class="section-title" id="pickLead">予約した時間を選んでね</div>
       <div id="pickList"></div>
@@ -695,7 +707,7 @@
 
     <!-- ② 選んだ時間のパーティ -->
     <div class="hidden" id="groupDetail">
-      <button class="back-link" id="backToPick">← 予約した時間の選択に戻る</button>
+      <button class="back-link back-nav" id="backToPick">← 予約した時間の選択に戻る</button>
       <!-- 予約日と残り時間（クエスト中は常に見える位置） -->
       <div class="detail-head">
         <div class="detail-slot" id="detailSlot"></div>
@@ -739,6 +751,7 @@
           <div class="missions">
             <div class="missions-title" id="missionsTitle">ミッション（パーティ全員のチェックでクリア）</div>
             <!-- ☕ ひと休み（2人目の姫の救出で開く）・次のおすすめ・お題の種類（タブ） -->
+            <div class="finish-box hidden" id="finishBox"></div>
             <div class="rest-box hidden" id="restBox"></div>
             <div class="reco hidden" id="recoBox"></div>
             <div class="cat-tabs hidden" id="catTabs"></div>
@@ -776,7 +789,7 @@
 
   <!-- 予約画面 -->
   <div class="wrap hidden" id="screen-reserve">
-    <button class="back-link" data-back>← メニューに戻る</button>
+    <button class="back-link back-nav" data-back>← メニューに戻る</button>
     <div class="screen-title">📅 参加予約</div>
 
     <!-- 予約済みリスト（複数）＋追加ボタン -->
@@ -938,7 +951,7 @@
 
   <!-- クーポン画面 -->
   <div class="wrap hidden" id="screen-coupon">
-    <button class="back-link" data-back>← メニューに戻る</button>
+    <button class="back-link back-nav" data-back>← メニューに戻る</button>
     <div class="screen-title">🎟 クーポン</div>
 
     <!-- 所持クーポン -->
@@ -1305,7 +1318,23 @@
     $("menuFaq").addEventListener("click", () => openExternal("https://yuki-natori.github.io/bocchi-liff/faq.html"));
     $("regTerms").addEventListener("click", () => openExternal("https://yuki-natori.github.io/bocchi-liff/terms.html"));
     $("regPrivacy").addEventListener("click", () => openExternal("https://yuki-natori.github.io/bocchi-liff/privacy.html"));
-    $("menuContact").addEventListener("click", () => openExternal("https://line.me/R/ti/p/@534oibuu"));
+    // 運営に連絡：公式LINEのトークを、組の名前とニックネームを入れた状態で開く（2026-10-16）。
+    //   LINEの表示名はアプリのニックネームと同じとは限らないので、運営がどの組の誰か分かるようにする。
+    //   組は「今日の予約」のうち、いまクエスト中のもの → これからのもの の順で選ぶ（なければニックネームだけ）
+    const OA_ID = "@534oibuu";
+    $("menuContact").addEventListener("click", async () => {
+      let list = myResvList || [];
+      if (!list.length && profile) {
+        try { const r = await api("getMyReservation", { lineUserId: profile.userId }); list = r.reservations || []; } catch (e) {}
+      }
+      const now = Date.now(), today = todayJst();
+      const mine = list.filter((r) => r.date === today && r.groupName).map((r) => ({ r, st: slotStartMs(r.date, r.time) || 0 }));
+      const pick = mine.filter((x) => x.st <= now && now <= x.st + 130 * 60000).sort((a, b) => b.st - a.st)[0]
+        || mine.filter((x) => x.st > now).sort((a, b) => a.st - b.st)[0] || null;
+      const nick = (currentUser && currentUser.nickname) || "";
+      const head = "【" + (pick ? pick.r.groupName + "／" : "") + (nick || "ニックネーム") + "】\n";
+      openExternal("https://line.me/R/oaMessage/" + encodeURIComponent(OA_ID) + "/?" + encodeURIComponent(head));
+    });
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", openMenu));
 
     // ===== パーティ画面：①予約した時間を選ぶ → ②その時間のパーティ =====
@@ -1410,10 +1439,6 @@
       return new Date(dateStr + "T" + String(m[1]).padStart(2, "0") + ":" + m[2] + ":00+09:00").getTime();
     }
     function fmtHM(ms) { const d = new Date(ms); return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); }
-    function fmtMMSS(ms) {
-      const s = Math.max(0, Math.floor(ms / 1000));
-      return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
-    }
 
     function renderActionBanner() {
       const box = $("actionBanner");
@@ -1523,7 +1548,9 @@
             + powerGaugeHtml(questData);
         } else if (questData) {
           html = '<div class="ab-label">レベル' + (questData.levelMax || 5) + '（MAX）</div>'
-            + '<div class="ab-title">🎉 ' + (questData.princesses || []).length + '人の姫を全員救出！</div>' + powerGaugeHtml(questData);
+            + '<div class="ab-title">🎉 ' + (questData.princesses || []).length + '人の姫を全員救出！</div>'
+            + (questData.finish && questData.finish.open ? '<div class="ab-sub">このあと続けるか終えるかは、ミッションの画面で全員で選んでね</div>' : '')
+            + powerGaugeHtml(questData);
         }
       }
 
@@ -1712,7 +1739,9 @@
         stopTick();
         return;
       }
-      el.textContent = "⏱ 残り " + fmtMMSS(endMs - now);
+      // 秒は出さない（残り時間を意識させすぎないため）。全体の長さはそのパーティの実際の値（テスト枠は30分など）
+      const totalMin = Math.round((endMs - startMs) / 60000);
+      el.textContent = "⏱ 残り " + Math.ceil((endMs - now) / 60000) + "分／" + totalMin + "分";
       el.classList.remove("hidden");
     }
 
@@ -2277,6 +2306,7 @@
       $("missionsTitle").textContent = tut
         ? "チュートリアル（パーティ全員のチェックでクリア）"
         : "ミッション（パーティ全員のチェックでクリア）";
+      renderFinishBox(q);
       renderRestBox(q);
       renderRecommend(q);
       renderCatTabs(q);
@@ -2430,6 +2460,37 @@
       box.classList.remove("hidden");
       const rp = $("rsReplay");
       if (rp) rp.onclick = () => openRestIntro(rest.intro);
+    }
+
+    // ----- 全員救出のあと：「クエストを続ける」か「終了する」を、パーティ全員で選ぶ（2026-10-16） -----
+    function renderFinishBox(q) {
+      const box = $("finishBox");
+      const f = q.finish;
+      if (!f || q.endedEarly || (!f.open && f.decision !== "continue")) { box.classList.add("hidden"); return; }
+      if (!f.open && f.decision === "continue") {
+        box.innerHTML = '<div class="fb-title">🎉 4人の姫を全員救出！</div><div class="fb-sub">全員で「続ける」に決まりました。このまま、仲間との時間を楽しもう</div>';
+        box.classList.remove("hidden");
+        return;
+      }
+      const btn = (v, label) => '<button type="button" class="fb-btn' + (f.mine === v ? " on" : "") + '" data-v="' + v + '">'
+        + (f.mine === v ? "✅ " : "") + label + '<small>' + (v === "end" ? f.end : f.cont) + '/' + f.total + '人</small></button>';
+      box.innerHTML = '<div class="fb-title">🎉 4人の姫を全員救出！</div>'
+        + '<div class="fb-sub">このあと、クエストを続ける？ 終了する？<br>全員が同じほうを選ぶと決まります</div>'
+        + '<div class="fb-btns">' + btn("continue", "続ける") + btn("end", "終了する") + '</div>'
+        + '<div class="fb-note">決まるまでは、何度でも選び直せます</div>';
+      box.classList.remove("hidden");
+      box.querySelectorAll(".fb-btn").forEach((b) => {
+        b.onclick = async () => {
+          b.disabled = true;
+          const r = await api("toggleQuestMission", { lineUserId: profile.userId, slotId: currentGroupSlotId, finish: b.dataset.v });
+          if (r.quest) { questData = r.quest; renderQuest(r.quest); }
+          if (r.ok && r.quest && r.quest.endedEarly) {
+            // 全員で終了に決まった → 終了の表示へ（パーティ画面の終わる時刻も早まるので読み直す）
+            try { await renderGroupDetail(currentGroupSlotId); } catch (e) {}
+          } else renderActionBanner();
+          if (!r.ok && r.error) alert(r.error);
+        };
+      });
     }
 
     // ----- 💡 お題の説明（窓） -----
