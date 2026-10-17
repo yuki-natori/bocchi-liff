@@ -378,6 +378,18 @@
     .pm-t { display:block; font-size:14.5px; font-weight:800; color:var(--ink); }
     .pm-opt.active .pm-t { color:var(--green); }
     .pm-d { display:block; font-size:12px; color:var(--sub); margin-top:3px; line-height:1.5; }
+    /* だれと参加する？：2段階（2026-10-17）と「？ 選び方」の窓 */
+    .pm-title-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .pm-help { border:1.5px solid #e8d9a8; background:#fff6df; color:#8a5e00; border-radius:99px; padding:5px 11px; font-size:12.5px; font-weight:800; cursor:pointer; font-family:inherit; margin-bottom:12px; }
+    .pm-sub { margin:8px 0 0 14px; padding-left:12px; border-left:3px solid #cfe5d6; }
+    .pm-sub-lead { font-size:12.5px; font-weight:800; color:var(--green); margin-bottom:6px; }
+    #partyGuide { position:fixed; inset:0; background:rgba(20,16,8,.55); z-index:140; display:flex; align-items:center; justify-content:center; padding:18px; }
+    #partyGuide.hidden { display:none; }
+    #partyGuide .hint-card { max-height:86vh; overflow-y:auto; }
+    .pg-sec { background:#fffaf0; border-radius:10px; padding:10px 12px; margin-top:10px; font-size:13.5px; line-height:1.75; color:var(--ink); }
+    .pg-sec b.pg-h { display:block; font-size:14.5px; margin-bottom:2px; }
+    .pg-sec ol { margin:4px 0 0; padding-left:1.3em; }
+    .pg-notes { font-size:12.5px; color:var(--sub); line-height:1.7; margin-top:10px; padding-left:1.1em; }
     #joinCodeBox { margin-top:10px; }
     #joinCode { width:100%; padding:14px; font-size:26px; font-weight:800; text-align:center;
       letter-spacing:.32em; text-indent:.32em; text-transform:uppercase;
@@ -816,20 +828,33 @@
       <div id="slotList"></div>
 
       <!-- ⑬ だれと参加するか -->
-      <div class="section-title" style="margin-top:20px" id="partyModeTitle">だれと参加する？</div>
+      <!-- 2026-10-17：まず「新しい仲間と／いつもの仲間と」の2つ。「いつもの仲間と」を選んだときだけ、コードを作る／もらったを選ぶ -->
+      <div class="pm-title-row" style="margin-top:20px">
+        <div class="section-title" id="partyModeTitle">だれと参加する？</div>
+        <button type="button" class="pm-help" id="partyGuideBtn">？ 選び方</button>
+      </div>
       <div class="pmode" id="partyMode">
         <button class="pm-opt active" data-mode="solo">
           <span class="pm-t">🎲 新しい仲間と</span>
-          <span class="pm-d">当日その場で3〜5人のパーティを組みます</span>
+          <span class="pm-d">ひとりで参加。当日その場で3〜5人のパーティを組みます</span>
         </button>
-        <button class="pm-opt" data-mode="create">
-          <span class="pm-t">👑 いつもの仲間と（パーティを作る）</span>
-          <span class="pm-d">コードが出るので、仲間に伝えてね</span>
+        <button class="pm-opt" data-mode="friends">
+          <span class="pm-t">👑 いつもの仲間と</span>
+          <span class="pm-d">友だちと同じパーティで参加します</span>
         </button>
-        <button class="pm-opt" data-mode="join">
-          <span class="pm-t">🤝 いつもの仲間と（コードで参加）</span>
-          <span class="pm-d">仲間からもらったコードを入れてね</span>
-        </button>
+      </div>
+      <div class="pm-sub hidden" id="partySub">
+        <div class="pm-sub-lead">あなたはどっち？</div>
+        <div class="pmode">
+          <button class="pm-opt" data-mode="create">
+            <span class="pm-t">🔑 コードを作る</span>
+            <span class="pm-d">仲間の代表（1人目）。予約するとコードが出るので、仲間に伝えてね</span>
+          </button>
+          <button class="pm-opt" data-mode="join">
+            <span class="pm-t">🤝 コードをもらった</span>
+            <span class="pm-d">仲間からもらったコードを入れて予約します</span>
+          </button>
+        </div>
       </div>
       <div class="hidden" id="joinCodeBox">
         <input type="text" id="joinCode" maxlength="8" placeholder="A7K2"
@@ -871,7 +896,7 @@
         <div class="pd-sub" id="pdSlot"></div>
         <div class="pd-text">
           このコードを仲間に伝えてね。<br>
-          仲間は<b>同じ日時</b>を選んで「コードで参加」から入力すると、同じパーティになります。
+          仲間は<b>同じ日時</b>を選んで「👑 いつもの仲間と」→「🤝 コードをもらった」から入力すると、同じパーティになります。
         </div>
         <button class="submit" id="pdCopyBtn">コードをコピー</button>
         <button class="back-link" id="pdDoneBtn" style="display:block;margin:10px auto 0">予約一覧に戻る</button>
@@ -1032,6 +1057,27 @@
   </div>
 
   <!-- 💡 お題の説明 -->
+  <!-- だれと参加する？の選び方（2026-10-17） -->
+  <div id="partyGuide" class="hidden">
+    <div class="hint-card" role="dialog" aria-label="だれと参加する？の選び方">
+      <div class="hc-name">だれと参加する？の選び方</div>
+      <div class="pg-sec"><b class="pg-h">🎲 新しい仲間と</b>
+        ひとりで参加する人向け。当日、ほかの参加者と3〜5人のパーティになります。迷ったらこちら。</div>
+      <div class="pg-sec"><b class="pg-h">👑 いつもの仲間と</b>
+        友だちと同じパーティで参加したいとき。
+        <ol>
+          <li>代表の1人が「<b>🔑 コードを作る</b>」で予約する → 4文字のコードが出る</li>
+          <li>ほかの人は、<b>それぞれ自分のスマホで</b>、<b>同じ日時</b>を選んで「<b>🤝 コードをもらった</b>」からコードを入れて予約する</li>
+        </ol>
+      </div>
+      <ul class="pg-notes">
+        <li>2人以下のときは、当日ほかの参加者と合流して3〜5人になります。パーティは5人まで</li>
+        <li>コードを使えるのは予約締切まで。席が埋まると、コードがあっても予約できません。仲間は早めに予約してね</li>
+        <li>参加費は1人ずつ、当日ブースで払います</li>
+      </ul>
+      <button type="button" class="hc-close" id="partyGuideClose">閉じる</button>
+    </div>
+  </div>
   <div id="hintOverlay" class="hidden">
     <div class="hint-card" role="dialog" aria-modal="true" aria-labelledby="hcName">
       <div class="hc-name" id="hcName"></div>
@@ -2207,10 +2253,7 @@
       // 「だれと参加する？」は毎回ソロに戻す（前回の選択が残っていると事故のもと）
       partyMode = "solo"; $("joinCode").value = "";
       $("minorBorrowed").checked = !!kid; $("participantNickname").value = ""; $("minorBox").classList.toggle("hidden", !kid);
-      document.querySelectorAll("#partyMode .pm-opt").forEach((x) =>
-        x.classList.toggle("active", x.dataset.mode === "solo"));
-      $("joinCodeBox").classList.add("hidden");
-      $("partyNote").classList.add("hidden");
+      applyPartyMode();
       setStatus("homeStatus", "", "");
       const slotsRes = await api("getSlots");
       paymentsInfo = slotsRes.payments || paymentsInfo;
@@ -2248,9 +2291,39 @@
     const powerLabel = (k) => (FUN_META[k] ? FUN_META[k].emoji + FUN_META[k].label : "");   // 名前は旧来のまま（呼び出し元が多いため）
     const stars = (n) => "⭐".repeat(Math.max(1, Math.min(3, n || 1)));
 
+    // ----- 押した瞬間に見た目を変える（2026-10-16） -----
+    // チェック・「続ける／終了する」は、押したらすぐ自分の印と人数を変えて、裏でサーバーに送る。
+    // クリア・チカラ・救出はサーバーの返事で決める（返事が来たら描き直す）。失敗したら元に戻して理由を出す。
+    // 送っている途中に10秒ごとの自動更新の返事が届いても、押した印を消さないように上から重ねる。
+    const pendingMine = new Map();   // missionId → 送っている途中の自分のチェック（true / false）
+    let pendingFinish = null;        // 送っている途中の「続ける／終了する」（"continue" / "end"）
+    let questWriteSeq = 0;           // チェックの返事を描いた回数（それより前に出した読み込みの返事は古いので捨てる）
+    function overlayPending(q) {
+      if (!q) return q;
+      (q.missions || []).forEach((m) => {
+        if (!pendingMine.has(m.id) || m.cleared) return;
+        const want = pendingMine.get(m.id);
+        if (!!m.mine === want) return;
+        m.mine = want;
+        m.checkedCount = Math.max(0, Math.min(m.memberCount || 99, (m.checkedCount || 0) + (want ? 1 : -1)));
+      });
+      const f = q.finish;
+      if (pendingFinish && f && f.open && f.mine !== pendingFinish) {
+        if (f.mine === "end") f.end--; else if (f.mine === "continue") f.cont--;
+        if (pendingFinish === "end") f.end++; else f.cont++;
+        f.mine = pendingFinish;
+      }
+      return q;
+    }
+    // サーバーから受け取ったクエストを描く（押した途中の印を重ねてから）
+    function showQuest(q) { questData = overlayPending(q); renderQuest(questData); }
+
     async function loadQuest(slotId) {
-      const r = await api("getQuestState", { lineUserId: profile.userId, slotId: slotId });
-      questData = r.quest || null; // 枠切替時に別枠の古いデータを残さない
+      const seq0 = questWriteSeq;
+      const r = await api("quest", { action: "get", lineUserId: profile.userId, slotId: slotId });
+      // 読み込みの途中でチェックの返事を描いていたら、この返事のほうが古い（同じ枠のときだけ捨てる）
+      if (seq0 !== questWriteSeq && r.quest && slotId === currentGroupSlotId) { applyGroupView(); return; }
+      questData = overlayPending(r.quest || null); // 枠切替時に別枠の古いデータを残さない
       if (r.quest) { renderQuest(r.quest); $("questBox").classList.remove("hidden"); }
       else { $("questBox").classList.add("hidden"); $("shareBtn").classList.add("hidden"); stopTick(); }
       applyGroupView();
@@ -2496,9 +2569,18 @@
       box.classList.remove("hidden");
       box.querySelectorAll(".fb-btn").forEach((b) => {
         b.onclick = async () => {
-          b.disabled = true;
-          const r = await api("toggleQuestMission", { lineUserId: profile.userId, slotId: currentGroupSlotId, finish: b.dataset.v });
-          if (r.quest) { questData = r.quest; renderQuest(r.quest); }
+          if (pendingFinish || f.mine === b.dataset.v) return;
+          // 押したらすぐ選んだ印と人数を変える（返事は裏で待つ）
+          pendingFinish = b.dataset.v;
+          overlayPending(questData);
+          renderFinishBox(questData);
+          let r;
+          try { r = await api("quest", { action: "toggle", lineUserId: profile.userId, slotId: currentGroupSlotId, finish: pendingFinish }); }
+          catch (e) { r = { error: "通信できませんでした。電波のよい場所でもう一度押してください" }; }
+          pendingFinish = null;
+          questWriteSeq++;
+          if (r.quest) showQuest(r.quest);
+          else { try { await loadQuest(currentGroupSlotId); } catch (e) {} }   // 元に戻す
           if (r.ok && r.quest && r.quest.endedEarly) {
             // 全員で終了に決まった → 終了の表示へ（パーティ画面の終わる時刻も早まるので読み直す）
             try { await renderGroupDetail(currentGroupSlotId); } catch (e) {}
@@ -2666,6 +2748,7 @@
           row.addEventListener("click", (e) => {
             if (e.target.closest(".m-name-edit")) return; // 名前の入力欄はチェックに反応させない
             if (e.target.closest(".m-hint-btn")) return;  // 💡も反応させない（念のため）
+            if (pendingMine.has(m.id)) return;             // 送っている途中は、返事が来るまで押せない
             toggleQuestMission(m.id, !m.mine, row);
           });
         }
@@ -2696,23 +2779,38 @@
         const name = input.value.trim();
         if (!name) { input.focus(); return; }
         btn.disabled = true; btn.textContent = "…";
-        const r = await api("setPartyName", {
+        const r = await api("quest", { action: "name",
           lineUserId: profile.userId, slotId: currentGroupSlotId, name: name });
-        if (r.ok && r.quest) { partyNameDraft = null; questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
+        if (r.ok && r.quest) { partyNameDraft = null; questWriteSeq++; showQuest(r.quest); renderActionBanner(); }
         else { btn.disabled = false; btn.textContent = "決定"; }
       });
       input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); btn.click(); } });
       return wrap;
     }
 
-    async function toggleQuestMission(missionId, mine, rowEl) {
-      if (rowEl) rowEl.style.pointerEvents = "none";
-      const r = await api("toggleQuestMission", {
-        lineUserId: profile.userId, slotId: currentGroupSlotId, missionId: missionId, done: mine });
-      if (r.ok && r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); return; }
-      if (rowEl) rowEl.style.pointerEvents = "";
-      // 断られた（スタート前・移動先に着く前など）→ 最新の状態に描き直して理由を見せる
-      if (r.quest) { questData = r.quest; renderQuest(r.quest); renderActionBanner(); }
+    async function toggleQuestMission(missionId, mine) {
+      // 押したらすぐ自分の印（・）と「◯/◯人」を変える。クリアかどうかはサーバーの返事で決める
+      const slotId = currentGroupSlotId;
+      pendingMine.set(missionId, !!mine);
+      overlayPending(questData);
+      renderMissionList(questData);
+      let r;
+      try { r = await api("quest", { action: "toggle", lineUserId: profile.userId, slotId: slotId, missionId: missionId, done: mine }); }
+      catch (e) { r = { error: "通信できませんでした。電波のよい場所でもう一度押してください" }; }
+      pendingMine.delete(missionId);
+      if (slotId !== currentGroupSlotId) return;   // 返事を待つ間に別の時間の画面へ移った
+      questWriteSeq++;
+      if (r.ok && r.quest) { showQuest(r.quest); renderActionBanner(); return; }
+      // 断られた（スタート前・移動先に着く前・ひと休み中など）・通信できなかった → 元に戻して理由を見せる
+      if (r.quest) { showQuest(r.quest); renderActionBanner(); }
+      else {
+        const m = questData && (questData.missions || []).find((x) => x.id === missionId);
+        if (m && !m.cleared && !!m.mine === !!mine) {
+          m.mine = !mine;
+          m.checkedCount = Math.max(0, (m.checkedCount || 0) + (mine ? -1 : 1));
+        }
+        if (questData) renderMissionList(questData);
+      }
       if (r.error) alert(r.error);
     }
 
@@ -3158,18 +3256,36 @@
     }
 
     // 日時を選んで予約（追加）
-    // ----- ⑬ だれと参加するか（ソロ／パーティを作る／コードで参加）-----
+    // ----- ⑬ だれと参加するか（新しい仲間と／いつもの仲間と → コードを作る・コードをもらった）-----
     let partyMode = "solo";
     let pendingPartyCode = null; // 支払い前に作ったパーティのコード（お支払い画面で伝える）
+    //   partyMode は solo / friends（「いつもの仲間と」を選んだが、作る・もらったはまだ）/ create / join
+    function applyPartyMode() {
+      const friends = partyMode !== "solo";
+      document.querySelectorAll("#partyMode .pm-opt").forEach((x) =>
+        x.classList.toggle("active", x.dataset.mode === (friends ? "friends" : "solo")));
+      document.querySelectorAll("#partySub .pm-opt").forEach((x) =>
+        x.classList.toggle("active", x.dataset.mode === partyMode));
+      $("partySub").classList.toggle("hidden", !friends);
+      $("joinCodeBox").classList.toggle("hidden", partyMode !== "join");
+      $("partyNote").classList.toggle("hidden", partyMode !== "create" && partyMode !== "join");
+    }
     $("partyMode").addEventListener("click", (e) => {
       const b = e.target.closest(".pm-opt"); if (!b) return;
+      if (b.dataset.mode === "friends") { if (partyMode === "solo") partyMode = "friends"; }
+      else partyMode = "solo";
+      applyPartyMode();
+    });
+    $("partySub").addEventListener("click", (e) => {
+      const b = e.target.closest(".pm-opt"); if (!b) return;
       partyMode = b.dataset.mode;
-      document.querySelectorAll("#partyMode .pm-opt").forEach((x) =>
-        x.classList.toggle("active", x.dataset.mode === partyMode));
-      $("joinCodeBox").classList.toggle("hidden", partyMode !== "join");
-      $("partyNote").classList.toggle("hidden", partyMode === "solo");
+      applyPartyMode();
       if (partyMode === "join") $("joinCode").focus();
     });
+    // 「？ 選び方」の窓
+    $("partyGuideBtn").addEventListener("click", () => $("partyGuide").classList.remove("hidden"));
+    $("partyGuideClose").addEventListener("click", () => $("partyGuide").classList.add("hidden"));
+    $("partyGuide").addEventListener("click", (e) => { if (e.target === $("partyGuide")) $("partyGuide").classList.add("hidden"); });
     // 入力は大文字4文字に寄せる（小文字・全角で打っても通るようサーバー側でも吸収している）
     // 英数字のコード欄の共通処理。打っている最中（変換中を含む）は書き換えず、確定したときだけ整える。
     // 入力のたびに中身を書き換えると、iPhoneの日本語入力や予測変換と衝突して文字が勝手に入ることがある。
@@ -3200,6 +3316,10 @@
       // 変換の途中で押されても整った形で送る（全角・小文字・余計な記号を落とす）
       const code = toHalfWidth($("joinCode").value).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
       $("joinCode").value = code;
+      if (partyMode === "friends") {
+        setStatus("homeStatus", "「🔑 コードを作る」か「🤝 コードをもらった」を選んでね", "ng");
+        $("partySub").scrollIntoView({ behavior: "smooth", block: "center" }); return;
+      }
       if (partyMode === "join" && code.length !== 4) {
         setStatus("homeStatus", "パーティコード（4文字）を入力してね", "ng"); return;
       }
