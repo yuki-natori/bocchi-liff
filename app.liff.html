@@ -558,6 +558,55 @@
       border-radius:20px; padding:22px 18px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.3); }
     .sc-head { font-size:17px; font-weight:800; color:var(--green); }
     .sc-animal { font-size:80px; margin:6px 0; }
+    /* 姫のイラスト（2026-10-18・試しにペンペン姫だけ。ほかの姫は絵文字のまま） */
+    .p-art { display:inline-block; vertical-align:bottom; object-fit:contain; }
+    /* 救出前の見せ方（SILHOUETTE で切り替え。C は専用の画像を使う） */
+    .p-art.sil-A { filter:brightness(.13) saturate(.4) contrast(1.1); }
+    .p-art.sil-B { filter:grayscale(1) brightness(.38) blur(1.5px); opacity:.85; }
+    .tut-face.has-art, .q-p .qp-face.has-art { filter:none; }
+    .tut-face .p-art { width:56px; height:56px; }
+    .q-p .qp-face .p-art { width:44px; height:44px; }
+    .q-p:not(.got) .qp-face.has-art { opacity:.9; }
+    .garden .pc .p-art { height:calc(var(--pc-size, 76px) * 1.55); width:auto; }
+    .rescue-face .p-art.big { width:min(66vw, 300px); height:min(66vw, 300px); }
+    .rescue-face .p-art.float { animation:artFloat 2.4s ease-in-out infinite; }
+    @keyframes artFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+    .rescue-face.finale .p-art { height:84px; width:84px; }
+    .sc-animal .p-art { height:110px; width:110px; }
+    @media (prefers-reduced-motion: reduce) { .rescue-face .p-art.float { animation:none; } }
+    /* 姫を動かす（2026-10-19）：止め絵の上に顔の部品（まばたき・口・表情）を重ねて切り替える */
+    .p-puppet { position:relative; display:inline-block; line-height:0; vertical-align:bottom; }
+    .p-puppet .pp-base { width:100%; height:100%; }
+    .p-puppet .pp-ov { position:absolute; display:block; visibility:hidden; pointer-events:none; }
+    .p-puppet .pp-ov.on { visibility:visible; }
+    .garden .pc .p-puppet { height:calc(var(--pc-size, 76px) * 1.55); width:calc(var(--pc-size, 76px) * 1.55); }
+    .garden .pc.has-puppet { animation:artBob 3.2s ease-in-out infinite; }
+    .garden .pc.has-puppet.jump { animation:artJump .62s ease-out, artBob 3.2s .62s ease-in-out infinite; }
+    @keyframes artBob { 0%,100% { transform:translateY(0) rotate(0deg); } 30% { transform:translateY(-5px) rotate(-1.5deg); } 70% { transform:translateY(-2px) rotate(1.5deg); } }
+    @keyframes artJump {
+      0%   { transform:translateY(0) scale(1,1); }
+      18%  { transform:translateY(0) scale(1.08,.9); }
+      50%  { transform:translateY(-26px) scale(.95,1.06); }
+      82%  { transform:translateY(0) scale(1.06,.94); }
+      100% { transform:translateY(0) scale(1,1); }
+    }
+    .rescue-face.has-puppet { position:relative; animation:none; }
+    .rescue-face .p-puppet.big { width:min(66vw, 300px); height:min(66vw, 300px); transform-origin:50% 100%;
+      animation:ppJumpIn .95s cubic-bezier(.2,1.2,.4,1) both, artFloat 2.6s 1s ease-in-out infinite; }
+    @keyframes ppJumpIn {
+      0%   { transform:translateY(70px) scale(.45); opacity:0; }
+      45%  { transform:translateY(-28px) scale(1.04,1.04); opacity:1; }
+      70%  { transform:translateY(0) scale(1.09,.9); }
+      86%  { transform:translateY(-6px) scale(.97,1.03); }
+      100% { transform:translateY(0) scale(1,1); }
+    }
+    .rescue-face .spark { position:absolute; color:#ffe9a8; font-size:20px; line-height:1; pointer-events:none;
+      text-shadow:0 0 8px rgba(255,220,120,.9); opacity:0; animation:sparkTw 1.8s ease-in-out infinite; }
+    @keyframes sparkTw { 0%,100% { opacity:0; transform:scale(.4) rotate(0deg); } 50% { opacity:1; transform:scale(1.15) rotate(25deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .garden .pc.has-puppet, .garden .pc.has-puppet.jump, .rescue-face .p-puppet.big, .rescue-face .spark { animation:none; }
+      .rescue-face .spark { opacity:.8; }
+    }
     .sc-grown { font-size:14px; font-weight:700; }
     .sc-pers { font-size:13px; color:var(--green); font-weight:700; margin-top:6px; }
     .sc-line { font-size:12px; color:var(--sub); margin:14px 0 4px; }
@@ -2324,6 +2373,7 @@
       // 読み込みの途中でチェックの返事を描いていたら、この返事のほうが古い（同じ枠のときだけ捨てる）
       if (seq0 !== questWriteSeq && r.quest && slotId === currentGroupSlotId) { applyGroupView(); return; }
       questData = overlayPending(r.quest || null); // 枠切替時に別枠の古いデータを残さない
+      preloadPrincessArt(questData);
       if (r.quest) { renderQuest(r.quest); $("questBox").classList.remove("hidden"); }
       else { $("questBox").classList.add("hidden"); $("shareBtn").classList.add("hidden"); stopTick(); }
       applyGroupView();
@@ -2382,7 +2432,7 @@
       // 救出した姫（進むほど賑やかになる）
       $("qPrincesses").innerHTML = (q.princesses || []).map((p) =>
         '<div class="q-p' + (p.rescued ? ' got' : '') + '">'
-        + '<div class="qp-face">' + p.emoji + '</div>'
+        + '<div class="qp-face' + (PRINCESS_ART[p.id] ? ' has-art' : '') + '">' + princessFace(p, p.rescued ? "icon" : "silhouette") + '</div>'
         + '<div class="qp-name">' + (p.rescued ? esc(p.name) : "？？？") + '</div></div>'
       ).join("");
 
@@ -2410,7 +2460,131 @@
       deviceFirstOpen = false; // 「初めて開いた」扱いは最初の表示だけ。以降に起きたことは演出する
     }
 
-    // ----- 姫たちタブ：救出した姫たちの庭（以前のたまごっち画面を流用。イラストができたら差し替える）-----
+    // ----- 姫のイラスト（2026-10-18・試しにペンペン姫だけ。方針メモ「姫イラスト（アニメーションWebP）と救出時の音」）-----
+    //   still＝止め絵（透過PNG 480px）／icon＝小さい止め絵（160px）／parts＝顔の部品（まばたき・口パク・表情。下の「姫を動かす」）
+    //   shadow＝救出前の見せ方 C 用の画像。イラストの無い姫は、今までどおり絵文字
+    //   使い分け：救出の演出・庭＝動く姫（顔の部品を重ねる）／一覧・記念画像＝止め絵／「動きを減らす」設定の人＝止め絵
+    //   parts＝顔の部品（2026-10-19）。止め絵（480px）の上に重ねる位置 [左, 上, 幅, 高さ]（480px基準）。
+    //   重ねる順＝書いた順（口 → まばたき → 表情）。作り方は claudeファイル/姫イラスト/build_parts.py
+    const PRINCESS_ART = {
+      penpen: { still: "img/hime/penpen.png", icon: "img/hime/penpen_icon.png", shadow: "img/hime/penpen_shadow.png", dir: "img/hime/penpen_",
+        parts: { closed: [226, 222, 48, 40], half: [226, 222, 48, 40], blink: [163, 157, 223, 231], surprised: [163, 157, 154, 105], shy: [163, 157, 223, 231] } }
+    };
+    const SILHOUETTE = "A";   // 救出前の見せ方：A＝暗く沈める／B＝すりガラス／C＝線画の影（比べて決める）
+    const REDUCE_MOTION = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+    const artLoaded = {};     // 読み込めた画像（パス → Image）。救出の演出で待たせないために先に読む
+    function preloadArt(src) {
+      if (!src || artLoaded[src] !== undefined) return;
+      artLoaded[src] = null;
+      const im = new Image();
+      im.onload = () => { artLoaded[src] = im; };
+      im.onerror = () => { delete artLoaded[src]; };   // 古い端末（動くWebPを出せない）・通信エラー → 止め絵のまま
+      im.src = src;
+    }
+    // パーティ画面を開いたら、そのパーティの姫の絵を先に読み込んでおく（チュートリアルが終わるころには届いている）
+    function preloadPrincessArt(q) {
+      ((q && q.princesses) || []).forEach((p) => {
+        const a = PRINCESS_ART[p.id]; if (!a) return;
+        preloadArt(a.still); preloadArt(a.icon);
+        Object.keys(a.parts || {}).forEach((k) => preloadArt(a.dir + k + ".png"));
+        if (SILHOUETTE === "C") preloadArt(a.shadow);
+      });
+    }
+    // 姫の顔（HTML）。kind：icon（小さい止め絵）／still（止め絵）／silhouette（救出前）。イラストが無ければ絵文字
+    function princessFace(p, kind, cls) {
+      const a = p && PRINCESS_ART[p.id];
+      if (!a) return esc((p && p.emoji) || "");
+      let src = kind === "still" ? a.still : a.icon, extra = "";
+      if (kind === "silhouette") {
+        if (SILHOUETTE === "C") src = a.shadow; else extra = " sil-" + SILHOUETTE;
+      }
+      return '<img class="p-art' + extra + (cls ? " " + cls : "") + '" src="' + src + '" alt="' + esc(p.name || "") + '" data-emoji="' + esc(p.emoji || "") + '" draggable="false">';
+    }
+    // 画像が読めなかったら（未アップロード・通信エラー）絵文字に戻す
+    document.addEventListener("error", (e) => {
+      const t = e.target;
+      if (t && t.tagName === "IMG" && t.classList.contains("pp-ov")) { t.remove(); return; }
+      if (t && t.tagName === "IMG" && t.classList.contains("p-art") && t.dataset.emoji !== undefined && !t.dataset.fellBack) {
+        t.dataset.fellBack = "1";
+        const pp = t.closest(".p-puppet");
+        if (pp) pp.querySelectorAll(".pp-ov").forEach((x) => x.remove());
+        t.replaceWith(document.createTextNode(t.dataset.emoji));
+      }
+    }, true);
+
+    // ----- 姫を動かす（2026-10-19）：止め絵の上に顔の部品を重ねて、まばたき・口パク・表情を切り替える -----
+    //   部品が無い姫・「動きを減らす」設定の人は止め絵のまま
+    function puppetHtml(p, cls) {
+      const a = PRINCESS_ART[p.id];
+      if (!a || !a.parts || REDUCE_MOTION) return princessFace(p, "still", cls);
+      const ov = Object.keys(a.parts).map((k) => {
+        const [x, y, w, h] = a.parts[k];
+        return '<img class="pp-ov" data-k="' + k + '" src="' + a.dir + k + '.png" alt="" draggable="false" style="left:'
+          + (x / 4.8) + '%;top:' + (y / 4.8) + '%;width:' + (w / 4.8) + '%;height:' + (h / 4.8) + '%">';
+      }).join("");
+      return '<span class="p-puppet' + (cls ? " " + cls : "") + '" data-pid="' + esc(p.id) + '">' + princessFace(p, "still", "pp-base") + ov + '</span>';
+    }
+    // 動かす係。画面から外れたら（作り直し・演出を閉じた）自然に止まる
+    function Puppet(el) {
+      const ov = {};
+      if (el) el.querySelectorAll(".pp-ov").forEach((x) => { ov[x.dataset.k] = x; });
+      let face = null, talking = false, mouthT = null, timers = [];
+      const alive = () => !!(el && el.isConnected);
+      const show = (k, on) => { if (ov[k]) ov[k].classList.toggle("on", !!on); };
+      const later = (fn, ms) => {
+        const t = setTimeout(() => { timers = timers.filter((x) => x !== t); if (alive()) fn(); }, ms);
+        timers.push(t); return t;
+      };
+      const setMouth = (k) => { show("half", k === "half"); show("closed", k === "closed"); };
+      // まばたき：2.4〜5秒おき。たまに2回続けて
+      const blinkLoop = () => later(() => {
+        if (!face) {
+          show("blink", true);
+          later(() => {
+            show("blink", false);
+            if (Math.random() < 0.22) later(() => { if (!face) { show("blink", true); later(() => show("blink", false), 110); } }, 150);
+          }, 130);
+        }
+        blinkLoop();
+      }, 2400 + Math.random() * 2600);
+      const api = {
+        // 表情（surprised＝驚き／shy＝照れ／null＝ふつう）。ms 後にふつうに戻す
+        setFace(k, ms) {
+          face = k || null;
+          ["surprised", "shy"].forEach((x) => show(x, x === face));
+          if (face) show("blink", false);
+          if (ms) later(() => { if (face === k) api.setFace(null); }, ms);
+        },
+        // 口パク。止めるときは最後の口（closed＝にっこり／null＝大きく開いた元の口）
+        talk(on, endMouth) {
+          talking = !!on; clearTimeout(mouthT);
+          if (!talking) {
+            setMouth(endMouth || null);
+            if (endMouth) later(() => { if (!talking) setMouth(null); }, 3000);   // にっこりのあと、元の笑顔に戻す
+            return;
+          }
+          const seq = ["half", null, "half", "closed", null, "half"]; let i = 0;
+          const step = () => { if (!talking || !alive()) return; setMouth(seq[i++ % seq.length]); mouthT = setTimeout(step, 90 + Math.random() * 80); };
+          step();
+        },
+        // ときどき表情を変える（庭用）：にっこり口を閉じる／照れる
+        idle() {
+          const loop = () => later(() => {
+            if (!face && !talking) {
+              if (Math.random() < 0.55) { setMouth("closed"); later(() => { if (!talking) setMouth(null); }, 2600); }
+              else api.setFace("shy", 1600);
+            }
+            loop();
+          }, 11000 + Math.random() * 9000);
+          loop();
+        },
+        stop() { timers.forEach(clearTimeout); timers = []; clearTimeout(mouthT); talking = false; }
+      };
+      blinkLoop();
+      return api;
+    }
+
+    // ----- 姫たちタブ：救出した姫たちの庭（以前のたまごっち画面を流用。イラストのある姫は動く姫で、ゆっくり揺れる）-----
     // 鳴き声（ひとこと）。姫ごとの口ぐせはサーバーの姫の定義（cries）から来る。手書き風の文字でふわっと浮かんで消える
     // 姫の名前・絵文字・セリフもすべてサーバーの定義から読む（差し替えはサーバーの1か所で済む）
     const firstPrincessName = (q) => (((q && q.princesses) || [])[0] || {}).name || "最初の姫";
@@ -2427,17 +2601,25 @@
       got.forEach((p, i) => {
         const el = document.createElement("span");
         el.className = "pc";
-        el.textContent = p.emoji;
+        el.innerHTML = puppetHtml(p);
         el.dataset.id = p.id;
         el.style.animationDelay = (i * -0.4) + "s"; // みんなで同じ動きにならないようずらす
-        el.addEventListener("click", () => playPrincessCry(el));
+        const pp = el.querySelector(".p-puppet");
+        if (pp) { el.classList.add("has-puppet"); el._pp = Puppet(pp); el._pp.idle(); }
+        el.addEventListener("click", () => playPrincessCry(el, true));
         garden.appendChild(el);
       });
     }
-    function playPrincessCry(el) {
+    function playPrincessCry(el, tapped) {
       const box = $("princessCry");
       const tr = $("terrarium");
       if (!el || !box || !tr || $("progressPane").classList.contains("hidden")) return;
+      // 動く姫：タップされたら驚いて跳ねてから、話すあいだ口を動かす
+      if (el._pp) {
+        const pp = el._pp, wait = tapped ? 600 : 0;
+        if (tapped) { pp.setFace("surprised", 600); el.classList.remove("jump"); void el.offsetWidth; el.classList.add("jump"); }
+        setTimeout(() => { pp.talk(true); setTimeout(() => pp.talk(false, "closed"), 1200); }, wait);
+      }
       const p = ((questData && questData.princesses) || []).find((x) => x.id === el.dataset.id);
       const words = (p && p.cries && p.cries.length) ? p.cries : ["♪"];
       box.textContent = words[Math.floor(Math.random() * words.length)];
@@ -2467,7 +2649,10 @@
       if (q.phase !== "tutorial") { box.classList.add("hidden"); return; }
       box.classList.remove("hidden");
       $("tutVoice").textContent = t.voice || "";
-      $("tutFace").textContent = ((q.princesses || [])[0] || {}).emoji || "❔";   // 救出前はシルエット（CSS）
+      // 救出前はシルエット（絵文字は CSS で真っ黒に、イラストは SILHOUETTE の見せ方で）
+      const p0 = (q.princesses || [])[0] || null;
+      $("tutFace").classList.toggle("has-art", !!(p0 && PRINCESS_ART[p0.id]));
+      $("tutFace").innerHTML = p0 ? princessFace(p0, "silhouette") : "❔";
       const ms = q.missions || [];
       if (t.flow === "moveFirst") {
         const done = ms.filter((m) => m.cleared).length;
@@ -2869,7 +3054,7 @@
       try { localStorage.setItem(finaleMemoryKey(), "1"); } catch (e) {}
       if (deviceFirstOpen) return; // 別の端末で途中から初めて開いた → 記録だけ
       if (rescueQueue.some((x) => x.finale)) return;
-      const faces = (q.princesses || []).filter((p) => p.rescued).map((p) => p.emoji);
+      const faces = (q.princesses || []).filter((p) => p.rescued).map((p) => princessFace(p, "icon"));
       rescueQueue.push({ finale: true, faces: faces.length ? faces : ["🏰"] });
       playNextRescue();
     }
@@ -2883,21 +3068,59 @@
       if (p.finale) {
         // 姫たちが並んで、少しずつずれて跳ねる
         face.className = "rescue-face finale";
-        face.innerHTML = p.faces.map((e, i) => '<span style="animation-delay:' + (i * 0.15) + 's">' + e + '</span>').join("");
+        face.innerHTML = p.faces.map((e, i) => '<span style="animation-delay:' + (i * 0.15) + 's">' + e + '</span>').join("");   // faces は HTML（絵文字かイラスト）
         $("rescueTitle").textContent = "🎉 全ミッションクリア！";
         $("rescueSay").textContent = "みんな、本当にありがとう！\nあなたたちのおかげで\nわたしたち全員が助かったよ。\nこの出会いを、ずっと大切にしてね";
         $("rescueNext").textContent = "やったね！";
       } else {
         face.className = "rescue-face";
-        face.textContent = p.emoji;
+        rescuePuppet = showRescueArt(face, p);
         $("rescueTitle").textContent = p.name + "を救出した！";
-        $("rescueSay").textContent = p.rescue || "";
+        typeSay(p.rescue || "", rescuePuppet);
         $("rescueNext").textContent = "つづける";
       }
       $("rescueOverlay").classList.remove("hidden");
       spawnConfetti(p.finale ? 90 : 40);
     }
+    // 救出の演出の絵：動く姫が跳ねて登場 → 驚いた顔 → セリフに合わせて口を動かす → にっこり。まわりにキラキラ
+    //   イラストの無い姫は絵文字。「動きを減らす」設定の人は止め絵のまま
+    let rescuePuppet = null, sayTimer = null, sayFinish = null;
+    function showRescueArt(face, p) {
+      const a = PRINCESS_ART[p.id];
+      if (!a) { face.textContent = p.emoji; return null; }
+      if (REDUCE_MOTION || !a.parts) { face.innerHTML = princessFace(p, "still", "big"); return null; }
+      face.classList.add("has-puppet");
+      const sparks = [[6, 18, 0], [86, 10, .5], [92, 52, 1.1], [2, 60, .8], [50, -4, 1.4], [74, 78, .3]]
+        .map(([l, t, d]) => '<span class="spark" style="left:' + l + '%;top:' + t + '%;animation-delay:' + (1 + d) + 's">✦</span>').join("");
+      face.innerHTML = puppetHtml(p, "big") + sparks;
+      const pp = Puppet(face.querySelector(".p-puppet"));
+      pp.setFace("surprised", 1100);
+      return pp;
+    }
+    // セリフを1文字ずつ出す（そのあいだ姫が話す）。「、。！…」と改行では少し間をあける。文字を押すと最後まで出る
+    function typeSay(text, pp) {
+      const el = $("rescueSay");
+      clearTimeout(sayTimer);
+      if (!pp || !text) { el.textContent = text || ""; return; }
+      el.textContent = "";
+      let i = 0;
+      const finish = () => { clearTimeout(sayTimer); sayFinish = null; el.textContent = text; pp.talk(false, "closed"); };
+      sayFinish = finish;
+      const step = () => {
+        if (i >= text.length) { finish(); return; }
+        const ch = text[i++];
+        el.textContent = text.slice(0, i);
+        const pause = /[、。！？!?…]/.test(ch) ? 260 : ch === "\n" ? 320 : 55;
+        if (pause > 100) { pp.talk(false); sayTimer = setTimeout(() => { pp.talk(true); step(); }, pause); }
+        else sayTimer = setTimeout(step, pause);
+      };
+      sayTimer = setTimeout(() => { pp.talk(true); step(); }, 1150);   // 驚いた顔のあとで話し始める
+    }
+    $("rescueSay").addEventListener("click", () => { if (sayFinish) sayFinish(); });
     function closeRescue() {
+      clearTimeout(sayTimer); sayFinish = null;
+      if (rescuePuppet) { rescuePuppet.stop(); rescuePuppet = null; }
+      $("rescueFace").innerHTML = "";
       $("rescueOverlay").classList.add("hidden");
       $("rescueBurst").innerHTML = "";
       rescuePlaying = false;
@@ -2932,7 +3155,11 @@
       const [y, m, day] = (d || "").split("-");
       return y + "." + Number(m) + "." + Number(day);
     }
-    // 救出した姫の絵文字を並べる（1人も救出できなくても表示は崩さない）
+    // 救出した姫の絵文字を並べる（1人も救出できなくても表示は崩さない）。イラストのある姫は絵で並べる版が rescuedFacesHtml
+    function rescuedFacesHtml(q, kind) {
+      const got = (q.princesses || []).filter((p) => p.rescued);
+      return got.length ? got.map((p) => princessFace(p, kind || "icon")).join("") : "🏰";
+    }
     function rescuedEmojis(q) {
       return (q.princesses || []).filter((p) => p.rescued).map((p) => p.emoji).join("") || "🏰";
     }
@@ -2940,7 +3167,7 @@
       const q = questData; if (!q) return;
       const n = (q.rescued || []).length;
       $("scHead").textContent = q.partyName || "あなたのパーティ";
-      $("scAnimal").textContent = rescuedEmojis(q);
+      $("scAnimal").innerHTML = rescuedFacesHtml(q, "icon");
       $("scGrown").textContent = n >= 4 ? "4人の姫を全員救出した！" : n + "人の姫を救出した！";
       $("scPers").textContent = "";
       $("scMembers").textContent = (q.memberNicknames || []).join(" / ");
@@ -2976,7 +3203,7 @@
       ctx.strokeRect(16, 16, W - 32, H - 32);
       ctx.textAlign = "center";
       ctx.font = "bold 34px sans-serif"; ctx.fillText(q.partyName || "あなたのパーティ", W / 2, 110);
-      ctx.font = "90px sans-serif"; ctx.fillText(rescuedEmojis(q), W / 2, 300);
+      drawRescuedRow(ctx, q, W / 2, 300);
       ctx.fillStyle = "#2b2b28"; ctx.font = "bold 26px sans-serif";
       ctx.fillText(n >= 4 ? "4人の姫を全員救出した！" : n + "人の姫を救出した！", W / 2, 390);
       ctx.fillStyle = "#6b6b63"; ctx.font = "20px sans-serif"; ctx.fillText("━ 一緒に旅した仲間 ━", W / 2, 510);
@@ -3015,6 +3242,24 @@
       $("saveOverlay").classList.remove("hidden");
     }
     $("saveCloseBtn").addEventListener("click", () => $("saveOverlay").classList.add("hidden"));
+    // 記念画像に救出した姫を並べる。イラストのある姫は止め絵（読み込めていなければ絵文字）
+    function drawRescuedRow(ctx, q, cx, baseY) {
+      const got = (q.princesses || []).filter((p) => p.rescued);
+      if (!got.length) { ctx.font = "90px sans-serif"; ctx.fillText("🏰", cx, baseY); return; }
+      const items = got.map((p) => {
+        const a = PRINCESS_ART[p.id];
+        const im = a && (artLoaded[a.still] || artLoaded[a.icon]);
+        return im ? { im, w: 150 } : { emoji: p.emoji, w: 108 };
+      });
+      const total = items.reduce((t, x) => t + x.w, 0);
+      let x = cx - total / 2;
+      ctx.font = "90px sans-serif";
+      items.forEach((it) => {
+        if (it.im) ctx.drawImage(it.im, x, baseY - 130, 150, 150);
+        else ctx.fillText(it.emoji, x + it.w / 2, baseY);
+        x += it.w;
+      });
+    }
     function wrapText(ctx, text, x, y, maxW, lh) {
       const words = text.split(" "); let line = ""; let yy = y;
       for (const w of words) {
